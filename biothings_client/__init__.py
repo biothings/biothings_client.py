@@ -83,30 +83,52 @@ MYTAXON_KWARGS.update({"_default_url": "http://t.biothings.io/v1", "_pkg_user_ag
 
 CLIENT_SETTINGS = {
     "gene": {
-        "class": 'MyGeneInfo',
+        "class_name": 'MyGeneInfo',
         "class_kwargs": MYGENE_KWARGS,
-        "function_aliases": MYGENE_ALIASES,
-        "ancestors": (BiothingClient, MyGeneClientMixin, )
+        "attr_aliases": MYGENE_ALIASES,
+        "base_class": BiothingClient, 
+        "mixins": [MyGeneClientMixin]
     },
     "variant": {
-        "class": 'MyVariantInfo',
+        "class_name": 'MyVariantInfo',
         "class_kwargs": MYVARIANT_KWARGS,
-        "function_aliases": MYVARIANT_ALIASES,
-        "ancestors": (BiothingClient, )
+        "attr_aliases": MYVARIANT_ALIASES,
+        "base_class": BiothingClient, 
+        "mixins": []
     },
     "taxon": {
-        "class": 'MyTaxonInfo',
+        "class_name": 'MyTaxonInfo',
         "class_kwargs": MYTAXON_KWARGS,
-        "function_aliases": MYTAXON_ALIASES,
-        "ancestors": (BiothingClient, )
+        "attr_aliases": MYTAXON_ALIASES,
+        "base_class": BiothingClient, 
+        "mixins": []
     },
-    "drug": {
-        "class": 'MyDrugInfo',
+    "drug2": {
+        "class_name": 'MyDrugInfo',
         "class_kwargs": MYDRUG_KWARGS,
-        "function_aliases": MYDRUG_ALIASES,
-        "ancestors": (BiothingClient, )
+        "attr_aliases": MYDRUG_ALIASES,
+        "base_class": BiothingClient, 
+        "mixins": []
     }
 }
+
+def _generate_settings(biothing_type, url):
+    """ Tries to generate a settings dictionary for a client that isn't explicitly listed in CLIENT_SETTINGS.
+    """
+    def _pluralize(s, optional=True):
+        _append = "({})" if optional else "{}"
+        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
+
+    _kwargs = copy(COMMON_KWARGS)
+    _aliases = copy(COMMON_ALIASES)
+    _kwargs.update({"_default_url": url, "_pkg_user_agent_header": "My" + biothing_type.title() + ".py",
+        "_annotation_endpoint": "/" + biothing_type.lower() + "/", 
+        "_optionally_plural_object_type": _pluralize(biothing_type.lower()), 
+        "_default_cache_file": "my" + biothing_type.lower() + "_cache"})
+    _aliases.update({'_getannotation': 'get' + biothing_type.lower(), 
+        '_getannotations': 'get' + _pluralize(biothing_type.lower(), optional=False)})
+    return {"class_name": "My" + biothing_type.title() + "Info", "class_kwargs": _kwargs, "mixins": [],
+            "attr_aliases": _aliases, "base_class": BiothingClient}
 
 def get_client(biothing_type, instance=True, *args, **kwargs):
     """ Function to return a new python client for a Biothings API service. 
@@ -118,12 +140,13 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
         All other args/kwargs are passed to the derived client instantiation (if applicable) 
     """
     biothing_type = biothing_type.lower()
-    if biothing_type not in CLIENT_SETTINGS:
+    if (biothing_type not in CLIENT_SETTINGS and not kwargs.get('url', False)):
         raise Exception("No client named '{0}', currently available clients are: {1}".format(biothing_type, list(CLIENT_SETTINGS.keys())))
-    _settings = CLIENT_SETTINGS[biothing_type]
-    _class = type(_settings["class"], _settings["ancestors"], _settings["class_kwargs"])
+    _settings = CLIENT_SETTINGS[biothing_type] if biothing_type in CLIENT_SETTINGS else _generate_settings(biothing_type, kwargs.get('url'))
+    _class = type(_settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]), 
+                    _settings["class_kwargs"])
     _client = _class(*args, **kwargs) if instance else _class
-    for (src_fn, target_fn) in _settings["function_aliases"].items():
-        if getattr(_client, src_fn, False):
-            setattr(_client, target_fn, getattr(_client, src_fn))
+    for (src_attr, target_attr) in _settings["attr_aliases"].items():
+        if getattr(_client, src_attr, False):
+            setattr(_client, target_attr, getattr(_client, src_attr))
     return _client
