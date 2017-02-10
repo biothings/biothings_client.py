@@ -103,7 +103,7 @@ CLIENT_SETTINGS = {
         "base_class": BiothingClient, 
         "mixins": []
     },
-    "drug2": {
+    "drug": {
         "class_name": 'MyDrugInfo',
         "class_kwargs": MYDRUG_KWARGS,
         "attr_aliases": MYDRUG_ALIASES,
