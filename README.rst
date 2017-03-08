@@ -32,8 +32,8 @@ Requirements
 
 Optional dependencies
 ======================
-    `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of variant objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
-    `requests_cache <https://pypi.python.org/pypi/requests-cache>`_ (install using "pip install requests_cache") is required for local caching of API requests.
+    * `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of variant objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
+    * `requests_cache <https://pypi.python.org/pypi/requests-cache>`_ (install using "pip install requests_cache") is required for local caching of API requests.
 
 Installation
 =============
