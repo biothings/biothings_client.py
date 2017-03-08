@@ -10,12 +10,12 @@
 Intro
 =====
 
-*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_ based backend service.  Currently, the following services are available: 
+*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_-based backend service.  Currently, the following clients are available: 
 
-MyGene.Info_ provides access to gene objects.
-MyVariant.Info_ provides access to genetic variant objects.
-c.biothings.io_ provides access to drug/compound objects.
-t.biothings.io_ provides access to taxon objects.
+    * gene - The client for MyGene.Info_, which provides access to gene objects.
+    * variant - The client MyVariant.Info_, which provides access to genetic variant objects.
+    * drug - The client for c.biothings.io_, which provides access to drug/compound objects.
+    * taxon - The client for t.biothings.io_, which provides access to taxon objects.
 
 .. _c.biothings.io: http://c.biothings.io
 .. _t.biothings.io: http://t.biothings.io
