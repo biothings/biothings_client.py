@@ -1,16 +1,16 @@
-.. image:: https://badge.fury.io/py/myvariant.svg
-    :target: https://pypi.python.org/pypi/myvariant
+.. image:: https://badge.fury.io/py/biothings-client.svg
+    :target: https://pypi.python.org/pypi/biothings-client
 
-.. image:: https://img.shields.io/pypi/pyversions/myvariant.svg
-    :target: https://pypi.python.org/pypi/myvariant
+.. image:: https://img.shields.io/pypi/pyversions/biothings-client.svg
+    :target: https://pypi.python.org/pypi/biothings-client
 
-.. image:: https://img.shields.io/pypi/format/myvariant.svg
-    :target: https://pypi.python.org/pypi/myvariant
+.. image:: https://img.shields.io/pypi/format/biothings-client.svg
+    :target: https://pypi.python.org/pypi/biothings-client
 
 Intro
 =====
 
-*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_-based backend service.  Currently, the following clients are available: 
+*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_-based backend service.  Currently, the following clients are available:
 
     * gene - The client for MyGene.Info_, which provides access to gene objects.
     * variant - The client MyVariant.Info_, which provides access to genetic variant objects.
@@ -51,12 +51,12 @@ Installation
     Option 3
           install the latest code directly from the repository::
 
-            pip install -e git+https://github.com/sulab/biothings_client.py
+            pip install -e git+https://github.com/biothings/biothings_client.py
 
 Version history
 ===============
 
-    `CHANGES.txt <https://raw.githubusercontent.com/sulab/biothings_client.py/master/CHANGES.txt>`_
+    `CHANGES.txt <https://raw.githubusercontent.com/biothings/biothings_client.py/master/CHANGES.txt>`_
 
 Tutorial
 =========
@@ -100,7 +100,7 @@ Usage
     # get a client for gene objects
 
     In [7]: mg = get_client("gene")
-    
+
     # see more gene client examples in docs/gene_examples.rst
 
     In [8]: mg.getgene(1017, 'name,symbol,refseq')
@@ -123,7 +123,7 @@ Usage
     # get a client for drugs/compounds
 
     In [9]: md = get_client("drug")
-    
+
     # see more drug client examples in docs/drug_examples.rst
 
     In [10]: md.getdrug("ATBDZSAENDYQDW-UHFFFAOYSA-N", fields="pubchem")
