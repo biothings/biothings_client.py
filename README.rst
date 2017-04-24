@@ -209,5 +209,7 @@ Usage
      'scientific_name': 'homo sapiens',
      'taxid': 9606,
      'uniprot_name': 'homo sapiens'}
+
 Contact
 ========
+Drop us any feedback `@biothingsapi <https://twitter.com/biothingsapi>`_
