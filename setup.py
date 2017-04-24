@@ -8,13 +8,13 @@ def read(fname):
 
 setup(
     name="biothings_client",
-    version="0.0.1",
-    author="The Su Lab",
+    version="0.1.0",
+    author="Cyrus Afrasiabi, Chunlei Wu",
     author_email="cwu@scripps.edu",
-    description="Python Client for Biothings.api services.",
+    description="Python Client for BioThings API services.",
     license="BSD",
     keywords="biology variant gene taxon species drug annotation web service client api myvariant mygene",
-    url="https://github.com/SuLab/biothings_client.py",
+    url="https://github.com/biothings/biothings_client.py",
     packages=find_packages(),
     long_description=read('README.rst'),
     classifiers=[
@@ -25,6 +25,7 @@ setup(
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX",
@@ -39,4 +40,8 @@ setup(
     install_requires=[
         'requests>=2.3.0',
     ],
+    extras_require={
+        'dataframe':  ["pandas>=0.18.0"],
+        'caching': ["requests_cache>=0.4.13"],
+    }
 )
