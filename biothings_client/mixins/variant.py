@@ -1,3 +1,6 @@
+from utils import str_types
+
+
 class MyVariantClientMixin:
     '''Adding some utility methods specific to MyVariant.info API.'''
     def get_hgvs_from_vcf(self, input_vcf):
@@ -26,7 +29,7 @@ class MyVariantClientMixin:
                 if row[0].lower().startswith('chr'):
                     row[0] = row[0][3:]
                 for alt in row[4].split(','):
-                    yield format_hgvs(row[0], row[1], row[3], alt)
+                    yield self.format_hgvs(row[0], row[1], row[3], alt)
 
     def _normalized_vcf(self, chrom, pos, ref, alt):
         """If both ref/alt are > 1 base, and there are overlapping from the left,
