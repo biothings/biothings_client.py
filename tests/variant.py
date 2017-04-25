@@ -49,19 +49,19 @@ class TestMyVariantPy(unittest.TestCase):
         ]
 
     def test_format_hgvs(self):
-        self.assertEqual(myvariant.format_hgvs("1", 35366, "C", "T"),
+        self.assertEqual(self.mv.format_hgvs("1", 35366, "C", "T"),
                          'chr1:g.35366C>T')
-        self.assertEqual(myvariant.format_hgvs("chr2", 17142, "G", "GA"),
+        self.assertEqual(self.mv.format_hgvs("chr2", 17142, "G", "GA"),
                          'chr2:g.17142_17143insA')
-        self.assertEqual(myvariant.format_hgvs("1", 10019, "TA", "T"),
+        self.assertEqual(self.mv.format_hgvs("1", 10019, "TA", "T"),
                          'chr1:g.10020del')
-        self.assertEqual(myvariant.format_hgvs("MT", 8270, "CACCCCCTCT", "C"),
+        self.assertEqual(self.mv.format_hgvs("MT", 8270, "CACCCCCTCT", "C"),
                          'chrMT:g.8271_8279del')
-        self.assertEqual(myvariant.format_hgvs("7", 15903, "G", "GC"),
+        self.assertEqual(self.mv.format_hgvs("7", 15903, "G", "GC"),
                          'chr7:g.15903_15904insC')
-        self.assertEqual(myvariant.format_hgvs("X", 107930849, "GGA", "C"),
+        self.assertEqual(self.mv.format_hgvs("X", 107930849, "GGA", "C"),
                          'chrX:g.107930849_107930851delinsC')
-        self.assertEqual(myvariant.format_hgvs("20", 1234567, "GTC", "GTCT"),
+        self.assertEqual(self.mv.format_hgvs("20", 1234567, "GTC", "GTCT"),
                          'chr20:g.1234569_1234570insT')
 
     def test_metadata(self):
@@ -234,7 +234,7 @@ class TestMyVariantPy(unittest.TestCase):
                 out = StringIO()
                 sys.stdout = out
                 r = f()
-                output = out.getvalue().strip()              
+                output = out.getvalue().strip()
             finally:
                 sys.stdout = current_stdout
 
@@ -242,9 +242,9 @@ class TestMyVariantPy(unittest.TestCase):
 
         from_cache, pre_cache_r = _cache_request(_getvariant)
         self.assertFalse(from_cache)
-        
+
         self.mv.set_caching('mvc')
-        
+
         # populate cache
         from_cache, cache_fill_r = _cache_request(_getvariant)
         self.assertTrue(os.path.exists('mvc.sqlite'))
@@ -252,7 +252,7 @@ class TestMyVariantPy(unittest.TestCase):
         # is it from the cache?
         from_cache, cached_r = _cache_request(_getvariant)
         self.assertTrue(from_cache)
-        
+
         self.mv.stop_caching()
         # same query should be live - not cached
         from_cache, post_cache_r = _cache_request(_getvariant)
@@ -269,7 +269,7 @@ class TestMyVariantPy(unittest.TestCase):
         self.assertFalse(from_cache)
 
         # all requests should be identical
-        self.assertTrue(all([x == pre_cache_r for x in 
+        self.assertTrue(all([x == pre_cache_r for x in
             [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
 
         # test getvariants POST caching
