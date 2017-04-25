@@ -1,4 +1,4 @@
-from utils import str_types
+from ..utils import str_types
 
 
 class MyVariantClientMixin:
