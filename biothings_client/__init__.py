@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Generic client for Biothings APIs
 """
-from .base import BiothingClient
+from .base import BiothingClient, __version__
 from .utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 from .mixins.gene import MyGeneClientMixin
 from .mixins.variant import MyVariantClientMixin
@@ -29,7 +28,7 @@ COMMON_ALIASES = {
 
 # Set project specific aliases
 MYGENE_ALIASES = copy(COMMON_ALIASES)
-MYGENE_ALIASES.update({'_getannotation':'getgene', '_getannotations': 'getgenes'})
+MYGENE_ALIASES.update({'_getannotation': 'getgene', '_getannotations': 'getgenes'})
 MYVARIANT_ALIASES = copy(COMMON_ALIASES)
 MYVARIANT_ALIASES.update({'_getannotation': 'getvariant', '_getannotations': 'getvariants'})
 MYDRUG_ALIASES = copy(COMMON_ALIASES)
@@ -53,21 +52,38 @@ COMMON_KWARGS = {
 }
 # project specific kwargs
 MYGENE_KWARGS = copy(COMMON_KWARGS)
-MYGENE_KWARGS.update({"_default_url": "http://mygene.info/v3", "_pkg_user_agent_header": "MyGene.py",
-    "_annotation_endpoint": "/gene/", "_optionally_plural_object_type": "gene(s)",
-    "_default_cache_file": "mygene_cache"})
+MYGENE_KWARGS.update({
+    "_default_url": "http://mygene.info/v3",
+    "_pkg_user_agent_header": "MyGene.py",
+    "_annotation_endpoint": "/gene/",
+    "_optionally_plural_object_type": "gene(s)",
+    "_default_cache_file": "mygene_cache"
+})
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
-MYVARIANT_KWARGS.update({"_default_url": "http://myvariant.info/v1", "_pkg_user_agent_header": "MyVariant.py",
-    "_annotation_endpoint": "/variant/", "_optionally_plural_object_type": "variant(s)",
-    "_default_cache_file": "myvariant_cache", "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS})
+MYVARIANT_KWARGS.update({
+    "_default_url": "http://myvariant.info/v1",
+    "_pkg_user_agent_header": "MyVariant.py",
+    "_annotation_endpoint": "/variant/",
+    "_optionally_plural_object_type": "variant(s)",
+    "_default_cache_file": "myvariant_cache",
+    "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS
+})
 MYDRUG_KWARGS = copy(COMMON_KWARGS)
-MYDRUG_KWARGS.update({"_default_url": "http://c.biothings.io/v1", "_pkg_user_agent_header": "MyDrug.py",
-    "_annotation_endpoint": "/drug/", "_optionally_plural_object_type": "drug(s)",
-    "_default_cache_file": "mydrug_cache"})
+MYDRUG_KWARGS.update({
+    "_default_url": "http://c.biothings.io/v1",
+    "_pkg_user_agent_header": "MyDrug.py",
+    "_annotation_endpoint": "/drug/",
+    "_optionally_plural_object_type": "drug(s)",
+    "_default_cache_file": "mydrug_cache"
+})
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
-MYTAXON_KWARGS.update({"_default_url": "http://t.biothings.io/v1", "_pkg_user_agent_header": "MyTaxon.py",
-    "_annotation_endpoint": "/taxon/", "_optionally_plural_object_type": "taxon/taxa",
-    "_default_cache_file": "mytaxon_cache"})
+MYTAXON_KWARGS.update({
+    "_default_url": "http://t.biothings.io/v1",
+    "_pkg_user_agent_header": "MyTaxon.py",
+    "_annotation_endpoint": "/taxon/",
+    "_optionally_plural_object_type": "taxon/taxa",
+    "_default_cache_file": "mytaxon_cache"
+})
 
 # ***********************************************
 # *  Client settings
@@ -122,12 +138,17 @@ def _generate_settings(biothing_type, url):
 
     _kwargs = copy(COMMON_KWARGS)
     _aliases = copy(COMMON_ALIASES)
-    _kwargs.update({"_default_url": url, "_pkg_user_agent_header": "My" + biothing_type.title() + ".py",
+    _kwargs.update({
+        "_default_url": url,
+        "_pkg_user_agent_header": "My" + biothing_type.title() + ".py",
         "_annotation_endpoint": "/" + biothing_type.lower() + "/",
         "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
-        "_default_cache_file": "my" + biothing_type.lower() + "_cache"})
-    _aliases.update({'_getannotation': 'get' + biothing_type.lower(),
-        '_getannotations': 'get' + _pluralize(biothing_type.lower(), optional=False)})
+        "_default_cache_file": "my" + biothing_type.lower() + "_cache"
+    })
+    _aliases.update({
+        '_getannotation': 'get' + biothing_type.lower(),
+        '_getannotations': 'get' + _pluralize(biothing_type.lower(), optional=False)
+    })
     return {"class_name": "My" + biothing_type.title() + "Info", "class_kwargs": _kwargs, "mixins": [],
             "attr_aliases": _aliases, "base_class": BiothingClient}
 
@@ -145,7 +166,7 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
         raise Exception("No client named '{0}', currently available clients are: {1}".format(biothing_type, list(CLIENT_SETTINGS.keys())))
     _settings = CLIENT_SETTINGS[biothing_type] if biothing_type in CLIENT_SETTINGS else _generate_settings(biothing_type, kwargs.get('url'))
     _class = type(_settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]),
-                    _settings["class_kwargs"])
+                  _settings["class_kwargs"])
     _client = _class(*args, **kwargs) if instance else _class
     for (src_attr, target_attr) in _settings["attr_aliases"].items():
         if getattr(_client, src_attr, False):
