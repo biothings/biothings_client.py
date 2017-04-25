@@ -18,7 +18,7 @@ except ImportError:
     caching_avail = False
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-from .biothings_client import get_client
+from biothings_client import get_client
 
 class TestMyVariantPy(unittest.TestCase):
 
