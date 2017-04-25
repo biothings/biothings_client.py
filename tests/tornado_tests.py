@@ -9,12 +9,9 @@ parser.add_argument('--host', default=None, help='IP of gene ES index backend')
 parser.add_arument('--test_module', default=None, help='IP of variant ES index backend')
 
 #class ClientAsyncHTTPTest(TestMyGenePy, AsyncHTTPTestCase):
-     
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.host is not None:
-        
-        
-        
-    
+        pass
