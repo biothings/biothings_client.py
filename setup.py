@@ -41,7 +41,7 @@ setup(
         'requests>=2.3.0',
     ],
     extras_require={
-        'dataframe':  ["pandas>=0.18.0"],
+        'dataframe': ["pandas>=0.18.0"],
         'caching': ["requests_cache>=0.4.13"],
         'jsonld': ["pyld>=0.7.2"],
     }
