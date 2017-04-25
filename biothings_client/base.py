@@ -2,7 +2,6 @@
 Python Client for generic Biothings API services
 '''
 from __future__ import print_function
-import sys
 import os
 import time
 from itertools import islice
@@ -22,12 +21,10 @@ try:
 except:
     caching_avail = False
 
-__version__ = '0.0.1'
+from .utils import str_types
 
-if sys.version_info[0] == 3:
-    str_types = str
-else:
-    str_types = (str, unicode)
+
+__version__ = '0.2.0'
 
 
 class ScanError(Exception):
@@ -397,9 +394,9 @@ class BiothingClient(object):
         :return: a dictionary with returned variant hits or a pandas DataFrame object (when **as_dataframe** is True)
                  or a generator of all hits (when **fetch_all** is True)
 
-        .. Hint:: By default, **query** method returns the first 10 hits if the matched hits are >10. 
-                  If the total number of hits are less than 1000, you can increase the value for 
-                  **size** parameter. For a query that returns more than 1000 hits, you can pass 
+        .. Hint:: By default, **query** method returns the first 10 hits if the matched hits are >10.
+                  If the total number of hits are less than 1000, you can increase the value for
+                  **size** parameter. For a query that returns more than 1000 hits, you can pass
                   "fetch_all=True" to return a `generator <http://www.learnpython.org/en/Generators>`_
                   of all matching hits (internally, those hits are requested from the server in blocks of 1000).
         '''
@@ -460,7 +457,7 @@ class BiothingClient(object):
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
-        :param scopes: specify the type (or types) of identifiers passed to **qterms**, 
+        :param scopes: specify the type (or types) of identifiers passed to **qterms**,
                        either a list or a comma-separated fields to specify type of input qterms.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
