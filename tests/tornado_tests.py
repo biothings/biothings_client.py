@@ -1,5 +1,5 @@
 #from tornado.testing import AsyncHTTPTestCase
-from importlib import import_module
+#from importlib import import_module
 from .gene import TestMyGenePy
 from .variant import TestMyVariantPy
 import argparse
