@@ -24,7 +24,7 @@ except:
 from .utils import str_types
 
 
-__version__ = '0.2.0'
+__version__ = '0.1.1'
 
 
 class ScanError(Exception):
