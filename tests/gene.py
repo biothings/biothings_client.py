@@ -18,8 +18,9 @@ except ImportError:
     caching_avail = False
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
+import biothings_client
+sys.stderr.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
 from biothings_client import get_client
-
 
 class TestMyGenePy(unittest.TestCase):
 
