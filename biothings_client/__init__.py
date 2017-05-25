@@ -57,7 +57,8 @@ MYGENE_KWARGS.update({
     "_pkg_user_agent_header": "MyGene.py",
     "_annotation_endpoint": "/gene/",
     "_optionally_plural_object_type": "gene(s)",
-    "_default_cache_file": "mygene_cache"
+    "_default_cache_file": "mygene_cache",
+    "_entity": "gene"
 })
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update({
@@ -66,6 +67,7 @@ MYVARIANT_KWARGS.update({
     "_annotation_endpoint": "/variant/",
     "_optionally_plural_object_type": "variant(s)",
     "_default_cache_file": "myvariant_cache",
+    "_entity": "variant",
     "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS
 })
 MYDRUG_KWARGS = copy(COMMON_KWARGS)
@@ -74,6 +76,7 @@ MYDRUG_KWARGS.update({
     "_pkg_user_agent_header": "MyDrug.py",
     "_annotation_endpoint": "/drug/",
     "_optionally_plural_object_type": "drug(s)",
+    "_entity": "drug",
     "_default_cache_file": "mydrug_cache"
 })
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
@@ -82,6 +85,7 @@ MYTAXON_KWARGS.update({
     "_pkg_user_agent_header": "MyTaxon.py",
     "_annotation_endpoint": "/taxon/",
     "_optionally_plural_object_type": "taxon/taxa",
+    "_entity": "taxon",
     "_default_cache_file": "mytaxon_cache"
 })
 
