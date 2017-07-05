@@ -31,8 +31,8 @@ MYGENE_ALIASES = copy(COMMON_ALIASES)
 MYGENE_ALIASES.update({'_getannotation': 'getgene', '_getannotations': 'getgenes'})
 MYVARIANT_ALIASES = copy(COMMON_ALIASES)
 MYVARIANT_ALIASES.update({'_getannotation': 'getvariant', '_getannotations': 'getvariants'})
-MYDRUG_ALIASES = copy(COMMON_ALIASES)
-MYDRUG_ALIASES.update({'_getannotation': 'getdrug', '_getannotations': 'getdrugs'})
+MYCHEM_ALIASES = copy(COMMON_ALIASES)
+MYCHEM_ALIASES.update({'_getannotation': 'getchem', '_getannotations': 'getchems'})
 MYTAXON_ALIASES = copy(COMMON_ALIASES)
 MYTAXON_ALIASES.update({'_getannotation': 'gettaxon', '_getannotations': 'gettaxa'})
 
@@ -48,7 +48,11 @@ COMMON_KWARGS = {
     "_query_endpoint": "/query/",
     "_metadata_endpoint": "/metadata",
     "_metadata_fields_endpoint": "/metadata/fields",
-    "_top_level_jsonld_uris": []
+    "_top_level_jsonld_uris": [],
+    "_delay": 1,
+    "_step": 1000,
+    "_scroll_size": 1000,
+    "_max_query": 1000 
 }
 # project specific kwargs
 MYGENE_KWARGS = copy(COMMON_KWARGS)
@@ -70,14 +74,16 @@ MYVARIANT_KWARGS.update({
     "_entity": "variant",
     "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS
 })
-MYDRUG_KWARGS = copy(COMMON_KWARGS)
-MYDRUG_KWARGS.update({
-    "_default_url": "http://c.biothings.io/v1",
-    "_pkg_user_agent_header": "MyDrug.py",
-    "_annotation_endpoint": "/drug/",
-    "_optionally_plural_object_type": "drug(s)",
-    "_entity": "drug",
-    "_default_cache_file": "mydrug_cache"
+MYCHEM_KWARGS = copy(COMMON_KWARGS)
+MYCHEM_KWARGS.update({
+    "_default_url": "http://mychem.info/v1",
+    "_pkg_user_agent_header": "MyChem.py",
+    "_annotation_endpoint": "/chem/",
+    "_optionally_plural_object_type": "chem(s)",
+    "_entity": "chem",
+    "_default_cache_file": "mychem_cache",
+    "_step": 10,
+    "_max_query": 10
 })
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
 MYTAXON_KWARGS.update({
@@ -125,9 +131,23 @@ CLIENT_SETTINGS = {
         "mixins": []
     },
     "drug": {
-        "class_name": 'MyDrugInfo',
-        "class_kwargs": MYDRUG_KWARGS,
-        "attr_aliases": MYDRUG_ALIASES,
+        "class_name": 'MyChemInfo',
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": []
+    },
+    "chem": {
+        "class_name": 'MyChemInfo',
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": []
+    },
+    "compound": {
+        "class_name": 'MyChemInfo',
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
         "base_class": BiothingClient,
         "mixins": []
     }
