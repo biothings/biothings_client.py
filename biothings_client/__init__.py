@@ -5,8 +5,10 @@ from .base import BiothingClient, __version__
 from .utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 from .mixins.gene import MyGeneClientMixin
 from .mixins.variant import MyVariantClientMixin
+from .docstring.gene import DOCSTRING as GENE_DOCSTRING
+from .docstring.variant import DOCSTRING as VARIANT_DOCSTRING
 from copy import copy
-
+import types
 
 # ***********************************************
 # *  Aliases.
@@ -48,7 +50,8 @@ COMMON_KWARGS = {
     "_query_endpoint": "/query/",
     "_metadata_endpoint": "/metadata",
     "_metadata_fields_endpoint": "/metadata/fields",
-    "_top_level_jsonld_uris": []
+    "_top_level_jsonld_uris": [],
+    "_docstring_obj": {}
 }
 # project specific kwargs
 MYGENE_KWARGS = copy(COMMON_KWARGS)
@@ -58,7 +61,8 @@ MYGENE_KWARGS.update({
     "_annotation_endpoint": "/gene/",
     "_optionally_plural_object_type": "gene(s)",
     "_default_cache_file": "mygene_cache",
-    "_entity": "gene"
+    "_entity": "gene",
+    "_docstring_obj": GENE_DOCSTRING 
 })
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update({
@@ -68,7 +72,8 @@ MYVARIANT_KWARGS.update({
     "_optionally_plural_object_type": "variant(s)",
     "_default_cache_file": "myvariant_cache",
     "_entity": "variant",
-    "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS
+    "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS,
+    "_docstring_obj": VARIANT_DOCSTRING
 })
 MYDRUG_KWARGS = copy(COMMON_KWARGS)
 MYDRUG_KWARGS.update({
@@ -133,6 +138,17 @@ CLIENT_SETTINGS = {
     }
 }
 
+def copy_func(f, name=None):
+    '''
+    return a function with same code, globals, defaults, closure, and 
+    name (or provide a new name)
+    '''
+    fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
+        f.__defaults__, f.__closure__)
+    # in case f was given attrs (note this dict is a shallow copy):
+    fn.__dict__.update(f.__dict__) 
+    return fn
+
 def _generate_settings(biothing_type, url):
     """ Tries to generate a settings dictionary for a client that isn't explicitly listed in CLIENT_SETTINGS.
     """
@@ -171,8 +187,12 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
     _settings = CLIENT_SETTINGS[biothing_type] if biothing_type in CLIENT_SETTINGS else _generate_settings(biothing_type, kwargs.get('url'))
     _class = type(_settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]),
                   _settings["class_kwargs"])
-    _client = _class(*args, **kwargs) if instance else _class
     for (src_attr, target_attr) in _settings["attr_aliases"].items():
-        if getattr(_client, src_attr, False):
-            setattr(_client, target_attr, getattr(_client, src_attr))
+        if getattr(_class, src_attr, False):
+            setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
+    for (_name, _docstring) in _settings['class_kwargs']['_docstring_obj'].items():
+        _func = getattr(_class, _name, None)
+        if _func:
+            _func.__doc__ = _docstring
+    _client = _class(*args, **kwargs) if instance else _class
     return _client
