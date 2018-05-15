@@ -97,11 +97,11 @@ class BiothingClient(object):
         self.url = url
         if self.url[-1] == '/':
             self.url = self.url[:-1]
-        self.max_query = 1000
+        self.max_query = self._max_query
         # delay and step attributes are for batch queries.
-        self.delay = 1
-        self.step = 1000
-        self.scroll_size = 1000
+        self.delay = self._delay
+        self.step = self._step
+        self.scroll_size = self._scroll_size
         # raise requests.exceptions.HTTPError for status_code > 400
         #   but not for 404 on getvariant
         #   set to False to surpress the exceptions.
