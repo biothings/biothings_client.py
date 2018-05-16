@@ -18,15 +18,14 @@ except ImportError:
     caching_avail = False
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
+from utils import descore
 import biothings_client
 sys.stderr.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
-from biothings_client import get_client
 
-
-class TestMyVariantPy(unittest.TestCase):
+class TestVariantClient(unittest.TestCase):
 
     def setUp(self):
-        self.mv = get_client("variant", url=os.environ.get("V_CLIENT_HOST", "http://myvariant.info/v1"))
+        self.mv = biothings_client.get_client("variant")
         self.query_list1 = [
             'chr1:g.866422C>T',
             'chr1:g.876664G>A',
@@ -237,7 +236,7 @@ class TestMyVariantPy(unittest.TestCase):
                 out = StringIO()
                 sys.stdout = out
                 r = f()
-                output = out.getvalue().strip()
+                output = out.getvalue().strip()              
             finally:
                 sys.stdout = current_stdout
 
@@ -245,9 +244,9 @@ class TestMyVariantPy(unittest.TestCase):
 
         from_cache, pre_cache_r = _cache_request(_getvariant)
         self.assertFalse(from_cache)
-
+        
         self.mv.set_caching('mvc')
-
+        
         # populate cache
         from_cache, cache_fill_r = _cache_request(_getvariant)
         self.assertTrue(os.path.exists('mvc.sqlite'))
@@ -255,7 +254,7 @@ class TestMyVariantPy(unittest.TestCase):
         # is it from the cache?
         from_cache, cached_r = _cache_request(_getvariant)
         self.assertTrue(from_cache)
-
+        
         self.mv.stop_caching()
         # same query should be live - not cached
         from_cache, post_cache_r = _cache_request(_getvariant)
@@ -272,7 +271,7 @@ class TestMyVariantPy(unittest.TestCase):
         self.assertFalse(from_cache)
 
         # all requests should be identical
-        self.assertTrue(all([x == pre_cache_r for x in
+        self.assertTrue(all([x == pre_cache_r for x in 
             [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
 
         # test getvariants POST caching
@@ -300,6 +299,8 @@ class TestMyVariantPy(unittest.TestCase):
 
         os.remove('mvc.sqlite')
 
+def suite():
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestVariantClient)
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner().run(suite())

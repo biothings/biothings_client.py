@@ -18,14 +18,14 @@ except ImportError:
     caching_avail = False
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
+from utils import descore
 import biothings_client
-sys.stderr.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
-from biothings_client import get_client
+sys.stdout.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
 
-class TestMyGenePy(unittest.TestCase):
+class TestGeneClient(unittest.TestCase):
 
     def setUp(self):
-        self.mg = get_client("gene", url=os.environ.get('G_CLIENT_HOST', 'http://mygene.info/v3'))
+        self.mg = biothings_client.get_client("gene")
         self.query_list1 = ['1007_s_at', '1053_at', '117_at', '121_at', '1255_g_at',
                             '1294_at', '1316_at', '1320_at', '1405_i_at', '1431_at']
 
@@ -109,7 +109,7 @@ class TestMyGenePy(unittest.TestCase):
         qres2 = self.mg.findgenes([1017, 'CDK2'], scopes='entrezgene,symbol', fields='uniprot,unigene', species=9606, verbose=False)
         self.assertEqual(len(qres2), 2)
 
-        self.assertEqual(qres1, qres2)
+        self.assertEqual(descore(qres1), descore(qres2))
 
     def test_querymany_notfound(self):
         qres = self.mg.findgenes([1017, '695', 'NA_TEST'], scopes='entrezgene', species=9606)
@@ -131,8 +131,8 @@ class TestMyGenePy(unittest.TestCase):
         self.mg.step = 3
         qres2 = self.mg.querymany(self.query_list1, scopes='reporter')
         self.mg.step = default_step
-        qres1.sort(key=lambda doc: doc['_id'])
-        qres2.sort(key=lambda doc: doc['_id'])
+        qres1 = descore(sorted(qres1, key=lambda doc: doc['_id']))
+        qres2 = descore(sorted(qres2, key=lambda doc: doc['_id']))
         self.assertEqual(qres1, qres2)
 
     def test_get_fields(self):
@@ -230,6 +230,8 @@ class TestMyGenePy(unittest.TestCase):
 
         os.remove('mgc.sqlite')
 
+def suite():
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestGeneClient)
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.TextTestRunner().run(suite())
