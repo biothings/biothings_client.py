@@ -5,10 +5,17 @@ import os
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
 import biothings_client
+
 sys.stdout.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
 
-from gene import suite as gene_suite
-from variant import suite as variant_suite
+print(sys.path)
+
+try:
+    from gene import suite as gene_suite
+    from variant import suite as variant_suite
+except ImportError:
+    from tests.gene import suite as gene_suite
+    from tests.variant import suite as variant_suite
 
 class TestBiothingsClient(unittest.TestCase):
     def setUp(self):
