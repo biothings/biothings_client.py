@@ -7,6 +7,9 @@
 .. image:: https://img.shields.io/pypi/format/biothings-client.svg
     :target: https://pypi.python.org/pypi/biothings-client
 
+.. image:: https://travis-ci.org/biothings/biothings_client.py.svg?branch=master
+    :target: https://travis-ci.org/biothings/biothings_client.py
+
 Intro
 =====
 
