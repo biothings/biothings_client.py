@@ -233,6 +233,9 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
     for (_name, _docstring) in _settings['class_kwargs']['_docstring_obj'].items():
         _func = getattr(_class, _name, None)
         if _func:
-            _func.__doc__ = _docstring
+            try:
+                _func.__doc__ = _docstring
+            except AttributeError:
+                _func.__func__.__doc__ = _docstring
     _client = _class(*args, **kwargs) if instance else _class
     return _client
