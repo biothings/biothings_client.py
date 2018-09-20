@@ -37,6 +37,8 @@ MYCHEM_ALIASES = copy(COMMON_ALIASES)
 MYCHEM_ALIASES.update({'_getannotation': 'getchem', '_getannotations': 'getchems'})
 MYTAXON_ALIASES = copy(COMMON_ALIASES)
 MYTAXON_ALIASES.update({'_getannotation': 'gettaxon', '_getannotations': 'gettaxa'})
+MYDISEASE_ALIASES = copy(COMMON_ALIASES)
+MYDISEASE_ALIASES.update({'_getannotation': 'getdisease', '_getannotations': 'getdiseases'})
 
 # ***********************************************
 # *  Kwargs.
@@ -87,6 +89,17 @@ MYCHEM_KWARGS.update({
     "_optionally_plural_object_type": "chem(s)",
     "_entity": "chem",
     "_default_cache_file": "mychem_cache",
+    "_step": 10,
+    "_max_query": 10
+})
+MYDISEASE_KWARGS = copy(COMMON_KWARGS)
+MYDISEASE_KWARGS.update({
+    "_default_url": "http://mydisease.info/v1",
+    "_pkg_user_agent_header": "MyDisease.py",
+    "_annotation_endpoint": "/disease/",
+    "_optionally_plural_object_type": "disease(s)",
+    "_entity": "disease",
+    "_default_cache_file": "mydisease_cache",
     "_step": 10,
     "_max_query": 10
 })
@@ -155,6 +168,13 @@ CLIENT_SETTINGS = {
         "attr_aliases": MYCHEM_ALIASES,
         "base_class": BiothingClient,
         "mixins": []
+    },
+    "disease": {
+        "class_name": "MyDiseaseInfo",
+        "class_kwargs": MYDISEASE_KWARGS,
+        "attr_aliases": MYDISEASE_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": []
     }
 }
 
@@ -195,7 +215,7 @@ def _generate_settings(biothing_type, url):
 def get_client(biothing_type, instance=True, *args, **kwargs):
     """ Function to return a new python client for a Biothings API service.
 
-        :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'drug'
+        :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease'
         :param instance: if True, return an instance of the derived client,
                          if False, return the class of the derived client
 
