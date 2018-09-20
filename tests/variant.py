@@ -214,8 +214,8 @@ class TestVariantClient(unittest.TestCase):
 
     def test_get_fields(self):
         fields = self.mv.get_fields()
-        self.assertTrue('dbsnp' in fields.keys())
-        self.assertTrue('clinvar' in fields.keys())
+        self.assertTrue('dbsnp.chrom' in fields.keys())
+        self.assertTrue('clinvar.chrom' in fields.keys())
 
     def test_caching(self):
         if not caching_avail:
