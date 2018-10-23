@@ -88,9 +88,7 @@ MYCHEM_KWARGS.update({
     "_annotation_endpoint": "/chem/",
     "_optionally_plural_object_type": "chem(s)",
     "_entity": "chem",
-    "_default_cache_file": "mychem_cache",
-    "_step": 10,
-    "_max_query": 10
+    "_default_cache_file": "mychem_cache"
 })
 MYDISEASE_KWARGS = copy(COMMON_KWARGS)
 MYDISEASE_KWARGS.update({
@@ -99,9 +97,7 @@ MYDISEASE_KWARGS.update({
     "_annotation_endpoint": "/disease/",
     "_optionally_plural_object_type": "disease(s)",
     "_entity": "disease",
-    "_default_cache_file": "mydisease_cache",
-    "_step": 10,
-    "_max_query": 10
+    "_default_cache_file": "mydisease_cache"
 })
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
 MYTAXON_KWARGS.update({
