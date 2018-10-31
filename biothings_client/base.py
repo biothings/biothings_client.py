@@ -50,8 +50,9 @@ def alwayslist(value):
     else:
         return [value]
 
+
 def safe_str(s, encoding='utf-8'):
-    '''if input is an unicode string, do proper encoding.'''
+    '''Perform proper encoding if input is an unicode string.'''
     try:
         _s = str(s)
     except UnicodeEncodeError:
@@ -88,9 +89,9 @@ def iter_n(iterable, n, with_cnt=False):
         else:
             yield chunk
 
+
 class BiothingClient(object):
-    '''This is the client for a biothing web service.
-    '''
+    '''This is the client for a biothing web service.'''
     def __init__(self, url=None):
         if url is None:
             url = self._default_url
@@ -110,9 +111,7 @@ class BiothingClient(object):
         self._cached = False
 
     def _dataframe(self, obj, dataframe, df_index=True):
-        """
-        converts object to DataFrame (pandas)
-        """
+        '''Converts object to DataFrame (pandas)'''
         if not df_avail:
             print("Error: pandas module must be installed for as_dataframe option.")
             return
@@ -123,7 +122,7 @@ class BiothingClient(object):
             if dataframe == 1:
                 df = json_normalize(obj['hits'])
             else:
-                df = DataFrame.from_dict(obj['hits'])
+                df = DataFrame.from_dict(obj)
         else:
             if dataframe == 1:
                 df = json_normalize(obj)
@@ -192,7 +191,7 @@ class BiothingClient(object):
                 time.sleep(self.delay)
 
     def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        '''run query_fn for input query_li in a batch (self.step).
+        '''Run query_fn for input query_li in a batch (self.step).
            return a generator of query_result in each batch.
            input query_li can be a list/tuple/iterable
         '''
@@ -212,7 +211,7 @@ class BiothingClient(object):
 
     @property
     def _from_cache_notification(self):
-        ''' Notification to alert user that a cached result is being returned.'''
+        '''Notification to alert user that a cached result is being returned.'''
         return "[ from cache ]"
 
     def _metadata(self, verbose=True, **kwargs):
@@ -225,7 +224,7 @@ class BiothingClient(object):
         return ret
 
     def _set_caching(self, cache_db=None, verbose=True, **kwargs):
-        ''' Installs a local cache for all requests.
+        '''Installs a local cache for all requests.
 
             **cache_db** is the path to the local sqlite cache database.'''
         if caching_avail:
@@ -241,7 +240,7 @@ class BiothingClient(object):
         return
 
     def _stop_caching(self):
-        ''' Stop caching.'''
+        '''Stop caching.'''
         if self._cached and caching_avail:
             requests_cache.uninstall_cache()
             self._cached = False
@@ -255,7 +254,7 @@ class BiothingClient(object):
             pass
 
     def _get_fields(self, search_term=None, verbose=True):
-        ''' Wrapper for /metadata/fields
+        '''Wrapper for /metadata/fields
 
             **search_term** is a case insensitive string to search for in available field names.
             If not provided, all available fields will be returned.
@@ -419,7 +418,7 @@ class BiothingClient(object):
         return out
 
     def _fetch_all(self, url, verbose=True, **kwargs):
-        ''' Function that returns a generator to results.  Assumes that 'q' is in kwargs.'''
+        '''Function that returns a generator to results.  Assumes that 'q' is in kwargs.'''
         # function to get the next batch of results, automatically disables cache if we are caching
         def _batch():
             if caching_avail and self._cached:
@@ -521,13 +520,18 @@ class BiothingClient(object):
             if len(out) == 1:
                 out = out[0]
             return out
-        if dataframe:
-            out = self._dataframe(out, dataframe, df_index=df_index)
 
         # check dup hits
         if li_query:
             li_dup = [(query, cnt) for query, cnt in list_itemcnt(li_query) if cnt > 1]
-        del li_query
+            del li_query
+
+        if dataframe:
+            out = self._dataframe(out, dataframe, df_index=df_index)
+            li_dup_df = DataFrame.from_records(li_dup,
+                                               columns=['query',
+                                                        'duplicate hits'])
+            li_missing_df = DataFrame(li_missing, columns=['query'])
 
         if verbose:
             if li_dup:
@@ -537,7 +541,10 @@ class BiothingClient(object):
                 print("{0} input query terms found no hit:".format(len(li_missing)))
                 print("\t"+str(li_missing)[:100])
         if returnall:
-            return {'out': out, 'dup': li_dup, 'missing': li_missing}
+            if dataframe:
+                return {'out': out, 'dup': li_dup_df, 'missing': li_missing_df}
+            else:
+                return {'out': out, 'dup': li_dup, 'missing': li_missing}
         else:
             if verbose and (li_dup or li_missing):
                 print('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
