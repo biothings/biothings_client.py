@@ -235,3 +235,18 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
                 _func.__func__.__doc__ = _docstring
     _client = _class(*args, **kwargs) if instance else _class
     return _client
+
+class MyGeneInfo(get_client('gene', instance=False)):
+    pass
+
+class MyVariantInfo(get_client('variant', instance=False)):
+    pass
+
+class MyChemInfo(get_client('chem', instance=False)):
+    pass
+
+class MyDiseaseInfo(get_client('disease', instance=False)):
+    pass
+
+class MyTaxonInfo(get_client('taxon', instance=False)):
+    pass
