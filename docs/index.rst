@@ -3,18 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to biothings_client's documentation!
-============================================
+.. _requests: http://docs.python-requests.org/en/latest/
+.. _MyGene.Info: http://mygene.info
+.. _MyVariant.Info: http://myvariant.info
+.. _MyChem.Info: http://mychem.info
+.. _MyGene.py: https://pypi.org/project/mygene/
+.. _MyVariant.py: https://pypi.org/project/myvariant/
 
-Biothings_client.py is a unified python client for accessing all BioThings APIs, such as:
-
-* MyGene.info
-* MyVariant.info
-* MyChem.info
-
-.. toctree::
-   :maxdepth: 2
-   index
+Biothings_client.py
+===================
+`Biothings_client.py <https://pypi.org/project/biothings-client/>`_ is a unified python client providing an easy-to-use wrapper for accessing *any* BioThings API (e.g. MyGene.Info_, MyVariant.Info_, MyChem.Info_).  It is the descendent and eventual replacement of both the MyGene.py_ and MyVariant.py_ python clients.
 
 Requirements
 ============
@@ -24,7 +22,9 @@ Requirements
 
 Optional dependencies
 ======================
-    `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of gene objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
+    * `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
+    * `requests-cache <https://pypi.org/project/requests-cache/>`_ (install using "pip install requests-cache") is required to use the local data caching function.
+
 
 Installation
 =============
@@ -47,31 +47,22 @@ Installation
 Version history
 ===============
 
-    `CHANGES.txt <https://raw.githubusercontent.com/SuLab/mygene.py/master/CHANGES.txt>`_
+    `CHANGES.txt <https://raw.githubusercontent.com/biothings/biothings_client.py/master/CHANGES.txt>`_
 
-Tutorial
-========
+.. toctree::
+    :maxdepth: 3
+    :caption: Tutorials
 
-API
-======
+    doc/Quick-Start
+    doc/Custom-API
+    doc/Subclassing
 
-.. py:module:: biothings_client
-.. autofunction:: get_client
-.. autoclass:: MyGeneInfo
-    :members:
-    :inherited-members:
-.. autoclass: MyVariantInfo
-    :members:
-    :inherited-members:
-.. autoclass: MyChemInfo
-    :members:
-    :inherited-members:
-.. autoclass: MyDiseaseInfo
-    :members:
-    :inherited-members:
-.. autoclass: MyTaxonInfo
-    :members:
-    :inherited-members:
+.. toctree::
+    :maxdepth: 3
+    :caption: Documentation
+
+    doc/API
+
 
 Indices and tables
 ==================
