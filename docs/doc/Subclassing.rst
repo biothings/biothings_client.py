@@ -8,18 +8,19 @@ The biothings_client **get_client** function generates settings for a biothings 
     In [1]: class CustomMyGeneClient(get_client('gene', instance=False)):
        ...:     def getgene(self, _id, fields=None, **kwargs):
        ...:         ''' overridden gene function '''
-       ...:         print('Custom Gene function')
-       ...:         return super(CustomMyGeneClient, self).getgene(_id=_id, fields=fields, **kwargs)
+       ...:         r =  super(CustomMyGeneClient, self).getgene(_id=_id, fields=fields, **kwargs)
+       ...:         r['custom-field'] = 'My custom field'
+       ...:         return r
        ...:
 
     In [2]: gene_client = CustomMyGeneClient()
 
     In [3]: gene_client.getgene('1017', fields='symbol,name')
-    Custom Gene function
     Out[3]:
     {'_id': '1017',
      '_score': 13.409985,
+     'custom-field': 'My custom field',
      'name': 'cyclin dependent kinase 2',
      'symbol': 'CDK2'}
 
-Here we overrode the normal functioning of the **getgene** function in the yGene client.
+Here we overrode the normal functioning of the **getgene** function in the MyGene client by adding a custom field to the result.
