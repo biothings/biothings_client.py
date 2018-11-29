@@ -17,14 +17,16 @@ Intro
 
     * gene - The client for MyGene.Info_, which provides access to gene objects.
     * variant - The client MyVariant.Info_, which provides access to genetic variant objects.
-    * drug - The client for c.biothings.io_, which provides access to drug/compound objects.
+    * chem - The client for MyChem.Info_, which provides access to chemical/drug objects.
+    * disease - The client for MyDisease.Info_, which provides access to disease objects.
     * taxon - The client for t.biothings.io_, which provides access to taxon objects.
 
-.. _c.biothings.io: http://c.biothings.io
 .. _t.biothings.io: http://t.biothings.io
 .. _Biothings.api: http://biothings.io
 .. _MyGene.Info: http://mygene.info
 .. _MyVariant.Info: http://myvariant.info
+.. _MyChem.Info: http://mychem.info
+.. _MyDisease.Info: http://mydisease.info
 .. _requests: https://pypi.python.org/pypi/requests
 
 Requirements
@@ -64,8 +66,12 @@ Version history
 Tutorial
 =========
 
+    See the `quick start tutorial <https://biothings-clientpy.readthedocs.io/en/latest/doc/Quick-Start.html>`_ at the `biothings_client doc page <https://biothings-clientpy.readthedocs.io/en/latest/index.html>`_.
+
 Documentation
 =============
+
+    You can find tutorials and detailed `API documentation <https://biothings-clientpy.readthedocs.io/en/latest/doc/API.html>`_ at the `biothings_client doc page <https://biothings-clientpy.readthedocs.io/en/latest/index.html>`_.
 
 Usage
 =====
@@ -77,8 +83,6 @@ Usage
     # get a client for variant objects
 
     In [2]: mv = get_client("variant")
-
-    # see more variant client options at docs/variant_examples.rst
 
     In [3]: mv.getvariant("chr7:g.140453134T>C")
     Out[3]:  #output below is collapsed
@@ -104,8 +108,6 @@ Usage
 
     In [7]: mg = get_client("gene")
 
-    # see more gene client examples in docs/gene_examples.rst
-
     In [8]: mg.getgene(1017, 'name,symbol,refseq')
     Out[8]:
     {'_id': '1017',
@@ -123,13 +125,11 @@ Usage
        {'protein': 'XP_011536034.1', 'rna': 'XM_011537732.1'}]},
      'symbol': 'CDK2'}
 
-    # get a client for drugs/compounds
+    # get a client for chems/drugs
 
-    In [9]: md = get_client("drug")
+    In [9]: md = get_client("chem")
 
-    # see more drug client examples in docs/drug_examples.rst
-
-    In [10]: md.getdrug("ATBDZSAENDYQDW-UHFFFAOYSA-N", fields="pubchem")
+    In [10]: md.getchem("ATBDZSAENDYQDW-UHFFFAOYSA-N", fields="pubchem")
     Out[10]:
     {'_id': 'ATBDZSAENDYQDW-UHFFFAOYSA-N',
      '_version': 1,
@@ -163,8 +163,6 @@ Usage
     # get a client for taxa
 
     In [11]: mt = get_client("taxon")
-
-    # more taxon client examples at docs/taxon_examples.rst
 
     In [12]: mt.gettaxon(9606)
     Out[12]:
