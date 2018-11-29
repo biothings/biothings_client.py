@@ -246,62 +246,66 @@ class TestVariantClient(unittest.TestCase):
 
             return ('[ from cache ]' in output, r)
 
-        from_cache, pre_cache_r = _cache_request(_getvariant)
-        self.assertFalse(from_cache)
-        
-        self.mv.set_caching('mvc')
-        
-        # populate cache
-        from_cache, cache_fill_r = _cache_request(_getvariant)
-        self.assertTrue(os.path.exists('mvc.sqlite'))
-        self.assertFalse(from_cache)
-        # is it from the cache?
-        from_cache, cached_r = _cache_request(_getvariant)
-        self.assertTrue(from_cache)
-        
-        self.mv.stop_caching()
-        # same query should be live - not cached
-        from_cache, post_cache_r = _cache_request(_getvariant)
-        self.assertFalse(from_cache)
+        try:
+            from_cache, pre_cache_r = _cache_request(_getvariant)
+            self.assertFalse(from_cache)
+            
+            self.mv.set_caching('mvc')
+            
+            # populate cache
+            from_cache, cache_fill_r = _cache_request(_getvariant)
+            self.assertTrue(os.path.exists('mvc.sqlite'))
+            self.assertFalse(from_cache)
+            # is it from the cache?
+            from_cache, cached_r = _cache_request(_getvariant)
+            self.assertTrue(from_cache)
+            
+            self.mv.stop_caching()
+            # same query should be live - not cached
+            from_cache, post_cache_r = _cache_request(_getvariant)
+            self.assertFalse(from_cache)
 
-        self.mv.set_caching('mvc')
-        # same query should still be sourced from cache
-        from_cache, recached_r = _cache_request(_getvariant)
-        self.assertTrue(from_cache)
+            self.mv.set_caching('mvc')
+            # same query should still be sourced from cache
+            from_cache, recached_r = _cache_request(_getvariant)
+            self.assertTrue(from_cache)
 
-        self.mv.clear_cache()
-        # cache was cleared, same query should be live
-        from_cache, clear_cached_r = _cache_request(_getvariant)
-        self.assertFalse(from_cache)
+            self.mv.clear_cache()
+            # cache was cleared, same query should be live
+            from_cache, clear_cached_r = _cache_request(_getvariant)
+            self.assertFalse(from_cache)
 
-        # all requests should be identical
-        self.assertTrue(all([x == pre_cache_r for x in 
-            [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
+            # all requests should be identical except their _score, which can vary slightly
+            for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]:
+                x.pop('_score', None)
 
-        # test getvariants POST caching
-        from_cache, first_getvariants_r = _cache_request(_getvariants)
-        self.assertFalse(from_cache)
-        # should be from cache this time
-        from_cache, second_getvariants_r = _cache_request(_getvariants)
-        self.assertTrue(from_cache)
+            self.assertTrue(all([x == pre_cache_r for x in 
+                [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
 
-        # test query GET caching
-        from_cache, first_query_r = _cache_request(_query)
-        self.assertFalse(from_cache)
-        # should be from cache this time
-        from_cache, second_query_r = _cache_request(_query)
-        self.assertTrue(from_cache)
+            # test getvariants POST caching
+            from_cache, first_getvariants_r = _cache_request(_getvariants)
+            self.assertFalse(from_cache)
+            # should be from cache this time
+            from_cache, second_getvariants_r = _cache_request(_getvariants)
+            self.assertTrue(from_cache)
 
-        # test querymany POST caching
-        from_cache, first_querymany_r = _cache_request(_querymany)
-        self.assertFalse(from_cache)
-        # should be from cache this time
-        from_cache, second_querymany_r = _cache_request(_querymany)
-        self.assertTrue(from_cache)
+            # test query GET caching
+            from_cache, first_query_r = _cache_request(_query)
+            self.assertFalse(from_cache)
+            # should be from cache this time
+            from_cache, second_query_r = _cache_request(_query)
+            self.assertTrue(from_cache)
 
-        self.mv.stop_caching()
+            # test querymany POST caching
+            from_cache, first_querymany_r = _cache_request(_querymany)
+            self.assertFalse(from_cache)
+            # should be from cache this time
+            from_cache, second_querymany_r = _cache_request(_querymany)
+            self.assertTrue(from_cache)
 
-        os.remove('mvc.sqlite')
+            self.mv.stop_caching()
+        finally:
+            os.remove('mvc.sqlite')
 
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestVariantClient)
