@@ -12,13 +12,13 @@ try:
     from pandas import DataFrame
     from pandas.io.json import json_normalize
     df_avail = True
-except:
+except ImportError:
     df_avail = False
 
 try:
     import requests_cache
     caching_avail = True
-except:
+except ImportError:
     caching_avail = False
 
 from .utils import str_types
@@ -249,8 +249,7 @@ class BiothingClient(object):
             self._cached = False
         return
 
-    @staticmethod
-    def _clear_cache():
+    def _clear_cache(self):
         ''' Clear the globally installed cache. '''
         try:
             requests_cache.clear()

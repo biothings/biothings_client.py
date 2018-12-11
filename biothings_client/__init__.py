@@ -72,7 +72,7 @@ MYGENE_KWARGS.update({
 })
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update({
-    "_default_url": "https://myvariant.info/v1",
+    "_default_url": "http://myvariant.info/v1",
     "_pkg_user_agent_header": "MyVariant.py",
     "_annotation_endpoint": "/variant/",
     "_optionally_plural_object_type": "variant(s)",
