@@ -75,6 +75,8 @@ class TestGeneClient(unittest.TestCase):
         self.assertEqual(qres['hits'][0]['_id'], '12566')
 
     def test_query_fetch_all(self):
+        # fetch_all won't work when caching is used.
+        self.mg.stop_caching()
         qres = self.mg.query('_exists_:pdb')
         total = qres['total']
 
@@ -180,6 +182,8 @@ class TestGeneClient(unittest.TestCase):
             from_cache, pre_cache_r = _cache_request(_getgene)
             self.assertFalse(from_cache)
 
+            if os.path.exists('mgc.sqlite'):
+                os.remove('mgc.sqlite')
             self.mg.set_caching('mgc')
 
             # populate cache
@@ -234,8 +238,8 @@ class TestGeneClient(unittest.TestCase):
             from_cache, second_querymany_r = _cache_request(_querymany)
             self.assertTrue(from_cache)
 
-            self.mg.stop_caching()
         finally:
+            self.mg.stop_caching()
             os.remove('mgc.sqlite')
 
 def suite():

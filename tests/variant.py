@@ -146,6 +146,8 @@ class TestVariantClient(unittest.TestCase):
         self.assertTrue(qres['total'] >= 3)
 
     def test_query_fetch_all(self):
+        # fetch_all won't work when caching is used.
+        self.mv.stop_caching()
         qres = self.mv.query('chr1:69500-70000', fields="chrom")
         total = qres['total']
 
@@ -250,6 +252,8 @@ class TestVariantClient(unittest.TestCase):
             from_cache, pre_cache_r = _cache_request(_getvariant)
             self.assertFalse(from_cache)
 
+            if os.path.exists('mvc.sqlite'):
+                os.remove('mvc.sqlite')
             self.mv.set_caching('mvc')
 
             # populate cache
@@ -303,8 +307,8 @@ class TestVariantClient(unittest.TestCase):
             from_cache, second_querymany_r = _cache_request(_querymany)
             self.assertTrue(from_cache)
 
-            self.mv.stop_caching()
         finally:
+            self.mv.stop_caching()
             os.remove('mvc.sqlite')
 
 def suite():
