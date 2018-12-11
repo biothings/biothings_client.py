@@ -164,4 +164,3 @@ DOCSTRING = {
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
         '''
 }
-

@@ -24,6 +24,7 @@ def get_dotfield(d, df):
     _helper(d, df)
     return list(s)
 
+
 def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kwargs=None):
     chunk = []
     join_val_dict = {}
@@ -40,6 +41,7 @@ def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kw
             join_val_dict = {}
     if chunk:
         yield chunk, join_val_dict
+
 
 def join(e1_client, e2_client, size=10, e1_query="__all__", e2_query="__all__", e1_join_field="_id", e2_join_field="_id", e1_kwargs=None, e2_kwargs=None):
     ''' implements a join with e1 being the outer loop and e2 being the inner loop '''

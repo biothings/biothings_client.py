@@ -2,6 +2,7 @@
 from collections import OrderedDict
 from biothings_client import get_client
 
+
 def get_homologs(gene_list, fields='all', species='all'):
     ''' Return the gene-objects for homologs in species for each gene in the input *gene_list*. '''
     gene_client = get_client("gene")

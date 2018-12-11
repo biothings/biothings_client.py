@@ -174,16 +174,18 @@ CLIENT_SETTINGS = {
     }
 }
 
+
 def copy_func(f, name=None):
     '''
     return a function with same code, globals, defaults, closure, and
     name (or provide a new name)
     '''
     fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
-        f.__defaults__, f.__closure__)
+                            f.__defaults__, f.__closure__)
     # in case f was given attrs (note this dict is a shallow copy):
     fn.__dict__.update(f.__dict__)
     return fn
+
 
 def _generate_settings(biothing_type, url):
     """ Tries to generate a settings dictionary for a client that isn't explicitly listed in CLIENT_SETTINGS.
@@ -207,6 +209,7 @@ def _generate_settings(biothing_type, url):
     })
     return {"class_name": "My" + biothing_type.title() + "Info", "class_kwargs": _kwargs, "mixins": [],
             "attr_aliases": _aliases, "base_class": BiothingClient}
+
 
 def get_client(biothing_type, instance=True, *args, **kwargs):
     """ Function to return a new python client for a Biothings API service.
@@ -236,17 +239,22 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
     _client = _class(*args, **kwargs) if instance else _class
     return _client
 
+
 class MyGeneInfo(get_client('gene', instance=False)):
     pass
+
 
 class MyVariantInfo(get_client('variant', instance=False)):
     pass
 
+
 class MyChemInfo(get_client('chem', instance=False)):
     pass
 
+
 class MyDiseaseInfo(get_client('disease', instance=False)):
     pass
+
 
 class MyTaxonInfo(get_client('taxon', instance=False)):
     pass
