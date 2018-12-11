@@ -27,7 +27,7 @@ class TestBiothingsClient(unittest.TestCase):
     def test_get_client(self):
         gene_client = biothings_client.get_client("gene")
         self.assertEqual(type(gene_client).__name__, "MyGeneInfo")
-        
+
         variant_client = biothings_client.get_client("variant")
         self.assertEqual(type(variant_client).__name__, "MyVariantInfo")
 

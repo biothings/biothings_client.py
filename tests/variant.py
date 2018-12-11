@@ -240,7 +240,7 @@ class TestVariantClient(unittest.TestCase):
                 out = StringIO()
                 sys.stdout = out
                 r = f()
-                output = out.getvalue().strip()              
+                output = out.getvalue().strip()
             finally:
                 sys.stdout = current_stdout
 
@@ -249,9 +249,9 @@ class TestVariantClient(unittest.TestCase):
         try:
             from_cache, pre_cache_r = _cache_request(_getvariant)
             self.assertFalse(from_cache)
-            
+
             self.mv.set_caching('mvc')
-            
+
             # populate cache
             from_cache, cache_fill_r = _cache_request(_getvariant)
             self.assertTrue(os.path.exists('mvc.sqlite'))
@@ -259,7 +259,7 @@ class TestVariantClient(unittest.TestCase):
             # is it from the cache?
             from_cache, cached_r = _cache_request(_getvariant)
             self.assertTrue(from_cache)
-            
+
             self.mv.stop_caching()
             # same query should be live - not cached
             from_cache, post_cache_r = _cache_request(_getvariant)
@@ -279,7 +279,7 @@ class TestVariantClient(unittest.TestCase):
             for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]:
                 x.pop('_score', None)
 
-            self.assertTrue(all([x == pre_cache_r for x in 
+            self.assertTrue(all([x == pre_cache_r for x in
                 [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
 
             # test getvariants POST caching
