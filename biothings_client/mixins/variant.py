@@ -51,7 +51,11 @@ class MyVariantClientMixin:
         # _ref/_alt cannot be both None, if so,
         # ref and alt are exactly the same,
         # something is wrong with this VCF record
-        assert not (_ref is None and _alt is None)
+        #assert not (_ref is None and _alt is None)
+        if (_ref is None and _alt is None):
+            raise ValueError('"ref" and "alt" cannot be the same: {}'.format(
+                (chrom, pos, ref, alt)
+            ))
 
         _pos = int(pos)
         if _ref is None or _alt is None:
