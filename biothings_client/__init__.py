@@ -57,7 +57,7 @@ COMMON_KWARGS = {
     "_delay": 1,
     "_step": 1000,
     "_scroll_size": 1000,
-    "_max_query": 1000 
+    "_max_query": 1000
 }
 # project specific kwargs
 MYGENE_KWARGS = copy(COMMON_KWARGS)
@@ -68,11 +68,11 @@ MYGENE_KWARGS.update({
     "_optionally_plural_object_type": "gene(s)",
     "_default_cache_file": "mygene_cache",
     "_entity": "gene",
-    "_docstring_obj": GENE_DOCSTRING 
+    "_docstring_obj": GENE_DOCSTRING
 })
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update({
-    "_default_url": "http://myvariant.info/v1",
+    "_default_url": "https://myvariant.info/v1",
     "_pkg_user_agent_header": "MyVariant.py",
     "_annotation_endpoint": "/variant/",
     "_optionally_plural_object_type": "variant(s)",
@@ -176,13 +176,13 @@ CLIENT_SETTINGS = {
 
 def copy_func(f, name=None):
     '''
-    return a function with same code, globals, defaults, closure, and 
+    return a function with same code, globals, defaults, closure, and
     name (or provide a new name)
     '''
     fn = types.FunctionType(f.__code__, f.__globals__, name or f.__name__,
         f.__defaults__, f.__closure__)
     # in case f was given attrs (note this dict is a shallow copy):
-    fn.__dict__.update(f.__dict__) 
+    fn.__dict__.update(f.__dict__)
     return fn
 
 def _generate_settings(biothing_type, url):
