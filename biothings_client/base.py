@@ -60,10 +60,10 @@ def safe_str(s, encoding='utf-8'):
     return _s
 
 
-def list_itemcnt(list):
-    '''Return number of occurrence for each type of item in the list.'''
+def list_itemcnt(li):
+    '''Return number of occurrence for each type of item in the input list.'''
     x = {}
-    for item in list:
+    for item in li:
         if item in x:
             x[item] += 1
         else:
@@ -110,7 +110,8 @@ class BiothingClient(object):
         self.default_user_agent = "%s/%s python-requests/%s" % (self._pkg_user_agent_header, __version__, requests.__version__)
         self._cached = False
 
-    def _dataframe(self, obj, dataframe, df_index=True):
+    @staticmethod
+    def _dataframe(obj, dataframe, df_index=True):
         '''Converts object to DataFrame (pandas)'''
         if not df_avail:
             print("Error: pandas module must be installed for as_dataframe option.")
@@ -165,7 +166,8 @@ class BiothingClient(object):
         ret = res.json()
         return from_cache, ret
 
-    def _format_list(self, a_list, sep=','):
+    @staticmethod
+    def _format_list(a_list, sep=','):
         if isinstance(a_list, (list, tuple)):
             _out = sep.join([safe_str(x) for x in a_list])
         else:
@@ -247,7 +249,8 @@ class BiothingClient(object):
             self._cached = False
         return
 
-    def _clear_cache(self):
+    @staticmethod
+    def _clear_cache():
         ''' Clear the globally installed cache. '''
         try:
             requests_cache.clear()

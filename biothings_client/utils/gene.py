@@ -18,7 +18,7 @@ def get_homologs(gene_list, fields='all', species='all'):
                 initial[gene['_id']].setdefault(taxid, []).append(geneid)
                 qset.add(geneid)
     gene_dict = dict([(g['_id'], g) for g in gene_client.getgenes(iter(qset), fields=fields, species='all')])
-    
+
     ret = []
     for (geneid, homolog_dict) in initial.items():
         _ret = {'gene': geneid, 'homologs': []}

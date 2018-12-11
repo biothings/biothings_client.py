@@ -33,7 +33,8 @@ class MyVariantClientMixin:
                 for alt in row[4].split(','):
                     yield self.format_hgvs(row[0], row[1], row[3], alt)
 
-    def _normalized_vcf(self, chrom, pos, ref, alt):
+    @staticmethod
+    def _normalized_vcf(chrom, pos, ref, alt):
         """If both ref/alt are > 1 base, and there are overlapping from the left,
            we need to trim off the overlapping bases.
            In the case that ref/alt is like this:
