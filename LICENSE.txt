@@ -1,4 +1,4 @@
-Copyright (c) 2016-2017, Chunlei Wu <cwu@scripps.edu>
+Copyright (c) 2016-2018, Chunlei Wu <cwu@scripps.edu>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
