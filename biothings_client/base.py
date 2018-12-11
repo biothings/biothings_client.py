@@ -250,8 +250,9 @@ class BiothingClient(object):
         ''' Clear the globally installed cache. '''
         try:
             requests_cache.clear()
-        except:
-            pass
+        except AttributeError:
+            # requests_cache is not enabled
+            print("requests_cache is not enabled. Nothing to clear.")
 
     def _get_fields(self, search_term=None, verbose=True):
         '''Wrapper for /metadata/fields
