@@ -273,6 +273,7 @@ class BiothingClient(object):
             params = {}
         from_cache, ret = self._get(_url, params=params, verbose=verbose)
         for (k, v) in ret.items():
+            del k
             # Get rid of the notes column information
             if "notes" in v:
                 del v['notes']

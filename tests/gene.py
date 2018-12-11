@@ -219,23 +219,29 @@ class TestGeneClient(unittest.TestCase):
 
             # test getvariants POST caching
             from_cache, first_getgenes_r = _cache_request(_getgenes)
+            del first_getgenes_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_getgenes_r = _cache_request(_getgenes)
+            del second_getgenes_r
             self.assertTrue(from_cache)
 
             # test query GET caching
             from_cache, first_query_r = _cache_request(_query)
+            del first_query_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_query_r = _cache_request(_query)
+            del second_query_r
             self.assertTrue(from_cache)
 
             # test querymany POST caching
             from_cache, first_querymany_r = _cache_request(_querymany)
+            del first_querymany_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_querymany_r = _cache_request(_querymany)
+            del second_querymany_r
             self.assertTrue(from_cache)
 
         finally:

@@ -288,23 +288,29 @@ class TestVariantClient(unittest.TestCase):
 
             # test getvariants POST caching
             from_cache, first_getvariants_r = _cache_request(_getvariants)
+            del first_getvariants_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_getvariants_r = _cache_request(_getvariants)
+            del second_getvariants_r
             self.assertTrue(from_cache)
 
             # test query GET caching
             from_cache, first_query_r = _cache_request(_query)
+            del first_query_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_query_r = _cache_request(_query)
+            del second_query_r
             self.assertTrue(from_cache)
 
             # test querymany POST caching
             from_cache, first_querymany_r = _cache_request(_querymany)
+            del first_querymany_r
             self.assertFalse(from_cache)
             # should be from cache this time
             from_cache, second_querymany_r = _cache_request(_querymany)
+            del second_querymany_r
             self.assertTrue(from_cache)
 
         finally:
