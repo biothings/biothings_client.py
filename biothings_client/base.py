@@ -132,7 +132,8 @@ class BiothingClient(object):
             df = df.set_index('query')
         return df
 
-    def _get(self, url, params={}, none_on_404=False, verbose=True):
+    def _get(self, url, params=None, none_on_404=False, verbose=True):
+        params = params or {}
         debug = params.pop('debug', False)
         return_raw = params.pop('return_raw', False)
         headers = {'user-agent': self.default_user_agent}

@@ -24,11 +24,12 @@ def get_dotfield(d, df):
             s.add(_d)
 
     _helper(d, df)
-    return list(s) 
+    return list(s)
 
-def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kwargs={}):
+def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kwargs=None):
     chunk = []
     join_val_dict = {}
+    query_kwargs = query_kwargs or {}
     if query_kwargs.get('fields', None) and query_kwargs['fields'] != 'all' and join_field != '_id':
         query_kwargs['fields'] = query_kwargs['fields'].rstrip(', ') + ',' + join_field
     for doc in client.query(query, fetch_all=True, **query_kwargs):
@@ -42,9 +43,11 @@ def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kw
     if chunk:
         yield chunk, join_val_dict
 
-def join(e1_client, e2_client, size=10, e1_query="__all__", e2_query="__all__", e1_join_field="_id", e2_join_field="_id", e1_kwargs={}, e2_kwargs={}):
+def join(e1_client, e2_client, size=10, e1_query="__all__", e2_query="__all__", e1_join_field="_id", e2_join_field="_id", e1_kwargs=None, e2_kwargs=None):
     ''' implements a join with e1 being the outer loop and e2 being the inner loop '''
     ret_chunk = []
+    e1_kwargs = e1_kwargs or {}
+    e2_kwargs = e2_kwargs or {}
     for outer_doc_chunk, outer_join_val_dict in unordered_chunk_iterator(e1_client, e1_query, e1_join_field, e1_kwargs):
         if outer_doc_chunk:
             inner_query_string = ' OR '.join(['{}:{}'.format(e2_join_field, x) for x in outer_join_val_dict.keys()])
