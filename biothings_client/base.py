@@ -220,7 +220,7 @@ class BiothingClient(object):
     def _metadata(self, verbose=True, **kwargs):
         '''Return a dictionary of Biothing metadata.
         '''
-        _url = self.url+self._metadata_endpoint
+        _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
             print(self._from_cache_notification)

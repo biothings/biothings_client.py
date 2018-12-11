@@ -1,5 +1,3 @@
-from biothings_client import get_client
-
 def get_dotfield(d, df):
     s = set()
 
