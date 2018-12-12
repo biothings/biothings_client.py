@@ -1,7 +1,7 @@
 """
 Generic client for Biothings APIs
 """
-from .base import BiothingClient, __version__, alwayslist
+from .base import BiothingClient, __version__, alwayslist, df_avail, caching_avail
 from .utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 from .mixins.gene import MyGeneClientMixin
 from .mixins.variant import MyVariantClientMixin

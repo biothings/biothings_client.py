@@ -430,6 +430,7 @@ class BiothingClient(object):
                 self._cached = False
                 with requests_cache.disabled():
                     from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
+                    del from_cache
                 self._cached = True
             else:
                 from_cache, ret = self._get(url, params=kwargs, verbose=verbose)

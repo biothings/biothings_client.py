@@ -6,16 +6,6 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-try:
-    from pandas import DataFrame
-    pandas_avail = True
-except ImportError:
-    pandas_avail = False
-try:
-    import requests_cache
-    caching_avail = True
-except ImportError:
-    caching_avail = False
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
 try:
@@ -123,9 +113,10 @@ class TestGeneClient(unittest.TestCase):
         self.assertEqual(qres[2], {"query": 'NA_TEST', "notfound": True})
 
     def test_querymany_dataframe(self):
-        if not pandas_avail:
+        if not biothings_client.df_avail:
             from nose.plugins.skip import SkipTest
             raise SkipTest
+        from pandas import DataFrame
         qres = self.mg.querymany(self.query_list1, scopes='reporter', as_dataframe=True)
         self.assertTrue(isinstance(qres, DataFrame))
         self.assertTrue('name' in qres.columns)
@@ -150,7 +141,7 @@ class TestGeneClient(unittest.TestCase):
         self.assertTrue('pathway.kegg' in fields.keys())
 
     def test_caching(self):
-        if not caching_avail:
+        if not biothings_client.caching_avail:
             from nose.plugins.skip import SkipTest
             raise SkipTest
 
