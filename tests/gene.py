@@ -33,8 +33,8 @@ class TestGeneClient(unittest.TestCase):
         self.assertEqual(g['_id'], "1017")
         self.assertEqual(g['symbol'], 'CDK2')
 
-    def test_getgene_with_filter(self):
-        g = self.mg.getgene("1017", "name,symbol,refseq")
+    def test_getgene_with_fields(self):
+        g = self.mg.getgene("1017", fields="name,symbol,refseq")
         self.assertTrue('_id' in g)
         self.assertTrue('name' in g)
         self.assertTrue('symbol' in g)
