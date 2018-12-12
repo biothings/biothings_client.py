@@ -214,3 +214,8 @@ Usage
 Contact
 ========
 Drop us any feedback `@biothingsapi <https://twitter.com/biothingsapi>`_
+
+
+.. image:: https://api.codacy.com/project/badge/Grade/0ec3b39fb487418686ca121d623ec96c
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/newgene/biothings_client.py?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_client.py&utm_campaign=Badge_Grade_Dashboard
