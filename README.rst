@@ -10,10 +10,15 @@
 .. image:: https://travis-ci.org/biothings/biothings_client.py.svg?branch=master
     :target: https://travis-ci.org/biothings/biothings_client.py
 
+.. image:: https://api.codacy.com/project/badge/Grade/0ec3b39fb487418686ca121d623ec96c
+   :alt: Codacy Badge
+   :target: https://app.codacy.com/app/newgene/biothings_client.py?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_client.py&utm_campaign=Badge_Grade_Dashboard
+
 Intro
 =====
 
-*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_-based backend service.  Currently, the following clients are available:
+*biothings_client* is an easy-to-use Python wrapper to access any Biothings.api_
+-based backend service. Currently, the following clients are available:
 
     * gene - The client for MyGene.Info_, which provides access to gene objects.
     * variant - The client MyVariant.Info_, which provides access to genetic variant objects.
@@ -31,7 +36,9 @@ Intro
 
 Requirements
 ============
-    python >=2.6 (including python3)
+    python >=2.7 (including all python3 versions)
+
+    (It may still work under python 2.6, but it's not supported any more.)
 
     requests_ (install using "pip install requests")
 
