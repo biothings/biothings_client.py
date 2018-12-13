@@ -7,6 +7,7 @@ DOCSTRING = {
                        If not provided or **fields="all"**, all available fields
                        are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                        for all available fields.
+        :param assembly: specify the human genome assembly used in HGVS-based variant id, "hg19" (default) or "hg38".
 
         :return: a variant object as a dictionary, or None if vid is not found.
 
@@ -16,6 +17,7 @@ DOCSTRING = {
         >>> mv.getvariant('chr9:g.107620835G>A', fields='dbnsfp.genename')
         >>> mv.getvariant('chr9:g.107620835G>A', fields=['dbnsfp.genename', 'cadd.phred'])
         >>> mv.getvariant('chr9:g.107620835G>A', fields='all')
+        >>> mv.getvariant('chr1:g.161362951G>A', assembly='hg38')
 
         .. Hint:: The supported field names passed to **fields** parameter can be found from
                   any full variant object (without **fields**, or **fields="all"**). Note that field name supports dot
@@ -31,6 +33,7 @@ DOCSTRING = {
                        If not provided or **fields="all"**, all available fields
                        are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                        for all available fields.
+        :param assembly: specify the human genome assembly used in HGVS-based variant id, "hg19" (default) or "hg38".
         :param as_generator:  if True, will yield the results in a generator.
         :param as_dataframe: if True or 1 or 2, return object as DataFrame (requires Pandas).
                                   True or 1: using json_normalize
@@ -57,6 +60,7 @@ DOCSTRING = {
         >>> mv.getvariants(vars, fields="cadd.phred")
         >>> mv.getvariants('chr1:g.876664G>A,chr1:g.881918G>A', fields="all")
         >>> mv.getvariants(['chr1:g.876664G>A', 'chr1:g.881918G>A'], as_dataframe=True)
+        >>> mv.getvariants(['chr1:g.161362951G>A', 'chr2:g.51032181G>A'], assembly='hg38')
 
         .. Hint:: A large list of more than 1000 input ids will be sent to the backend
                   web service in batches (1000 at a time), and then the results will be
@@ -75,6 +79,7 @@ DOCSTRING = {
                        If not provided or **fields="all"**, all available fields
                        are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                        for all available fields.
+        :param assembly: specify the human genome assembly used for the query, "hg19" (default) or "hg38".
         :param size:   the maximum number of results to return (with a cap
                        of 1000 at the moment). Default: 10.
         :param skip:   the number of results to skip. Default: 0.
@@ -99,6 +104,7 @@ DOCSTRING = {
         >>> mv.query('dbnsfp.polyphen2.hdiv.score:>0.99 AND chrom:1')
         >>> mv.query('cadd.phred:>50')
         >>> mv.query('dbnsfp.genename:CDK2', size=5)
+        >>> mv.query('dbnsfp.genename:CDK2', size=5, assembly='hg38')
         >>> mv.query('dbnsfp.genename:CDK2', fetch_all=True)
         >>> mv.query('chrX:151073054-151383976')
 
@@ -119,6 +125,7 @@ DOCSTRING = {
                        If not provided or **fields="all"**, all available fields
                        are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
                        for all available fields.
+        :param assembly: specify the human genome assembly used for the query, "hg19" (default) or "hg38".
         :param returnall:   if True, return a dict of all related data, including dup. and missing qterms
         :param verbose:     if True (default), print out information about dup and missing qterms
         :param as_dataframe: if True or 1 or 2, return object as DataFrame (requires Pandas).
@@ -134,6 +141,7 @@ DOCSTRING = {
         Example:
 
         >>> mv.querymany(['rs58991260', 'rs2500'], scopes='dbsnp.rsid')
+        >>> mv.querymany(['rs58991260', 'rs2500'], scopes='dbsnp.rsid', assembly='hg38')
         >>> mv.querymany(['RCV000083620', 'RCV000083611', 'RCV000083584'], scopes='clinvar.rcv_accession')
         >>> mv.querymany(['COSM1362966', 'COSM990046', 'COSM1392449'], scopes='cosmic.cosmic_id', fields='cosmic')
         >>> mv.querymany(['COSM1362966', 'COSM990046', 'COSM1392449'], scopes='cosmic.cosmic_id',
@@ -149,16 +157,20 @@ DOCSTRING = {
         ''',
     'metadata': '''Return a dictionary of MyVariant.info metadata.
 
+        :param assembly: return the metadata for either hg19 or hg38 variants, "hg19" (default) or "hg38".
+
         Example:
 
         >>> metadata = mv.metadata()
+        >>> metadata = mv.metadata(assembly='hg38')
 
         ''',
     'get_fields': '''Wrapper for http://myvariant.info/v1/metadata/fields
 
-            **search_term** is a case insensitive string to search for in available field names.
-            If not provided, all available fields will be returned.
+        :param search_term: a case insensitive string to search for in available field names.
+                            If not provided, all available fields will be returned.
 
+        :param assembly: return the metadata for either hg19 or hg38 variants, "hg19" (default) or "hg38".
 
         Example:
 
