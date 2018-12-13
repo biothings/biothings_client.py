@@ -8,13 +8,11 @@ except ImportError:
     from io import StringIO
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-try:
-    from utils import descore
-except ImportError:
-    from tests.utils import descore
+from .utils import descore
 
 import biothings_client
 sys.stdout.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
+
 
 class TestChemClient(unittest.TestCase):
 
@@ -88,7 +86,7 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(qres['hits'][0]['_id'], 'ZRALSGWEFCBTJO-UHFFFAOYSA-N')
 
     def test_query_chebi(self):
-        qres = self.mc.query('chebi.id:CHEBI\:42820')
+        qres = self.mc.query(r'chebi.id:CHEBI\:42820')
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 1)
         self.assertEqual(qres['hits'][0]['_id'], 'ZRALSGWEFCBTJO-UHFFFAOYSA-N')
