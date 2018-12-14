@@ -1,11 +1,15 @@
 .. _Quick Start:
 
+.. _MyGene.py: https://pypi.org/project/mygene/
+.. _BioThings API: http://biothings.io
+
+
 Quick Start
 ===========
 
-biothings_client was made to allow easy programmatic access to any BioThings API backend.  We do this by generating configuration
+biothings_client was made to allow easy programmatic access to any `BioThings API`_ backend.  We do this by generating configuration
 parameters (and documentation) that define a particular API on-the-fly.  This is done using the *get_client* function.  To use the
-*get_client* function, you only need to specify the entity type you want a client for - as a string.  Consider the following code:
+*get_client* function, you only need to specify the entity type you want a client for as a string.  Consider the following code:
 
 .. code-block:: python
 
@@ -16,8 +20,23 @@ parameters (and documentation) that define a particular API on-the-fly.  This is
     In [3]: type(gene_client)
     Out[3]: biothings_client.MyGeneInfo
 
-The **gene_client** variable in the code above *is* a MyGeneInfo object (exactly as obtained through the MyGene.py package).  As such,
- all of the methods available in the MyGene.py client are available in the biothings_client generated gene client.
+The ``gene_client`` variable in the code above *is* a ``MyGeneInfo`` object (exactly as obtained through the MyGene.py_ package).  As such,
+all of the methods available in the MyGene.py_ client are available in the biothings_client generated gene client. So the above code block
+is equivalent to the way you use MyGene.py_ client package before:
+
+.. code-block:: python
+
+    In [1]: import mygene
+
+    In [2]: gene_client = mygene.MyGeneInfo()get_client('gene')
+
+    In [3]: type(gene_client)
+    Out[3]: mygene.MyGeneInfo
+
+Use the client for MyGene.info API - Genes
+------------------------------------------
+
+Once you get the ``gene_client`` instance from biothings_client, the rest is exactly the same:
 
 .. code-block:: python
 
@@ -67,8 +86,8 @@ The **gene_client** variable in the code above *is* a MyGeneInfo object (exactly
      'query': 'O14727',
      'symbol': 'APAF1'}]
 
-    In [10]: gene_client.metadata()
-    Out[10]:
+    In [8]: gene_client.metadata()
+    Out[8]:
     {'app_revision': 'c2a3aaa5fdac7b05fe243c1de62e6b3a3cf2b773',
      'available_fields': 'http://mygene.info/metadata/fields',
      'build_date': '2018-11-26T08:11:23.790634',
@@ -159,9 +178,15 @@ The **gene_client** variable in the code above *is* a MyGeneInfo object (exactly
       'thale-cress': 3702,
       'zebrafish': 7955}}
 
-In addition to the *gene_client*, you can generate a client to any of the other BioThings API services we offer.  See the following code snippet:
+In addition to the ``gene_client``, you can generate a client to any of the other `BioThings API`_
+services we offer.  See the following code snippet:
+
+Use the client for MyVariant.info API - Variants
+------------------------------------------------
 
 .. code-block:: python
+
+    In [10]: variant_client = get_client('variant')
 
     In [11]: variant_client.query('dbnsfp.genename:BTK', fields='_id')
     Out[11]:
@@ -179,6 +204,12 @@ In addition to the *gene_client*, you can generate a client to any of the other 
      'took': 10,
      'total': 5143}
 
+
+Use the client for MyChem.info API - Chemicals/Drugs
+----------------------------------------------------
+
+.. code-block:: python
+
     In [12]: chem_client = get_client('chem')
 
     In [13]: chem_client.getchem('DB00551', fields='drugbank.name')
@@ -186,6 +217,14 @@ In addition to the *gene_client*, you can generate a client to any of the other 
     {'_id': 'RRUDCFGSUDOHDG-UHFFFAOYSA-N',
      'drugbank': {'_license': 'https://goo.gl/kvVASD',
       'name': 'Acetohydroxamic Acid'}}
+
+
+Use the client for MyDisease.info API - Disease
+-----------------------------------------------
+
+.. code-block:: python
+
+    In [13]: disease_client = get_client('disease')
 
     In [14]: disease_client.query('diabetes')
     Out[14]:
@@ -261,6 +300,12 @@ In addition to the *gene_client*, you can generate a client to any of the other 
      'max_score': 3.466746,
      'took': 17,
      'total': 120}
+
+Use the client for t.biothings.io API - Taxnomy
+-----------------------------------------------
+
+
+.. code-block:: python
 
     In [15]: taxon_client = get_client('taxon')
 

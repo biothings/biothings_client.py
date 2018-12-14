@@ -1,7 +1,11 @@
 Subclassing a Client
 ====================
 
-The biothings_client **get_client** function generates settings for a biothings client on-the-fly.  However, sometimes a user may want to subclass an existing client.  This can be accomplished by use of the **instance** parameter in the **get_client** function.  Normally the **get_client** function returns an instantiated client object, however if **instance** is False, **get_client** returns the class itself (allowing it to be used as a parent class).  See the following code snippet for an example:
+The biothings_client **get_client** function generates settings for a biothings client on-the-fly.
+However, sometimes a user may want to subclass an existing client.  This can be accomplished by use
+of the **instance** parameter in the **get_client** function.  Normally the **get_client** function
+returns an instantiated client object, however if **instance** is False, **get_client** returns the
+class itself (allowing it to be used as a parent class).  See the following code snippet for an example:
 
 .. code-block:: python
 
