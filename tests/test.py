@@ -34,6 +34,13 @@ class TestBiothingsClient(unittest.TestCase):
         chem_client = biothings_client.get_client("chem")
         self.assertEqual(type(chem_client).__name__, "MyChemInfo")
 
+        # drug_client as an alias of chem_client
+        drug_client = biothings_client.get_client("drug")
+        self.assertEqual(type(drug_client).__name__, "MyChemInfo")
+
+        disease_client = biothings_client.get_client("disease")
+        self.assertEqual(type(disease_client).__name__, "MyDiseaseInfo")
+
         taxon_client = biothings_client.get_client("taxon")
         self.assertEqual(type(taxon_client).__name__, "MyTaxonInfo")
 
