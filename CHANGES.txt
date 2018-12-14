@@ -1,3 +1,14 @@
+v0.2.0 (2018/12/14):
+    Added client-specific doc-strings to match with current mygene.py and myvariant.py clients.
+    Enhanced support for MyChem.info client (using `get_client("chem")` or `get_client("drug")`)
+    Added initial support for MyDisease.info client.
+    Dropped the support for Python 2.6 (might still work but we don't explicitly test it under
+        Python 2.6 any more)
+    Support for Python 3.7
+    When returned objects as a Pandas Dataframe (i.e. using "as_dataframe=True"),
+        duplicated and missing hits are now returned as dataframes as well (Thanks @sdhutchins!)
+    Many code optimizations.
+
 v0.1.1 (2017/04/26):
     Optimized the code folder structure
 
