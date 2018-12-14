@@ -7,6 +7,7 @@ from .mixins.gene import MyGeneClientMixin
 from .mixins.variant import MyVariantClientMixin
 from .docstring.gene import DOCSTRING as GENE_DOCSTRING
 from .docstring.variant import DOCSTRING as VARIANT_DOCSTRING
+from .docstring.chem import DOCSTRING as CHEM_DOCSTRING
 from copy import copy
 import types
 
@@ -89,7 +90,8 @@ MYCHEM_KWARGS.update({
     "_annotation_endpoint": "/chem/",
     "_optionally_plural_object_type": "chem(s)",
     "_entity": "chem",
-    "_default_cache_file": "mychem_cache"
+    "_default_cache_file": "mychem_cache",
+    "_docstring_obj": CHEM_DOCSTRING
 })
 MYDISEASE_KWARGS = copy(COMMON_KWARGS)
 MYDISEASE_KWARGS.update({
