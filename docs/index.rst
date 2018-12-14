@@ -13,7 +13,7 @@
 Biothings_client.py
 ===================
 `Biothings_client.py <https://pypi.org/project/biothings-client/>`_ is a unified python client providing an easy-to-use wrapper
-for accessing *any* BioThings API (e.g. MyGene.Info_, MyVariant.Info_, MyChem.Info_).  It is the descendent and eventual replacement
+for accessing *any* `BioThings API <http://biothings.io>`_ (e.g. MyGene.Info_, MyVariant.Info_, MyChem.Info_).  It is the descendent and eventual replacement
 of both the MyGene.py_ and MyVariant.py_ python clients.
 
 Requirements
@@ -22,13 +22,13 @@ Requirements
 
     (Python 2.6 might still work, but is not supported any more since v0.2.0)
 
-    requests_ (install using "pip install requests")
+    requests_ (install using ``pip install requests``)
 
 Optional dependencies
 ======================
-    * `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of objects as
+    * `pandas <http://pandas.pydata.org>`_ (install using ``pip install pandas``) is required for returning a list of objects as
       `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
-    * `requests-cache <https://pypi.org/project/requests-cache/>`_ (install using "pip install requests-cache") is required to
+    * `requests-cache <https://pypi.org/project/requests-cache/>`_ (install using ``pip install requests-cache``) is required to
       use the local data caching function.
 
 
