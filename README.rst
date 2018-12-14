@@ -78,7 +78,7 @@ Tutorial
 Documentation
 =============
 
-    You can find tutorials and detailed `API documentation <https://biothings-clientpy.readthedocs.io/en/latest/doc/API.html>`_ at the `biothings_client doc page <https://biothings-clientpy.readthedocs.io>`_.
+    https://biothings-clientpy.readthedocs.io
 
 Usage
 =====
