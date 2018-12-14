@@ -3,7 +3,9 @@
 Quick Start
 ===========
 
-biothings_client was made to allow easy programmatic access to any BioThings API backend.  We do this by generating configuration parameters (and documentation) that define a particular API on-the-fly.  This is done using the *get_client* function.  To use the *get_client* function, you only need to specify the entity type you want a client for - as a string.  Consider the following code:
+biothings_client was made to allow easy programmatic access to any BioThings API backend.  We do this by generating configuration
+parameters (and documentation) that define a particular API on-the-fly.  This is done using the *get_client* function.  To use the
+*get_client* function, you only need to specify the entity type you want a client for - as a string.  Consider the following code:
 
 .. code-block:: python
 
@@ -14,7 +16,8 @@ biothings_client was made to allow easy programmatic access to any BioThings API
     In [3]: type(gene_client)
     Out[3]: biothings_client.MyGeneInfo
 
-The **gene_client** variable in the code above *is* a MyGeneInfo object (exactly as obtained through the MyGene.py package).  As such, all of the methods available in the MyGene.py client are available in the biothings_client generated gene client.
+The **gene_client** variable in the code above *is* a MyGeneInfo object (exactly as obtained through the MyGene.py package).  As such,
+ all of the methods available in the MyGene.py client are available in the biothings_client generated gene client.
 
 .. code-block:: python
 
