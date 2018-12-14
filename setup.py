@@ -2,6 +2,7 @@ import os
 from setuptools import setup
 from setuptools import find_packages
 
+
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -44,6 +45,6 @@ setup(
     extras_require={
         'dataframe': ["pandas>=0.18.0"],
         'caching': ["requests_cache>=0.4.13"],
-        'jsonld': ["pyld>=0.7.2"],
+        'jsonld': ["PyLD>=0.7.2"],
     }
 )
