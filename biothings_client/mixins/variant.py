@@ -8,8 +8,8 @@ class MyVariantClientMixin:
             From the input VCF file (filename or file handle), return a generator
             of genomic based HGVS ids.
             :param input_vcf: input VCF file, can be a filename or a file handle
-            :returns: a generator of genomic based HGVS ids. To get back a list
-                      instead, using *list(get_hgvs_from_vcf("your_vcf_file"))*
+            :returns: a generator of genomic based HGVS ids. To get back a list instead,
+                      using ``list(get_hgvs_from_vcf("your_vcf_file"))``
             .. NOTE:: This is a lightweight VCF parser to return valid genomic-based
                       HGVS ids from the *input_vcf* file. For more sophisticated VCF
                       parser, consider using `PyVCF <https://pypi.python.org/pypi/PyVCF>`_
