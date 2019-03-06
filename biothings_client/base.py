@@ -440,7 +440,7 @@ class BiothingClient(object):
             print("Fetching {0} {1} . . .".format(batch['total'], self._optionally_plural_object_type))
         for key in ['q', 'fetch_all']:
             kwargs.pop(key)
-        while not batch.get('error', '').startswith('No results to return.'):
+        while not batch.get('error', '').startswith('No results to return'):
             if 'error' in batch:
                 print(batch['error'])
                 break
