@@ -1,6 +1,11 @@
 """
 Generic client for Biothings APIs
 """
+import types
+from copy import copy
+
+import requests
+
 from .base import BiothingClient, __version__, alwayslist, df_avail, caching_avail
 from .utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 from .mixins.gene import MyGeneClientMixin
@@ -8,8 +13,6 @@ from .mixins.variant import MyVariantClientMixin
 from .docstring.gene import DOCSTRING as GENE_DOCSTRING
 from .docstring.variant import DOCSTRING as VARIANT_DOCSTRING
 from .docstring.chem import DOCSTRING as CHEM_DOCSTRING
-from copy import copy
-import types
 
 # ***********************************************
 # *  Aliases.
@@ -214,7 +217,7 @@ def _generate_settings(biothing_type, url):
             "attr_aliases": _aliases, "base_class": BiothingClient}
 
 
-def get_client(biothing_type, instance=True, *args, **kwargs):
+def get_client(biothing_type=None, instance=True, *args, **kwargs):
     """ Function to return a new python client for a Biothings API service.
 
         :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease'
@@ -223,7 +226,22 @@ def get_client(biothing_type, instance=True, *args, **kwargs):
 
         All other args/kwargs are passed to the derived client instantiation (if applicable)
     """
-    biothing_type = biothing_type.lower()
+    if not biothing_type:
+        url = kwargs.get('url', False)
+        if not url:
+            raise RuntimeError("No biothings_type or url specified.")
+        try:
+            url += 'metadata' if url.endswith('/') else '/metadata'
+            res = requests.get(url)
+            dic = res.json()
+            biothing_type = dic.get('biothing_type')
+            assert isinstance(biothing_type, str)
+        except requests.RequestException:
+            raise RuntimeError("Cannot access metadata url to determine biothing_type.")
+        except AssertionError:
+            raise RuntimeError("Biothing_type in metadata url is not a valid string.")
+    else:
+        biothing_type = biothing_type.lower()
     if (biothing_type not in CLIENT_SETTINGS and not kwargs.get('url', False)):
         raise Exception("No client named '{0}', currently available clients are: {1}".format(biothing_type, list(CLIENT_SETTINGS.keys())))
     _settings = CLIENT_SETTINGS[biothing_type] if biothing_type in CLIENT_SETTINGS else _generate_settings(biothing_type, kwargs.get('url'))
