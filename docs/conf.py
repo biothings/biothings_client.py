@@ -52,6 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'biothings_client'
+author = 'BioThings team'
 copyright = '2018-2019, A BioThings Project.'
 
 # The version info for the project you're documenting, acts as replacement for
