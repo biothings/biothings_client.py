@@ -2,12 +2,17 @@
 Python Client for generic Biothings API services
 '''
 from __future__ import print_function
+
 import os
+import platform
 import time
-from itertools import islice
 from collections import Iterable
+from itertools import islice
 
 import requests
+
+from .utils import str_types
+
 try:
     from pandas import DataFrame
     from pandas.io.json import json_normalize
@@ -21,7 +26,6 @@ try:
 except ImportError:
     caching_avail = False
 
-from .utils import str_types
 
 
 __version__ = '0.2.0'
@@ -107,7 +111,15 @@ class BiothingClient(object):
         #   but not for 404 on getvariant
         #   set to False to surpress the exceptions.
         self.raise_for_status = True
-        self.default_user_agent = "%s/%s python-requests/%s" % (self._pkg_user_agent_header, __version__, requests.__version__)
+        self.default_user_agent = ("{package_header}/{client_version} ("
+                               "python:{python_version} "
+                               "requests:{requests_version}"
+                               ")").format(**{
+                                   'package_header':self._pkg_user_agent_header,
+                                   'client_version': __version__,
+                                   'python_version': platform.python_version(),
+                                   'requests_version': requests.__version__
+                               })
         self._cached = False
 
     @staticmethod

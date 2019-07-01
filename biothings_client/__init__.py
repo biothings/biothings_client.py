@@ -1,7 +1,7 @@
 """
 Generic client for Biothings APIs
 """
-import platform
+
 import types
 from copy import copy
 
@@ -56,14 +56,7 @@ MYDISEASE_ALIASES.update({'_getannotation': 'getdisease', '_getannotations': 'ge
 
 # Object creation kwargs common to all clients
 COMMON_KWARGS = {
-    "_pkg_user_agent_header": ("biothings_client.py/{client_version} ("
-                               "python:{python_version} "
-                               "requests:{requests_version}"
-                               ")").format(**{
-                                   'client_version': __version__,
-                                   'python_version': platform.python_version(),
-                                   'requests_version': requests.__version__
-                               }),
+    "_pkg_user_agent_header": "biothings_client.py",
     "_query_endpoint": "/query/",
     "_metadata_endpoint": "/metadata",
     "_metadata_fields_endpoint": "/metadata/fields",
@@ -209,7 +202,6 @@ def _generate_settings(biothing_type, url):
     _aliases = copy(COMMON_ALIASES)
     _kwargs.update({
         "_default_url": url,
-        "_pkg_user_agent_header": "My" + biothing_type.title() + ".py",
         "_annotation_endpoint": "/" + biothing_type.lower() + "/",
         "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
         "_default_cache_file": "my" + biothing_type.lower() + "_cache"
