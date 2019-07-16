@@ -181,7 +181,7 @@ class BiothingClient(object):
     @staticmethod
     def _format_list(a_list, sep=','):
         if isinstance(a_list, (list, tuple)):
-            _out = sep.join([safe_str(x) for x in a_list])
+            _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
         else:
             _out = a_list     # a_list is already a comma separated string
         return _out
