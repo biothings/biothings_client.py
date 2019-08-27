@@ -6,6 +6,7 @@ from __future__ import print_function
 import os
 import platform
 import time
+import warnings
 from collections import Iterable
 from itertools import islice
 
@@ -25,7 +26,6 @@ try:
     caching_avail = True
 except ImportError:
     caching_avail = False
-
 
 
 __version__ = '0.2.0'
@@ -96,6 +96,7 @@ def iter_n(iterable, n, with_cnt=False):
 
 class BiothingClient(object):
     '''This is the client for a biothing web service.'''
+
     def __init__(self, url=None):
         if url is None:
             url = self._default_url
@@ -112,14 +113,14 @@ class BiothingClient(object):
         #   set to False to surpress the exceptions.
         self.raise_for_status = True
         self.default_user_agent = ("{package_header}/{client_version} ("
-                               "python:{python_version} "
-                               "requests:{requests_version}"
-                               ")").format(**{
-                                   'package_header':self._pkg_user_agent_header,
-                                   'client_version': __version__,
-                                   'python_version': platform.python_version(),
-                                   'requests_version': requests.__version__
-                               })
+                                   "python:{python_version} "
+                                   "requests:{requests_version}"
+                                   ")").format(**{
+                                       'package_header': self._pkg_user_agent_header,
+                                       'client_version': __version__,
+                                       'python_version': platform.python_version(),
+                                       'requests_version': requests.__version__
+                                   })
         self._cached = False
 
     @staticmethod
@@ -130,7 +131,8 @@ class BiothingClient(object):
             return
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
-            raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
+            raise ValueError(
+                "dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
         if 'hits' in obj:
             if dataframe == 1:
                 df = json_normalize(obj['hits'])
@@ -193,10 +195,10 @@ class BiothingClient(object):
             # No need to do series of batch queries, turn off verbose output
             verbose = False
         for i in range(0, len(query_li), step):
-            is_last_loop = i+step >= len(query_li)
+            is_last_loop = i + step >= len(query_li)
             if verbose:
-                print("querying {0}-{1}...".format(i+1, min(i+step, len(query_li))), end="")
-            query_result = query_fn(query_li[i:i+step], **fn_kwargs)
+                print("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))), end="")
+            query_result = query_fn(query_li[i:i + step], **fn_kwargs)
 
             yield query_result
 
@@ -214,7 +216,7 @@ class BiothingClient(object):
         i = 0
         for batch, cnt in iter_n(query_li, step, with_cnt=True):
             if verbose:
-                print("querying {0}-{1}...".format(i+1, cnt), end="")
+                print("querying {0}-{1}...".format(i + 1, cnt), end="")
             i = cnt
             from_cache, query_result = query_fn(batch, **fn_kwargs)
             yield query_result
@@ -245,10 +247,15 @@ class BiothingClient(object):
         if caching_avail:
             if cache_db is None:
                 cache_db = self._default_cache_file
-            requests_cache.install_cache(cache_name=cache_db, allowable_methods=('GET', 'POST'), **kwargs)
+            requests_cache.install_cache(
+                cache_name=cache_db, allowable_methods=(
+                    'GET', 'POST'), **kwargs)
             self._cached = True
             if verbose:
-                print('[ Future queries will be cached in "{0}" ]'.format(os.path.abspath(cache_db + '.sqlite')))
+                print(
+                    '[ Future queries will be cached in "{0}" ]'.format(
+                        os.path.abspath(
+                            cache_db + '.sqlite')))
         else:
             print("Error: The requests_cache python module is required to use request caching.")
             print("See - https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation")
@@ -370,7 +377,7 @@ class BiothingClient(object):
         if return_raw:
             dataframe = None
 
-        query_fn = lambda ids: self._getannotations_inner(ids, verbose=verbose, **kwargs)
+        def query_fn(ids): return self._getannotations_inner(ids, verbose=verbose, **kwargs)
         if generator:
             return self._annotations_generator(query_fn, ids, verbose=verbose, **kwargs)
         out = []
@@ -421,6 +428,9 @@ class BiothingClient(object):
         kwargs.update({'q': q})
         fetch_all = kwargs.get('fetch_all')
         if fetch_all in [True, 1]:
+            if kwargs.get('as_dataframe', None) in [True, 1]:
+                warnings.warn("Ignored 'as_dataframe' because 'fetch_all' is specified. "
+                              "Too many documents to return as a Dataframe.")
             return self._fetch_all(url=_url, verbose=verbose, **kwargs)
         dataframe = kwargs.pop('as_dataframe', None)
         if dataframe in [True, 1]:
@@ -449,7 +459,10 @@ class BiothingClient(object):
             return ret
         batch = _batch()
         if verbose:
-            print("Fetching {0} {1} . . .".format(batch['total'], self._optionally_plural_object_type))
+            print(
+                "Fetching {0} {1} . . .".format(
+                    batch['total'],
+                    self._optionally_plural_object_type))
         for key in ['q', 'fetch_all']:
             kwargs.pop(key)
         while not batch.get('error', '').startswith('No results to return'):
@@ -520,7 +533,7 @@ class BiothingClient(object):
         li_missing = []
         li_dup = []
         li_query = []
-        query_fn = lambda qterms: self._querymany_inner(qterms, verbose=verbose, **kwargs)
+        def query_fn(qterms): return self._querymany_inner(qterms, verbose=verbose, **kwargs)
         for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
             if return_raw:
                 out.append(hits)   # hits is the raw response text
@@ -554,10 +567,10 @@ class BiothingClient(object):
         if verbose:
             if li_dup:
                 print("{0} input query terms found dup hits:".format(len(li_dup)))
-                print("\t"+str(li_dup)[:100])
+                print("\t" + str(li_dup)[:100])
             if li_missing:
                 print("{0} input query terms found no hit:".format(len(li_missing)))
-                print("\t"+str(li_missing)[:100])
+                print("\t" + str(li_missing)[:100])
         if returnall:
             if dataframe:
                 return {'out': out, 'dup': li_dup_df, 'missing': li_missing_df}
