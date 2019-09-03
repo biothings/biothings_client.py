@@ -1,3 +1,9 @@
+v0.2.1 (2019/08/29):
+    Use doc_type key in metadata to generate client without having to specific biothings_type (#6).
+    Have a more consistent user-agent pattern (#7).
+    Fixed the issue when passed query terms contains white spaces in querymany method (#8).
+    Added warning when as_dataframe set to True and fetch_all is True (#9).
+
 v0.2.0 (2018/12/14):
     Added client-specific doc-strings to match with current mygene.py and myvariant.py clients.
     Enhanced support for MyChem.info client (using `get_client("chem")` or `get_client("drug")`)
