@@ -14,6 +14,14 @@
    :alt: Codacy Badge
    :target: https://app.codacy.com/app/newgene/biothings_client.py?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_client.py&utm_campaign=Badge_Grade_Dashboard
 
+.. image:: https://img.shields.io/pypi/dm/biothings_client.svg
+   :alt: PyPI Downloads
+   :target: https://pypistats.org/packages/biothings_client
+
+.. image:: https://readthedocs.org/projects/biothings-clientpy/badge/?version=latest
+   :alt: Documentation Status
+   :target: https://biothings-clientpy.readthedocs.io/en/latest/?badge=latest
+
 Intro
 =====
 
