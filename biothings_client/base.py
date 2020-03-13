@@ -105,7 +105,7 @@ class BiothingClient(object):
             self.url = self.url[:-1]
         self.max_query = self._max_query
         # delay and step attributes are for batch queries.
-        self.delay = self._delay
+        self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
         self.scroll_size = self._scroll_size
         # raise requests.exceptions.HTTPError for status_code > 400
@@ -223,7 +223,8 @@ class BiothingClient(object):
             if verbose:
                 cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
                 print("done.{0}".format(cache_str))
-            if self.delay:
+            if not from_cache and self.delay:
+                # no need to delay if requests are from cache.
                 time.sleep(self.delay)
 
     @property
