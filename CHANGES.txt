@@ -1,3 +1,6 @@
+v0.2.2 (2020/08/25):
+    Fix a bug when certain query parameters are passed in as lists. (#12)
+
 v0.2.1 (2019/08/29):
     Use doc_type key in metadata to generate client without having to specific biothings_type (#6).
     Have a more consistent user-agent pattern (#7).
