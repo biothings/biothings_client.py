@@ -181,9 +181,12 @@ class BiothingClient(object):
         return from_cache, ret
 
     @staticmethod
-    def _format_list(a_list, sep=','):
+    def _format_list(a_list, sep=',', quoted=True):
         if isinstance(a_list, (list, tuple)):
-            _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
+            if quoted:
+                _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
+            else:
+                _out = sep.join(['{}'.format(safe_str(x)) for x in a_list])
         else:
             _out = a_list     # a_list is already a comma separated string
         return _out
@@ -426,6 +429,8 @@ class BiothingClient(object):
         '''
         _url = self.url + self._query_endpoint
         verbose = kwargs.pop('verbose', True)
+        if 'fields' in kwargs:
+            kwargs['fields'] = self._format_list(kwargs['fields'], quoted=False)
         kwargs.update({'q': q})
         fetch_all = kwargs.get('fetch_all')
         if fetch_all in [True, 1]:
