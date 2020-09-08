@@ -7,12 +7,16 @@ import os
 import platform
 import time
 import warnings
-from collections import Iterable
 from itertools import islice
 
 import requests
 
 from .utils import str_types
+
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 try:
     from pandas import DataFrame
