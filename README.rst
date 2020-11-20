@@ -71,7 +71,7 @@ Installation
     Option 3
           install the latest code directly from the repository::
 
-            pip install -e git+https://github.com/biothings/biothings_client.py
+            pip install -e git+https://github.com/biothings/biothings_client.py#egg=biothings_client
 
 Version history
 ===============
