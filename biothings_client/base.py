@@ -173,7 +173,7 @@ class BiothingClient(object):
     def _post(self, url, params, verbose=True):
         return_raw = params.pop('return_raw', False)
         headers = {'user-agent': self.default_user_agent}
-        res = requests.post(url, json=params, headers=headers)
+        res = requests.post(url, data=params, headers=headers)
         from_cache = getattr(res, 'from_cache', False)
         if self.raise_for_status:
             # raise requests.exceptions.HTTPError if not 200
