@@ -1,3 +1,6 @@
+v0.2.4 (2021/02/22)
+    Update HTTP request calling signature to match server update. (#17)
+
 v0.2.3 (2020/09/01):
     Support additional list-typed query parameters. (#12)
 
