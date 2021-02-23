@@ -32,7 +32,7 @@ except ImportError:
     caching_avail = False
 
 
-__version__ = '0.2.1'
+__version__ = '0.2.4'
 
 
 class ScanError(Exception):
@@ -156,7 +156,7 @@ class BiothingClient(object):
         debug = params.pop('debug', False)
         return_raw = params.pop('return_raw', False)
         headers = {'user-agent': self.default_user_agent}
-        res = requests.get(url, data=params, headers=headers)
+        res = requests.get(url, params=params, headers=headers)
         from_cache = getattr(res, 'from_cache', False)
         if debug:
             return from_cache, res
