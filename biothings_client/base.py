@@ -19,8 +19,7 @@ except ImportError:
     from collections import Iterable
 
 try:
-    from pandas import DataFrame
-    from pandas.io.json import json_normalize
+    from pandas import DataFrame, json_normalize
     df_avail = True
 except ImportError:
     df_avail = False
