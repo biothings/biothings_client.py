@@ -45,7 +45,6 @@ setup(
     extras_require={
         'dataframe': ["pandas>=0.18.0"],
         'caching': ["requests_cache>=0.4.13"],
-        'jsonld': ["PyLD>=0.7.2"],
-        'test': ["pytest"]
+        'jsonld': ["PyLD>=0.7.2"]
     }
 )
