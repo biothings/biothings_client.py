@@ -57,6 +57,13 @@ class TestGeneClient(unittest.TestCase):
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 5)
 
+    def test_query_with_fields_as_list(self):
+        qres1 = self.mg.query("entrezgene:1017", fields="name,symbol,refseq")
+        qres2 = self.mg.query("entrezgene:1017", fields=["name", "symbol", "refseq"])
+        self.assertTrue('hits' in qres1)
+        self.assertEqual(len(qres1['hits']), 1)
+        self.assertEqual(descore(qres1['hits']), descore(qres2['hits']))
+
     def test_query_reporter(self):
         qres = self.mg.query('reporter:1000_at')
         self.assertTrue('hits' in qres)
@@ -107,7 +114,7 @@ class TestGeneClient(unittest.TestCase):
         qres1 = self.mg.findgenes([1017, 'CDK2'], scopes='entrezgene,symbol', fields=['uniprot', 'unigene'], species=9606, verbose=False)
         self.assertEqual(len(qres1), 2)
 
-        qres2 = self.mg.findgenes([1017, 'CDK2'], scopes='entrezgene,symbol', fields='uniprot,unigene', species=9606, verbose=False)
+        qres2 = self.mg.findgenes("1017,CDK2", scopes='entrezgene,symbol'.split(','), fields='uniprot,unigene', species=9606, verbose=False)
         self.assertEqual(len(qres2), 2)
 
         self.assertEqual(descore(qres1), descore(qres2))
