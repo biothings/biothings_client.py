@@ -8,10 +8,10 @@ except ImportError:
     from io import StringIO
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-# try:
-#     from utils import descore
-# except ImportError:
-#     from tests.utils import descore
+try:
+    from utils import descore
+except ImportError:
+    from tests.utils import descore
 
 import biothings_client
 sys.stderr.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
@@ -109,7 +109,9 @@ class TestVariantClient(unittest.TestCase):
         self.assertEqual(len(qres['hits']), 5)
 
     def test_query_hgvs(self):
-        qres = self.mv.query('"NM_000048.3:c.566A>G"', size=5)
+        qres = self.mv.query('"NM_000048.4:c.566A>G"', size=5)
+        # should match clinvar.hgvs.coding field from variant "chr7:g.65551772A>G"
+        # sometime we need to update ".4" part if clinvar data updated.
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 1)
 
@@ -180,17 +182,15 @@ class TestVariantClient(unittest.TestCase):
         qres2 = self.mv.querymany(ids, scopes='cosmic.cosmic_id', fields='cosmic.tumor_site,cosmic.cosmic_id', verbose=False)
         self.assertEqual(len(qres2), 3)
 
-        self.assertEqual(qres1, qres2)
+        self.assertEqual(descore(qres1), descore(qres2))
 
     def test_querymany_notfound(self):
         qres = self.mv.querymany(['rs58991260', 'rs2500', 'NA_TEST'], scopes='dbsnp.rsid', verbose=False)
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": 'NA_TEST', "notfound": True})
 
+    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
     def test_querymany_dataframe(self):
-        if not biothings_client.df_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
         from pandas import DataFrame
         qres = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', fields='dbsnp', as_dataframe=True, verbose=False)
         self.assertTrue(isinstance(qres, DataFrame))
@@ -203,17 +203,16 @@ class TestVariantClient(unittest.TestCase):
         self.mv.step = 3
         qres2 = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', verbose=False)
         self.mv.step = default_step
-        self.assertEqual(qres1, qres2)
+        # self.assertEqual(qres1, qres2, (qres1, qres2))
+        self.assertEqual(descore(qres1), descore(qres2))
 
     def test_get_fields(self):
         fields = self.mv.get_fields()
         self.assertTrue('dbsnp.chrom' in fields.keys())
         self.assertTrue('clinvar.chrom' in fields.keys())
 
+    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
     def test_caching(self):
-        if not biothings_client.caching_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
 
         def _getvariant():
             return self.mv.getvariant("chr9:g.107620835G>A")

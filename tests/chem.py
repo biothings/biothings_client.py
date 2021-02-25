@@ -199,10 +199,8 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": 'NA_TEST', "notfound": True})
 
+    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
     def test_querymany_dataframe(self):
-        if not biothings_client.df_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
         from pandas import DataFrame
         qres = self.mc.querymany(self.query_list1, scopes='_id', fields="pubchem", as_dataframe=True)
         self.assertTrue(isinstance(qres, DataFrame))
@@ -227,10 +225,8 @@ class TestChemClient(unittest.TestCase):
         fields = self.mc.get_fields('unii')
         self.assertTrue('unii.molecular_formula' in fields.keys())
 
+    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
     def test_caching(self):
-        if not biothings_client.caching_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
 
         def _getchem():
             return self.mc.getchem("ZRALSGWEFCBTJO-UHFFFAOYSA-N")

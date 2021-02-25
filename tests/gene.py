@@ -40,6 +40,11 @@ class TestGeneClient(unittest.TestCase):
         self.assertTrue('symbol' in g)
         self.assertTrue('refseq' in g)
 
+    def test_getgene_with_fields_as_list(self):
+        g1 = self.mg.getgene("1017", fields="name,symbol,refseq")
+        g2 = self.mg.getgene("1017", fields=["name", "symbol", "refseq"])
+        self.assertEqual(g1, g2)
+
     def test_getgenes(self):
         g_li = self.mg.getgenes([1017, 1018, 'ENSG00000148795'])
         self.assertEqual(len(g_li), 3)
@@ -112,10 +117,8 @@ class TestGeneClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": 'NA_TEST', "notfound": True})
 
+    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
     def test_querymany_dataframe(self):
-        if not biothings_client.df_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
         from pandas import DataFrame
         qres = self.mg.querymany(self.query_list1, scopes='reporter', as_dataframe=True)
         self.assertTrue(isinstance(qres, DataFrame))
@@ -140,11 +143,8 @@ class TestGeneClient(unittest.TestCase):
         fields = self.mg.get_fields('kegg')
         self.assertTrue('pathway.kegg' in fields.keys())
 
+    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
     def test_caching(self):
-        if not biothings_client.caching_avail:
-            from nose.plugins.skip import SkipTest
-            raise SkipTest
-
         def _getgene():
             return self.mg.getgene("1017")
 

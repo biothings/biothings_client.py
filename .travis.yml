@@ -7,5 +7,5 @@ python:
   - "3.7"
   - "3.8"
   - "3.9"
-install: pip install tox-travis
-script: tox
+install: pip install pytest
+script: pytest tests/test.py

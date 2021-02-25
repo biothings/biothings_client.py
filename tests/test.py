@@ -13,9 +13,11 @@ print(sys.path)
 try:
     from gene import suite as gene_suite
     from variant import suite as variant_suite
+    from chem import suite as chem_suite
 except ImportError:
     from tests.gene import suite as gene_suite
     from tests.variant import suite as variant_suite
+    from tests.chem import suite as chem_suite
 
 class TestBiothingsClient(unittest.TestCase):
     def setUp(self):
@@ -48,10 +50,12 @@ def suite():
     _biothings_suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBiothingsClient)
     _gene_suite = gene_suite()
     _variant_suite = variant_suite()
+    _chem_suite = chem_suite()
     _total_suite = unittest.TestSuite()
     _total_suite.addTest(_biothings_suite)
     _total_suite.addTest(_gene_suite)
     _total_suite.addTest(_variant_suite)
+    _total_suite.addTest(_chem_suite)
     return _total_suite
 
 if __name__ == '__main__':
