@@ -31,7 +31,7 @@ except ImportError:
     caching_avail = False
 
 
-__version__ = '0.2.4'
+__version__ = '0.2.5'
 
 
 class ScanError(Exception):
@@ -193,6 +193,13 @@ class BiothingClient(object):
             _out = a_list     # a_list is already a comma separated string
         return _out
 
+    def _handle_common_kwargs(self, kwargs):
+        # handle these common parameters accept field names as the value
+        for kw in ['fields', 'always_list', 'allow_null']:
+            if kw in kwargs:
+                kwargs[kw] = self._format_list(kwargs[kw], quoted=False)
+        return kwargs
+
     def _repeated_query_old(self, query_fn, query_li, verbose=True, **fn_kwargs):
         '''This is deprecated, query_li can only be a list'''
         step = min(self.step, self.max_query)
@@ -318,8 +325,7 @@ class BiothingClient(object):
         :return: an entity object as a dictionary, or None if _id is not found.
         '''
         verbose = kwargs.pop('verbose', True)
-        if fields:
-            kwargs['fields'] = self._format_list(fields)
+        kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
         from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         if verbose and from_cache:
@@ -369,8 +375,7 @@ class BiothingClient(object):
             ids = ids.split(',') if ids else []
         if (not (isinstance(ids, (list, tuple, Iterable)))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
-        if fields:
-            kwargs['fields'] = self._format_list(fields)
+        kwargs = self._handle_common_kwargs(kwargs)
         verbose = kwargs.pop('verbose', True)
         dataframe = kwargs.pop('as_dataframe', None)
         df_index = kwargs.pop('df_index', True)
@@ -431,8 +436,7 @@ class BiothingClient(object):
         '''
         _url = self.url + self._query_endpoint
         verbose = kwargs.pop('verbose', True)
-        if 'fields' in kwargs:
-            kwargs['fields'] = self._format_list(kwargs['fields'], quoted=False)
+        kwargs = self._handle_common_kwargs(kwargs)
         kwargs.update({'q': q})
         fetch_all = kwargs.get('fetch_all')
         if fetch_all in [True, 1]:
@@ -522,9 +526,8 @@ class BiothingClient(object):
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs['scopes'] = self._format_list(scopes)
-        if 'fields' in kwargs:
-            kwargs['fields'] = self._format_list(kwargs['fields'])
+            kwargs['scopes'] = self._format_list(scopes, quoted=False)
+        kwargs = self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop('returnall', False)
         verbose = kwargs.pop('verbose', True)
         dataframe = kwargs.pop('as_dataframe', None)
