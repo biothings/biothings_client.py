@@ -1,3 +1,8 @@
+v0.2.5 (2021/02/25)
+    Fixed mismatched __version__ in v0.2.4
+    Removed a pandas deprecation message
+    Better handling of fields, always_list and allow_null parameters (#12, #17)
+
 v0.2.4 (2021/02/22)
     Update HTTP request calling signature to match server update. (#17)
 
