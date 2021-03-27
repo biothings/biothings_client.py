@@ -4,6 +4,7 @@ Python Client for generic Biothings API services
 from __future__ import print_function
 
 import os
+import sys
 import platform
 import time
 import warnings
@@ -40,16 +41,17 @@ _DEBUG_ = logging.DEBUG
 logger = logging.getLogger("biothings_client")
 logger.setLevel(_DEBUG_)
 
-console_handler = logging.StreamHandler()
+console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(_DEBUG_)
 
 # setting up the logging formatter
-# This formatter contains time, but will use without time for now
+# this formatter contains time, but will use without time for now
 # formatter = logging.Formatter("%(asctime)s - %(name)s - Line: %(lineno)d - %(levelname)s - %(message)s")
-formatter = logging.Formatter("%(name)s - Line: %(lineno)d - %(levelname)s - %(message)s")
 
+# this formatter contains line number
+# formatter = logging.Formatter("%(name)s - Line: %(lineno)d - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
 console_handler.setFormatter(formatter)
-
 logger.addHandler(console_handler)
 
 class ScanError(Exception):
@@ -619,13 +621,13 @@ class BiothingClient(object):
             if li_dup:
                 # print("{0} input query terms found dup hits:".format(len(li_dup)))
                 # print("\t" + str(li_dup)[:100])
-                logger.info("{0} input query terms found dup hits:".format(len(li_dup)))
-                logger.info("\t" + str(li_dup)[:100])
+                logger.warning("{0} input query terms found dup hits:".format(len(li_dup)) + "\t" + str(li_dup)[:100])
+                # logger.info("\t" + str(li_dup)[:100])
             if li_missing:
                 # print("{0} input query terms found no hit:".format(len(li_missing)))
                 # print("\t" + str(li_missing)[:100])
-                logger.info("{0} input query terms found no hit:".format(len(li_missing)))
-                logger.info("\t" + str(li_missing)[:100])
+                logger.warning("{0} input query terms found no hit:".format(len(li_missing)) + "\t" + str(li_missing)[:100])
+                # logger.info("\t" + str(li_missing)[:100])
                 
         if returnall:
             if dataframe:
