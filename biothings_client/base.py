@@ -41,16 +41,15 @@ _DEBUG_ = logging.DEBUG
 logger = logging.getLogger("biothings_client")
 logger.setLevel(_DEBUG_)
 
+# creating the handler to output to stdout
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(_DEBUG_)
 
 # setting up the logging formatter
 # this formatter contains time, but will use without time for now
-# formatter = logging.Formatter("%(asctime)s - %(name)s - Line: %(lineno)d - %(levelname)s - %(message)s")
+# formatter = logging.Formatter("[%(levelname)s %(asctime)s %(name)s:%(lineno)s] - %(message)s ")
 
-# this formatter contains line number
-# formatter = logging.Formatter("%(name)s - Line: %(lineno)d - %(levelname)s - %(message)s")
-formatter = logging.Formatter("%(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("[%(levelname)s %(name)s:%(lineno)s] - %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
