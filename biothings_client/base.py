@@ -49,7 +49,7 @@ console_handler.setLevel(_DEBUG_)
 # this formatter contains time, but will use without time for now
 # formatter = logging.Formatter("[%(levelname)s %(asctime)s %(name)s:%(lineno)s] - %(message)s ")
 
-formatter = logging.Formatter("[%(levelname)s %(name)s:%(lineno)s] - %(message)s")
+formatter = logging.Formatter("%(levelname)-8s [%(name)s:%(lineno)s] - %(message)s")
 console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
