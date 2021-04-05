@@ -325,6 +325,8 @@ class BiothingClient(object):
         :return: an entity object as a dictionary, or None if _id is not found.
         '''
         verbose = kwargs.pop('verbose', True)
+        if fields:
+            kwargs['fields'] = fields
         kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
         from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
@@ -375,6 +377,8 @@ class BiothingClient(object):
             ids = ids.split(',') if ids else []
         if (not (isinstance(ids, (list, tuple, Iterable)))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
+        if fields:
+            kwargs['fields'] = fields
         kwargs = self._handle_common_kwargs(kwargs)
         verbose = kwargs.pop('verbose', True)
         dataframe = kwargs.pop('as_dataframe', None)

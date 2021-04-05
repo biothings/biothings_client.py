@@ -39,6 +39,7 @@ class TestGeneClient(unittest.TestCase):
         self.assertTrue('name' in g)
         self.assertTrue('symbol' in g)
         self.assertTrue('refseq' in g)
+        self.assertFalse('summary' in g)
 
     def test_getgene_with_fields_as_list(self):
         g1 = self.mg.getgene("1017", fields="name,symbol,refseq")
