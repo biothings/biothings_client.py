@@ -31,7 +31,7 @@ except ImportError:
     caching_avail = False
 
 
-__version__ = '0.2.5'
+__version__ = '0.2.6'
 
 
 class ScanError(Exception):

@@ -1,3 +1,6 @@
+v0.2.6 (2021/04/05)
+    Fixed an issue fields parameter were not processed for getgene and getgenes (#18)
+
 v0.2.5 (2021/02/25)
     Fixed mismatched __version__ in v0.2.4
     Removed a pandas deprecation message

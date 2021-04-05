@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="biothings_client",
-    version="0.2.5",
+    version="0.2.6",
     author="Cyrus Afrasiabi, Xinghua Zhou, Chunlei Wu",
     author_email="cwu@scripps.edu",
     description="Python Client for BioThings API services.",
