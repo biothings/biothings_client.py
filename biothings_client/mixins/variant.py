@@ -113,7 +113,7 @@ class MyVariantClientMixin:
                 _chrom, _pos, _ref, _alt = self._normalized_vcf(chrom, pos, ref, alt)
                 return self.format_hgvs(_chrom, _pos, _ref, _alt)
             else:
-                end = int(pos) + len(alt) - 1
+                end = int(pos) + len(ref) - 1
                 hgvs = 'chr{0}:g.{1}_{2}delins{3}'.format(chrom, pos, end, alt)
         else:
             raise ValueError("Cannot convert {} into HGVS id.".format((chrom, pos, ref, alt)))
