@@ -16,6 +16,7 @@ except ImportError:
 import biothings_client
 sys.stderr.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
 
+
 class TestVariantClient(unittest.TestCase):
 
     def setUp(self):
@@ -40,7 +41,8 @@ class TestVariantClient(unittest.TestCase):
             'rs137857980',
             'rs199710579',
             'rs186823979',
-            'rs2276240',
+            # 'rs2276240',
+            'rs34521797',
             'rs372452565'
         ]
 
@@ -198,10 +200,10 @@ class TestVariantClient(unittest.TestCase):
         self.assertEqual(set(self.query_list2), set(qres.index))
 
     def test_querymany_step(self):
-        qres1 = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', verbose=False)
+        qres1 = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', fields='dbsnp.rsid', verbose=False)
         default_step = self.mv.step
         self.mv.step = 3
-        qres2 = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', verbose=False)
+        qres2 = self.mv.querymany(self.query_list2, scopes='dbsnp.rsid', fields='dbsnp.rsid', verbose=False)
         self.mv.step = default_step
         # self.assertEqual(qres1, qres2, (qres1, qres2))
         self.assertEqual(descore(qres1), descore(qres2))
@@ -273,8 +275,9 @@ class TestVariantClient(unittest.TestCase):
             for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]:
                 x.pop('_score', None)
 
-            self.assertTrue(all([x == pre_cache_r for x in
-                [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]]))
+            self.assertTrue(all([x == pre_cache_r for x in [
+                pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r
+            ]]))
 
             # test getvariants POST caching
             from_cache, first_getvariants_r = _cache_request(_getvariants)
@@ -307,8 +310,10 @@ class TestVariantClient(unittest.TestCase):
             self.mv.stop_caching()
             os.remove('mvc.sqlite')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestVariantClient)
+
 
 if __name__ == '__main__':
     unittest.TextTestRunner().run(suite())
