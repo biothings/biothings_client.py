@@ -8,6 +8,6 @@ python:
   - "3.8"
   - "3.9"
 install:
-  #- pip install ".[test]" . # install package + test dependencies
-  - pip install . # install package
-script: python tests/test.py
+  - pip install ".[test]" . # install package + test dependencies
+  # - pip install . # install package
+script: pytest -v tests/*.py
