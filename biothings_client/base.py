@@ -130,7 +130,7 @@ class BiothingClient(object):
     def _dataframe(obj, dataframe, df_index=True):
         '''Converts object to DataFrame (pandas)'''
         if not df_avail:
-            print("Error: pandas module must be installed for as_dataframe option.")
+            print("Error: pandas module must be installed (or upgraded) for as_dataframe option.")
             return
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
