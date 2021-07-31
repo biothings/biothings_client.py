@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="biothings_client",
-    version="0.2.5",
+    version="0.2.6",
     author="Cyrus Afrasiabi, Xinghua Zhou, Chunlei Wu",
     author_email="cwu@scripps.edu",
     description="Python Client for BioThings API services.",
@@ -28,6 +28,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX",
@@ -45,6 +46,7 @@ setup(
     extras_require={
         'dataframe': ["pandas>=0.18.0"],
         'caching': ["requests_cache>=0.4.13"],
-        'jsonld': ["PyLD>=0.7.2"]
+        'jsonld': ["PyLD>=0.7.2"],
+        'test': ["pytest"]
     }
 )
