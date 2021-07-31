@@ -4,12 +4,15 @@ Python Client for generic Biothings API services
 from __future__ import print_function
 
 import os
+import sys
 import platform
 import time
 import warnings
 from itertools import islice
 
 import requests
+
+import logging
 
 from .utils import str_types
 
@@ -33,6 +36,22 @@ except ImportError:
 
 __version__ = '0.2.5'
 
+# setting up the logging logger
+_DEBUG_ = logging.DEBUG
+logger = logging.getLogger("biothings_client")
+logger.setLevel(_DEBUG_)
+
+# creating the handler to output to stdout
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(_DEBUG_)
+
+# setting up the logging formatter
+# this formatter contains time, but will use without time for now
+# formatter = logging.Formatter("[%(levelname)s %(asctime)s %(name)s:%(lineno)s] - %(message)s ")
+
+formatter = logging.Formatter("%(levelname)-8s [%(name)s:%(lineno)s] - %(message)s")
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 class ScanError(Exception):
     # for errors in scan search type
@@ -130,7 +149,8 @@ class BiothingClient(object):
     def _dataframe(obj, dataframe, df_index=True):
         '''Converts object to DataFrame (pandas)'''
         if not df_avail:
-            print("Error: pandas module must be installed for as_dataframe option.")
+            # print("Error: pandas module must be installed for as_dataframe option.")
+            logger.error("Error: pandas module must be installed for as_dataframe option.")
             return
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
@@ -209,13 +229,15 @@ class BiothingClient(object):
         for i in range(0, len(query_li), step):
             is_last_loop = i + step >= len(query_li)
             if verbose:
-                print("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))), end="")
+                # print("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))), end="")
+                logger.info("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))))
             query_result = query_fn(query_li[i:i + step], **fn_kwargs)
 
             yield query_result
 
             if verbose:
-                print("done.")
+                # print("done.")
+                logger.info("done.")
             if not is_last_loop and self.delay:
                 time.sleep(self.delay)
 
@@ -228,13 +250,15 @@ class BiothingClient(object):
         i = 0
         for batch, cnt in iter_n(query_li, step, with_cnt=True):
             if verbose:
-                print("querying {0}-{1}...".format(i + 1, cnt), end="")
+                # print("querying {0}-{1}...".format(i + 1, cnt), end="")
+                logger.info("querying {0}-{1}...".format(i + 1, cnt))
             i = cnt
             from_cache, query_result = query_fn(batch, **fn_kwargs)
             yield query_result
             if verbose:
                 cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
-                print("done.{0}".format(cache_str))
+                # print("done.{0}".format(cache_str))
+                logger.info("done.{0}".format(cache_str))
             if not from_cache and self.delay:
                 # no need to delay if requests are from cache.
                 time.sleep(self.delay)
@@ -250,7 +274,8 @@ class BiothingClient(object):
         _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
-            print(self._from_cache_notification)
+            # print(self._from_cache_notification)
+            logger.info(self._from_cache_notification)
         return ret
 
     def _set_caching(self, cache_db=None, verbose=True, **kwargs):
@@ -265,13 +290,19 @@ class BiothingClient(object):
                     'GET', 'POST'), **kwargs)
             self._cached = True
             if verbose:
-                print(
-                    '[ Future queries will be cached in "{0}" ]'.format(
+                # print(
+                #     '[ Future queries will be cached in "{0}" ]'.format(
+                #         os.path.abspath(
+                #             cache_db + '.sqlite')))
+                logger.info('[ Future queries will be cached in "{0}" ]'.format(
                         os.path.abspath(
                             cache_db + '.sqlite')))
         else:
-            print("Error: The requests_cache python module is required to use request caching.")
-            print("See - https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation")
+            # print("Error: The requests_cache python module is required to use request caching.")
+            # print("See - https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation")
+
+            logger.error("Error: The requests_cache python module is required to use request caching")
+            logger.error("See - https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation")
         return
 
     def _stop_caching(self):
@@ -287,7 +318,8 @@ class BiothingClient(object):
             requests_cache.clear()
         except AttributeError:
             # requests_cache is not enabled
-            print("requests_cache is not enabled. Nothing to clear.")
+            # print("requests_cache is not enabled. Nothing to clear.")
+            logger.warning("requests_cache is not enabled. Nothing to clear.")
 
     def _get_fields(self, search_term=None, verbose=True):
         '''Wrapper for /metadata/fields
@@ -310,7 +342,8 @@ class BiothingClient(object):
             if "notes" in v:
                 del v['notes']
         if verbose and from_cache:
-            print(self._from_cache_notification)
+            # print(self._from_cache_notification)
+            logger.info(self._from_cache_notification)
         return ret
 
     def _getannotation(self, _id, fields=None, **kwargs):
@@ -329,7 +362,8 @@ class BiothingClient(object):
         _url = self.url + self._annotation_endpoint + str(_id)
         from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         if verbose and from_cache:
-            print(self._from_cache_notification)
+            # print(self._from_cache_notification)
+            logger.info(self._from_cache_notification)
         return ret
 
     def _getannotations_inner(self, ids, verbose=True, **kwargs):
@@ -451,7 +485,8 @@ class BiothingClient(object):
             dataframe = None
         from_cache, out = self._get(_url, kwargs, verbose=verbose)
         if verbose and from_cache:
-            print(self._from_cache_notification)
+            # print(self._from_cache_notification)
+            logger.info(self._from_cache_notification)
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=False)
         return out
@@ -471,18 +506,23 @@ class BiothingClient(object):
             return ret
         batch = _batch()
         if verbose:
-            print(
-                "Fetching {0} {1} . . .".format(
-                    batch['total'],
-                    self._optionally_plural_object_type))
+            # print(
+            #     "Fetching {0} {1} . . .".format(
+            #         batch['total'],
+            #         self._optionally_plural_object_type))
+            logger.info("Fetching {0} {1} . . .".format(
+                            batch['total'],
+                            self._optionally_plural_object_type))
         for key in ['q', 'fetch_all']:
             kwargs.pop(key)
         while not batch.get('error', '').startswith('No results to return'):
             if 'error' in batch:
-                print(batch['error'])
+                # print(batch['error'])
+                logger.error(batch['error'])
                 break
             if '_warning' in batch and verbose:
-                print(batch['_warning'])
+                # print(batch['_warning'])
+                logger.warning(batch['_warning'])
             for hit in batch['hits']:
                 yield hit
             kwargs.update({'scroll_id': batch['_scroll_id']})
@@ -557,7 +597,8 @@ class BiothingClient(object):
                         li_query.append(hit['query'])
 
         if verbose:
-            print("Finished.")
+            # print("Finished.")
+            logger.info("Finished.")
         if return_raw:
             if len(out) == 1:
                 out = out[0]
@@ -577,11 +618,16 @@ class BiothingClient(object):
 
         if verbose:
             if li_dup:
-                print("{0} input query terms found dup hits:".format(len(li_dup)))
-                print("\t" + str(li_dup)[:100])
+                # print("{0} input query terms found dup hits:".format(len(li_dup)))
+                # print("\t" + str(li_dup)[:100])
+                logger.warning("{0} input query terms found dup hits:".format(len(li_dup)) + "\t" + str(li_dup)[:100])
+                # logger.info("\t" + str(li_dup)[:100])
             if li_missing:
-                print("{0} input query terms found no hit:".format(len(li_missing)))
-                print("\t" + str(li_missing)[:100])
+                # print("{0} input query terms found no hit:".format(len(li_missing)))
+                # print("\t" + str(li_missing)[:100])
+                logger.warning("{0} input query terms found no hit:".format(len(li_missing)) + "\t" + str(li_missing)[:100])
+                # logger.info("\t" + str(li_missing)[:100])
+                
         if returnall:
             if dataframe:
                 return {'out': out, 'dup': li_dup_df, 'missing': li_missing_df}
@@ -589,5 +635,6 @@ class BiothingClient(object):
                 return {'out': out, 'dup': li_dup, 'missing': li_missing}
         else:
             if verbose and (li_dup or li_missing):
-                print('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
+                # print('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
+                logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
