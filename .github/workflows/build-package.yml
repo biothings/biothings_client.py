@@ -1,0 +1,29 @@
+name: Build
+
+on:
+  push: {}
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build_package_and_run_tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ 2.7, 3.6, 3.7, 3.8, 3.9 ]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+      - name: Install wheel
+        run: pip install wheel
+      - name: Build Package
+        run: python setup.py sdist bdist_wheel
+
