@@ -7,8 +7,11 @@
 .. image:: https://img.shields.io/pypi/format/biothings-client.svg
     :target: https://pypi.python.org/pypi/biothings-client
 
-.. image:: https://travis-ci.org/biothings/biothings_client.py.svg?branch=master
-    :target: https://travis-ci.org/biothings/biothings_client.py
+.. image:: https://github.com/biothings/biothings_client.py/actions/workflows/build-package.yml/badge.svg
+    :target: https://github.com/biothings/biothings_client.py/actions/workflows/build-package.yml
+
+.. image:: https://github.com/biothings/biothings_client.py/actions/workflows/run-tests.yml/badge.svg
+    :target: https://github.com/biothings/biothings_client.py/actions/workflows/run-tests.yml
 
 .. image:: https://api.codacy.com/project/badge/Grade/0ec3b39fb487418686ca121d623ec96c
    :alt: Codacy Badge
