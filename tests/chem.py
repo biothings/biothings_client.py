@@ -39,18 +39,16 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(c['chebi']['name'], 'guanidine')
 
     def test_getchem_with_fields(self):
-        c = self.mc.getchem("DB00553", fields="chebi.name,drugbank.id,pubchem.cid")
+        c = self.mc.getchem("7AXV542LZ4", fields="chebi.name,chembl.inchi_key,pubchem.cid")
         self.assertTrue('_id' in c)
         self.assertTrue('chebi' in c)
         self.assertTrue('name' in c['chebi'])
-        self.assertTrue('drugbank' in c)
-        self.assertTrue('id' in c['drugbank'])
+        self.assertTrue('chembl' in c)
+        self.assertTrue('inchi_key' in c['chembl'])
         self.assertTrue('pubchem' in c)
         self.assertTrue('cid' in c['pubchem'])
 
     def get_getdrug(self):
-        c = self.mc.getdrug("DB00551")
-        self.assertEqual(c['_id'], "ZRALSGWEFCBTJO-UHFFFAOYSA-N")
         c = self.mc.getdrug("CHEMBL1308")
         self.assertEqual(c['_id'], "ZRALSGWEFCBTJO-UHFFFAOYSA-N")
         c = self.mc.getdrug("7AXV542LZ4")
@@ -82,6 +80,7 @@ class TestChemClient(unittest.TestCase):
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 5)
 
+    @unittest.skip("Drugbank was removed")
     def test_query_drugbank(self):
         qres = self.mc.query('drugbank.id:DB00536')
         self.assertTrue('hits' in qres)
@@ -170,32 +169,32 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(total, len(list(qres)))
 
     def test_querymany(self):
-        qres = self.mc.querymany(["ZRALSGWEFCBTJO-UHFFFAOYSA-N", "RRUDCFGSUDOHDG-UHFFFAOYSA-N"], verbose=False)
+        qres = self.mc.querymany(['ZRALSGWEFCBTJO-UHFFFAOYSA-N', 'RRUDCFGSUDOHDG-UHFFFAOYSA-N'], verbose=False)
         self.assertEqual(len(qres), 2)
 
-        qres = self.mc.querymany("ZRALSGWEFCBTJO-UHFFFAOYSA-N,RRUDCFGSUDOHDG-UHFFFAOYSA-N", verbose=False)
+        qres = self.mc.querymany('ZRALSGWEFCBTJO-UHFFFAOYSA-N,RRUDCFGSUDOHDG-UHFFFAOYSA-N', verbose=False)
         self.assertEqual(len(qres), 2)
 
     def test_querymany_with_scopes(self):
-        qres = self.mc.querymany(["DB00536", 'DB00533'], scopes='drugbank.id', verbose=False)
+        qres = self.mc.querymany(['CHEBI:31690', 'CHEBI:15365'], scopes='chebi.id', verbose=False)
         self.assertEqual(len(qres), 2)
 
-        qres = self.mc.querymany(["DB00536", '4RZ82L2GY5'], scopes='drugbank.id,unii.unii', verbose=False)
+        qres = self.mc.querymany(['CHEMBL374515', '4RZ82L2GY5'], scopes='chembl.molecule_chembl_id,unii.unii', verbose=False)
         self.assertTrue(len(qres) >= 2)
 
     def test_querymany_fields(self):
-        qres1 = self.mc.querymany(["DB00536", 'DB00533'], scopes='drugbank.id',
-                                  fields=['drugbank.name', 'unii.registry_number'], verbose=False)
+        qres1 = self.mc.querymany(['CHEBI:31690', 'CHEBI:15365'], scopes='chebi.id',
+                                  fields=['chebi.name', 'unii.registry_number'], verbose=False)
         self.assertEqual(len(qres1), 2)
 
-        qres2 = self.mc.querymany(["DB00536", 'DB00533'], scopes='drugbank.id',
-                                   fields='drugbank.name,unii.registry_number', verbose=False)
+        qres2 = self.mc.querymany(['CHEBI:31690', 'CHEBI:15365'], scopes='chebi.id',
+                                   fields='chebi.name,unii.registry_number', verbose=False)
         self.assertEqual(len(qres2), 2)
 
         self.assertEqual(descore(qres1), descore(qres2))
 
     def test_querymany_notfound(self):
-        qres = self.mc.querymany(['DB00536', 'DB00533', 'NA_TEST'], scopes='drugbank.id')
+        qres = self.mc.querymany(['CHEBI:31690', 'CHEBI:15365', 'NA_TEST'], scopes='chebi.id')
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": 'NA_TEST', "notfound": True})
 
@@ -219,7 +218,7 @@ class TestChemClient(unittest.TestCase):
 
     def test_get_fields(self):
         fields = self.mc.get_fields()
-        self.assertTrue('drugbank.id' in fields.keys())
+        self.assertTrue('chembl.inchi_key' in fields.keys())
         self.assertTrue('pharmgkb.trade_names' in fields.keys())
 
         fields = self.mc.get_fields('unii')
@@ -238,7 +237,7 @@ class TestChemClient(unittest.TestCase):
             return self.mc.query('chebi.name:albendazole', size=5)
 
         def _querymany():
-            return self.mc.querymany(["DB00536", 'DB00533'], scopes='drugbank.id')
+            return self.mc.querymany(['CHEBI:31690', 'CHEBI:15365'], scopes='chebi.id')
 
         def _cache_request(f):
             current_stdout = sys.stdout
