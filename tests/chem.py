@@ -133,10 +133,10 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(qres['hits'][0]['_id'], 'ZRALSGWEFCBTJO-UHFFFAOYSA-N')
 
     def test_query_ndc(self):
-        qres = self.mc.query('ndc.productndc:"0085-0492"')
+        qres = self.mc.query('ndc.productndc:"0456-2700"')
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 1)
-        self.assertEqual(qres['hits'][0]['_id'], 'ZRALSGWEFCBTJO-UHFFFAOYSA-N')
+        self.assertEqual(qres['hits'][0]['_id'], 'NDCUAPJVLWFHHB-UHNVWZDZSA-N')
 
     def test_query_sider(self):
         qres = self.mc.query('sider.meddra.umls_id:C0232487', fields='sider', size=5)
