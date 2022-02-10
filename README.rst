@@ -13,9 +13,9 @@
 .. image:: https://github.com/biothings/biothings_client.py/actions/workflows/run-tests.yml/badge.svg
     :target: https://github.com/biothings/biothings_client.py/actions/workflows/run-tests.yml
 
-.. image:: https://api.codacy.com/project/badge/Grade/0ec3b39fb487418686ca121d623ec96c
+.. image:: https://api.codacy.com/project/badge/Grade/2b716becb6e948a6b576f278e64dd81f
    :alt: Codacy Badge
-   :target: https://app.codacy.com/app/newgene/biothings_client.py?utm_source=github.com&utm_medium=referral&utm_content=biothings/biothings_client.py&utm_campaign=Badge_Grade_Dashboard
+   :target: https://www.codacy.com/gh/biothings/biothings_client.py/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=biothings/biothings_client.py&amp;utm_campaign=Badge_Grade
 
 .. image:: https://img.shields.io/pypi/dm/biothings_client.svg
    :alt: PyPI Downloads
