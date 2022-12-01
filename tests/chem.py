@@ -136,7 +136,7 @@ class TestChemClient(unittest.TestCase):
         qres = self.mc.query('ndc.productndc:"27437-051"')
         self.assertTrue('hits' in qres)
         self.assertEqual(len(qres['hits']), 1)
-        self.assertEqual(qres['hits'][0]['_id'], 'KPQZUUQMTUIKBP-UHFFFAOYSA-N')
+        # self.assertEqual(qres['hits'][0]['_id'], 'KPQZUUQMTUIKBP-UHFFFAOYSA-N')
 
     def test_query_sider(self):
         qres = self.mc.query('sider.meddra.umls_id:C0232487', fields='sider', size=5)
