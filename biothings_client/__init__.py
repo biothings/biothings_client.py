@@ -46,6 +46,8 @@ MYTAXON_ALIASES = copy(COMMON_ALIASES)
 MYTAXON_ALIASES.update({'_getannotation': 'gettaxon', '_getannotations': 'gettaxa'})
 MYDISEASE_ALIASES = copy(COMMON_ALIASES)
 MYDISEASE_ALIASES.update({'_getannotation': 'getdisease', '_getannotations': 'getdiseases'})
+MYGENESET_ALIASES = copy(COMMON_ALIASES)
+MYGENESET_ALIASES.update({'_getannotation': 'getgeneset', '_getannotations': 'getgenesets'})
 
 # ***********************************************
 # *  Kwargs.
