@@ -83,59 +83,59 @@ class TestGenesetClient(unittest.TestCase):
     # def test_species_filter_blank_query(self):
     #     dog = self.mc.query(species='9615')
     #     print(3, dog['hits'][0])
-    #     assert dog['hits'][0]['taxid'] == "9615"
+    #     self.assertEqual(dog['hits'][0]['taxid'], "9615")
 
     def test_species_filter_plus_query(self):
         dog = self.mc.query(q='glucose', species='9615')
-        assert dog['hits'][0]['taxid'] == "9615"
+        self.assertEqual(dog['hits'][0]['taxid'], "9615")
 
     def test_query_by_id(self):
         query = self.mc.query(q="_id:WP100")
-        assert query['hits'][0]['_id'] == "WP100"
+        self.assertEqual(query['hits'][0]['_id'], "WP100")
 
     def test_query_by_name(self):
         kinase = self.mc.query(q='name:kinase')
-        assert 'kinase' in kinase['hits'][0]['name'].lower()
+        self.assertIn('kinase', kinase['hits'][0]['name'].lower())
 
     def test_query_by_description(self):
         desc = self.mc.query(q='description:cytosine deamination')
-        assert 'cytosine' in desc['hits'][0]['description'].lower()
-        assert 'deamination' in desc['hits'][0]['description'].lower()
+        self.assertIn('cytosine', desc['hits'][0]['description'].lower())
+        self.assertIn('deamination', desc['hits'][0]['description'].lower())
 
     def test_query_by_source_go(self):
         go = self.mc.query(q='source:go', fields='all')
-        assert 'go' in go['hits'][0].keys()
-        assert go['hits'][0]['source'] == 'go'
+        self.assertIn('go', go['hits'][0].keys())
+        self.assertEqual(go['hits'][0]['source'], 'go')
 
     def test_query_by_source_ctd(self):
         ctd = self.mc.query(q='source:ctd', fields='all')
-        assert 'ctd' in ctd['hits'][0].keys()
-        assert ctd['hits'][0]['source'] == 'ctd'
+        self.assertIn('ctd', ctd['hits'][0].keys())
+        self.assertEqual(ctd['hits'][0]['source'], 'ctd')
 
     def test_query_by_source_msigdb(self):
         msigdb = self.mc.query(q='source:msigdb', fields='all')
-        assert 'msigdb' in msigdb['hits'][0].keys()
-        assert msigdb['hits'][0]['source'] == 'msigdb'
+        self.assertIn('msigdb', msigdb['hits'][0].keys())
+        self.assertEqual(msigdb['hits'][0]['source'], 'msigdb')
 
     def test_query_by_source_kegg(self):
         kegg = self.mc.query(q='source:kegg', fields='all')
-        assert 'kegg' in kegg['hits'][0].keys()
-        assert kegg['hits'][0]['source'] == 'kegg'
+        self.assertIn('kegg', kegg['hits'][0].keys())
+        self.assertEqual(kegg['hits'][0]['source'], 'kegg')
 
     def test_query_by_source_do(self):
         do = self.mc.query(q='source:do', fields='all')
-        assert 'do' in do['hits'][0].keys()
-        assert do['hits'][0]['source'] == 'do'
+        self.assertIn('do', do['hits'][0].keys())
+        self.assertEqual(do['hits'][0]['source'], 'do')
 
     def test_query_by_source_reactome(self):
         reactome = self.mc.query(q='source:reactome', fields='all')
-        assert 'reactome' in reactome['hits'][0].keys()
-        assert reactome['hits'][0]['source'] == 'reactome'
+        self.assertIn('reactome', reactome['hits'][0].keys())
+        self.assertEqual(reactome['hits'][0]['source'], 'reactome')
 
     def test_query_by_source_smpdb(self):
         smpdb = self.mc.query(q='source:smpdb', fields='all')
-        assert 'smpdb' in smpdb['hits'][0].keys()
-        assert smpdb['hits'][0]['source'] == 'smpdb'
+        self.assertIn('smpdb', smpdb['hits'][0].keys())
+        self.assertEqual(smpdb['hits'][0]['source'], 'smpdb')
 
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestGenesetClient)
