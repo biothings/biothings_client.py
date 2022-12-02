@@ -90,9 +90,8 @@ class TestGenesetClient(unittest.TestCase):
         assert dog['hits'][0]['taxid'] == "9615"
 
     def test_query_by_id(self):
-        _id = "WP100"
-        query = self.mc.query(q=f"_id:{_id}")
-        assert query['hits'][0]['_id'] == _id
+        query = self.mc.query(q="_id:WP100")
+        assert query['hits'][0]['_id'] == "WP100"
 
     def test_query_by_name(self):
         kinase = self.mc.query(q='name:kinase')
