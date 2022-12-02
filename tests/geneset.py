@@ -29,24 +29,41 @@ class TestGenesetClient(unittest.TestCase):
         self.assertTrue("total" in meta['stats'])
 
     def test_getgeneset(self):
-        g = self.mgs.getgeneset("D005947_9615")
-        self.assertEqual(len(g), 2)
-        self.assertEqual(g[0]['_id'], 'D005947_9615')
-        self.assertEqual(g[0]['name'], 'Glucose interactions')
-        self.assertEqual(g[0]['source'], 'ctd')
-        self.assertEqual(g[0]['taxid'], '9615')
-        self.assertEqual(g[1]['_id'], 'D005947_9615')
-        self.assertEqual(g[1]['name'], 'Glucose interactions')
-        self.assertEqual(g[1]['source'], 'ctd')
-        self.assertEqual(g[1]['taxid'], '9615')
+        id = "WP100"
+        gs = self.mgs.getgeneset(id)
+        self.assertEqual(gs['_id'], id)
+        self.assertEqual(gs['name'], 'Glutathione metabolism')
+        self.assertEqual(gs['source'], 'wikipathways')
+        self.assertEqual(gs['taxid'], '9606')
+        self.assertGreaterEqual(len(gs['genes']), 19)
+        self.assertEqual(gs['count'], len(gs['genes']))
+        self.assertEqual(gs['wikipathways']['id'], id)
+
+        # Check if all fields exists in wikipathways
+        self.assertTrue('wikipathways' in gs)
+
+        # Check if the gene exist with the values in the gene list:
+        # "mygene_id": "2937",
+        # "symbol": "GSS",
+
+        # self.assertTrue(i['name'] == "2937dada" for i in gs['genes'])
+        # self.assertTrue(gs['genes'].get)
+        # self.assertTrue({
+        #                     'name': 'Glutathione metabolism'
+        #                 }.items() <= gs.items() )
 
     def test_query_fetch_all(self):
+
+        # pdb-->reactome
+        # q=source:reactome
+        # _exists_:pdb ---> source:reactome
+
         # fetch_all won't work when caching is used.
         self.mgs.stop_caching()
-        qres = self.mgs.query('_exists_:pdb')
+        qres = self.mgs.query('source:reactome')
         total = qres['total']
 
-        qres = self.mgs.query('_exists_:pdb', fields='pdb', fetch_all=True)
+        qres = self.mgs.query('source:reactome', fields='source,count,name', fetch_all=True)
         self.assertTrue(isinstance(qres, types.GeneratorType))
         self.assertEqual(total, len(list(qres)))
 
@@ -57,15 +74,15 @@ class TestGenesetClient(unittest.TestCase):
         self.assertEqual(len(qres1['hits']), 10)
         self.assertEqual(descore(qres1['hits']), descore(qres2['hits']))
 
-    # def test_getgeneset_with_fields(self):
-    #     c = self.mgs.getgeneset("7AXV542LZ4", fields="chebi.name,genesetbl.inchi_key,pubgeneset.cid")
-    #     self.assertTrue('_id' in c)
-    #     self.assertTrue('chebi' in c)
-    #     self.assertTrue('name' in c['chebi'])
-    #     self.assertTrue('genesetbl' in c)
-    #     self.assertTrue('inchi_key' in c['genesetbl'])
-    #     self.assertTrue('pubgeneset' in c)
-    #     self.assertTrue('cid' in c['pubgeneset'])
+    def test_getgeneset_with_fields(self):
+        c = self.mgs.getgeneset("WP100", fields="chebi.name,genesetbl.inchi_key,pubgeneset.cid")
+        self.assertTrue('_id' in c)
+        self.assertTrue('chebi' in c)
+        self.assertTrue('name' in c['chebi'])
+        self.assertTrue('genesetbl' in c)
+        self.assertTrue('inchi_key' in c['genesetbl'])
+        self.assertTrue('pubgeneset' in c)
+        self.assertTrue('cid' in c['pubgeneset'])
 
     # def get_getdrug(self):
     #     c = self.mgs.getdrug("CHEMBL1308")
