@@ -50,6 +50,13 @@ class TestGenesetClient(unittest.TestCase):
         self.assertTrue(isinstance(qres, types.GeneratorType))
         self.assertEqual(total, len(list(qres)))
 
+    def test_query_with_fields_as_list(self):
+        qres1 = self.mgs.query("genes.ncbigene:1017", fields="name,symbol,source_id")
+        qres2 = self.mgs.query("genes.ncbigene:1017", fields=["name", "symbol", "source_id"])
+        self.assertTrue('hits' in qres1)
+        self.assertEqual(len(qres1['hits']), 10)
+        self.assertEqual(descore(qres1['hits']), descore(qres2['hits']))
+
     # def test_getgeneset_with_fields(self):
     #     c = self.mgs.getgeneset("7AXV542LZ4", fields="chebi.name,genesetbl.inchi_key,pubgeneset.cid")
     #     self.assertTrue('_id' in c)
