@@ -30,9 +30,8 @@ class TestGenesetClient(unittest.TestCase):
         self.assertTrue("total" in meta['stats'])
 
     def test_getgeneset(self):
-        id = "WP100"
-        gs = self.mgs.getgeneset(id)
-        self.assertEqual(gs['_id'], id)
+        gs = self.mgs.getgeneset("WP100")
+        self.assertEqual(gs['_id'], "WP100")
         self.assertEqual(gs['name'], 'Glutathione metabolism')
         self.assertEqual(gs['source'], 'wikipathways')
         self.assertEqual(gs['taxid'], '9606')
