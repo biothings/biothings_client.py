@@ -39,7 +39,7 @@ class TestGenesetClient(unittest.TestCase):
         self.assertEqual(gs['count'], len(gs['genes']))
 
         self.assertTrue('wikipathways' in gs)
-        self.assertEqual(gs['wikipathways']['id'], id)
+        self.assertEqual(gs['wikipathways']['id'], "WP100")
         self.assertEqual(gs['wikipathways']['pathway_name'], 'Glutathione metabolism')
         self.assertEqual(gs['wikipathways']['url'], 'http://www.wikipathways.org/instance/WP100_r107114')
         self.assertEqual(gs['wikipathways']['_license'], 'https://www.wikipathways.org/index.php/WikiPathways:License_Terms')
