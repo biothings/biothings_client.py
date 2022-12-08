@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import sys
 import os
 import types
@@ -37,20 +38,14 @@ class TestGenesetClient(unittest.TestCase):
         self.assertEqual(gs['taxid'], '9606')
         self.assertGreaterEqual(len(gs['genes']), 19)
         self.assertEqual(gs['count'], len(gs['genes']))
-        self.assertEqual(gs['wikipathways']['id'], id)
 
-        # Check if all fields exists in wikipathways
         self.assertTrue('wikipathways' in gs)
+        self.assertEqual(gs['wikipathways']['id'], id)
+        self.assertEqual(gs['wikipathways']['pathway_name'], 'Glutathione metabolism')
+        self.assertEqual(gs['wikipathways']['url'], 'http://www.wikipathways.org/instance/WP100_r107114')
+        self.assertEqual(gs['wikipathways']['_license'], 'https://www.wikipathways.org/index.php/WikiPathways:License_Terms')
 
-        # Check if the gene exist with the values in the gene list:
-        # "mygene_id": "2937",
-        # "symbol": "GSS",
-
-        # self.assertTrue(i['name'] == "2937dada" for i in gs['genes'])
-        # self.assertTrue(gs['genes'].get)
-        # self.assertTrue({
-        #                     'name': 'Glutathione metabolism'
-        #                 }.items() <= gs.items() )
+        self.assertTrue(any((gene.get('mygene_id') == '2937' and gene.get('symbol') == 'GSS') for gene in gs['genes']))
 
     def test_query_fetch_all(self):
 
@@ -68,56 +63,45 @@ class TestGenesetClient(unittest.TestCase):
         self.assertEqual(total, len(list(qres)))
 
     def test_query_with_fields_as_list(self):
-        qres1 = self.mgs.query("genes.ncbigene:1017", fields="name,symbol,source_id")
-        qres2 = self.mgs.query("genes.ncbigene:1017", fields=["name", "symbol", "source_id"])
+        qres1 = self.mgs.query("genes.ncbigene:1017", fields="name,source,taxid")
+        qres2 = self.mgs.query("genes.ncbigene:1017", fields=["name", "source", "taxid"])
         self.assertTrue('hits' in qres1)
         self.assertEqual(len(qres1['hits']), 10)
         self.assertEqual(descore(qres1['hits']), descore(qres2['hits']))
 
     def test_getgeneset_with_fields(self):
-        c = self.mgs.getgeneset("WP100", fields="chebi.name,genesetbl.inchi_key,pubgeneset.cid")
-        self.assertTrue('_id' in c)
-        self.assertTrue('chebi' in c)
-        self.assertTrue('name' in c['chebi'])
-        self.assertTrue('genesetbl' in c)
-        self.assertTrue('inchi_key' in c['genesetbl'])
-        self.assertTrue('pubgeneset' in c)
-        self.assertTrue('cid' in c['pubgeneset'])
+        gs = self.mgs.getgeneset("WP100", fields="name,source,taxid,genes.mygene_id,genes.symbol")
 
-    # def get_getdrug(self):
-    #     c = self.mgs.getdrug("CHEMBL1308")
-    #     self.assertEqual(c['_id'], "ZRALSGWEFCBTJO-UHFFFAOYSA-N")
-    #     c = self.mgs.getdrug("7AXV542LZ4")
-    #     self.assertEqual(c['_id'], "ZRALSGWEFCBTJO-UHFFFAOYSA-N")
-    #     c = self.mgs.getdrug("CHEBI:6431")
-    #     self.assertEqual(c['_id'], "ZRALSGWEFCBTJO-UHFFFAOYSA-N")
+        self.assertTrue('_id' in gs)
+        self.assertTrue('name' in gs)
+        self.assertTrue('source' in gs)
+        self.assertTrue('taxid' in gs)
 
-    # def test_getgenesets(self):
-    #     c_li = self.mgs.getgenesets([
-    #         "KTUFNOKKBVMGRW-UHFFFAOYSA-N",
-    #         "HXHWSAZORRCQMX-UHFFFAOYSA-N",
-    #         'DQMZLTXERSFNPB-UHFFFAOYSA-N'
-    #     ])
-    #     self.assertEqual(len(c_li), 3)
-    #     self.assertEqual(c_li[0]['_id'], 'KTUFNOKKBVMGRW-UHFFFAOYSA-N')
-    #     self.assertEqual(c_li[1]['_id'], 'HXHWSAZORRCQMX-UHFFFAOYSA-N')
-    #     self.assertEqual(c_li[2]['_id'], 'DQMZLTXERSFNPB-UHFFFAOYSA-N')
+        self.assertTrue(any((gene.get('mygene_id') == '2937' and gene.get('symbol') == 'GSS') for gene in gs['genes']))
+        self.assertFalse(any(gene.get('name') for gene in gs['genes']))
 
-    # def test_query(self):
-    #     qres = self.mgs.query('genes.name:insulin', size=5)
-    #     self.assertTrue('hits' in qres)
-    #     self.assertEqual(len(qres['hits']), 5)
+    def test_getgenesets(self):
+        gs_li = self.mgs.getgenesets([
+            "WP100",
+            "WP101",
+            'WP103'
+        ])
+
+        self.assertEqual(len(gs_li), 3)
+        self.assertEqual(gs_li[0]['_id'], 'WP100')
+        self.assertEqual(gs_li[1]['_id'], 'WP101')
+        self.assertEqual(gs_li[2]['_id'], 'WP103')
+
+    def test_query(self):
+        qres = self.mgs.query('genes.mygene_id:2937', size=5)
+        self.assertTrue('hits' in qres)
+        self.assertEqual(len(qres['hits']), 5)
 
     def test_query_default_fields(self):
         self.mgs.query(q='glucose')
 
     def test_query_field(self):
         self.mgs.query(q='genes.ncbigene:1017')
-
-    # def test_species_filter_blank_query(self):
-    #     dog = self.mgs.query(species='9615')
-    #     print(3, dog['hits'][0])
-    #     self.assertEqual(dog['hits'][0]['taxid'], "9615")
 
     def test_species_filter_plus_query(self):
         dog = self.mgs.query(q='glucose', species='9615')
@@ -151,6 +135,7 @@ class TestGenesetClient(unittest.TestCase):
         self.assertIn('msigdb', msigdb['hits'][0].keys())
         self.assertEqual(msigdb['hits'][0]['source'], 'msigdb')
 
+    @pytest.mark.skip(reason="Has to configure credentials")
     def test_query_by_source_kegg(self):
         kegg = self.mgs.query(q='source:kegg', fields='all')
         self.assertIn('kegg', kegg['hits'][0].keys())
