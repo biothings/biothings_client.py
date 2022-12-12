@@ -134,7 +134,7 @@ class TestGenesetClient(unittest.TestCase):
         self.assertIn('msigdb', msigdb['hits'][0].keys())
         self.assertEqual(msigdb['hits'][0]['source'], 'msigdb')
 
-    @pytest.mark.skip(reason="Has to configure credentials")
+    @pytest.mark.skip(reason="We removed kegg data source for now")
     def test_query_by_source_kegg(self):
         kegg = self.mgs.query(q='source:kegg', fields='all')
         self.assertIn('kegg', kegg['hits'][0].keys())
@@ -158,16 +158,16 @@ class TestGenesetClient(unittest.TestCase):
     @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
     def test_caching(self):
         def _getgeneset():
-            return self.mgs.getgenesets("1017")
+            return self.mgs.getgenesets("WP100")
 
         def _getgenesets():
-            return self.mgs.getgenesets(["1017", "1018"])
+            return self.mgs.getgenesets(["WP100", "WP101"])
 
         def _query():
-            return self.mgs.query("cdk2")
+            return self.mgs.query("wnt", fields="name,count,source,taxid")
 
         def _querymany():
-            return self.mgs.querymany(['1017', '695'])
+            return self.mgs.querymany(["wnt", "jak-stat"], fields="name,count,source,taxid")
 
         def _cache_request(f):
             current_stdout = sys.stdout
