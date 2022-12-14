@@ -46,6 +46,8 @@ MYTAXON_ALIASES = copy(COMMON_ALIASES)
 MYTAXON_ALIASES.update({'_getannotation': 'gettaxon', '_getannotations': 'gettaxa'})
 MYDISEASE_ALIASES = copy(COMMON_ALIASES)
 MYDISEASE_ALIASES.update({'_getannotation': 'getdisease', '_getannotations': 'getdiseases'})
+MYGENESET_ALIASES = copy(COMMON_ALIASES)
+MYGENESET_ALIASES.update({'_getannotation': 'getgeneset', '_getannotations': 'getgenesets'})
 
 # ***********************************************
 # *  Kwargs.
@@ -112,6 +114,14 @@ MYTAXON_KWARGS.update({
     "_entity": "taxon",
     "_default_cache_file": "mytaxon_cache"
 })
+MYGENESET_KWARGS = copy(COMMON_KWARGS)
+MYGENESET_KWARGS.update({
+    "_default_url": "http://mygeneset.info/v1",
+    "_annotation_endpoint": "/geneset/",
+    "_optionally_plural_object_type": "geneset(s)",
+    "_entity": "geneset",
+    "_default_cache_file": "mygeneset_cache"
+})
 
 # ***********************************************
 # *  Client settings
@@ -175,6 +185,13 @@ CLIENT_SETTINGS = {
         "attr_aliases": MYDISEASE_ALIASES,
         "base_class": BiothingClient,
         "mixins": []
+    },
+    "geneset": {
+        "class_name": "MyGenesetInfo",
+        "class_kwargs": MYGENESET_KWARGS,
+        "attr_aliases": MYGENESET_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": []
     }
 }
 
@@ -217,7 +234,7 @@ def _generate_settings(biothing_type, url):
 def get_client(biothing_type=None, instance=True, *args, **kwargs):
     """ Function to return a new python client for a Biothings API service.
 
-        :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease'
+        :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease', 'geneset'
         :param instance: if True, return an instance of the derived client,
                          if False, return the class of the derived client
 
@@ -277,4 +294,8 @@ class MyDiseaseInfo(get_client('disease', instance=False)):
 
 
 class MyTaxonInfo(get_client('taxon', instance=False)):
+    pass
+
+
+class MyGenesetInfo(get_client('geneset', instance=False)):
     pass
