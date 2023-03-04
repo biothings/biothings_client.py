@@ -42,7 +42,7 @@ class TestGenesetClient(unittest.TestCase):
         self.assertEqual(gs['wikipathways']['id'], "WP100")
         self.assertEqual(gs['wikipathways']['pathway_name'], 'Glutathione metabolism')
         self.assertEqual(gs['wikipathways']['url'], 'http://www.wikipathways.org/instance/WP100_r107114')
-        self.assertEqual(gs['wikipathways']['_license'], 'https://www.wikipathways.org/index.php/WikiPathways:License_Terms')
+        self.assertEqual(gs['wikipathways']['_license'], 'https://www.wikipathways.org/terms.html')
 
         self.assertTrue(any((gene.get('mygene_id') == '2937' and gene.get('symbol') == 'GSS') for gene in gs['genes']))
 
