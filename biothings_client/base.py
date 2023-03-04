@@ -8,6 +8,7 @@ import os
 import platform
 import time
 import warnings
+from collections import Counter
 from itertools import islice
 
 import requests
@@ -77,14 +78,8 @@ def safe_str(s, encoding='utf-8'):
 
 
 def list_itemcnt(li):
-    """Return number of occurrence for each type of item in the input list."""
-    x = {}
-    for item in li:
-        if item in x:
-            x[item] += 1
-        else:
-            x[item] = 1
-    return [(i, x[i]) for i in x]
+    """Return number of occurrence for each item in the list."""
+    return list(Counter(li).items())
 
 
 def iter_n(iterable, n, with_cnt=False):
@@ -122,7 +117,7 @@ class BiothingClient(object):
         self.scroll_size = self._scroll_size
         # raise requests.exceptions.HTTPError for status_code > 400
         #   but not for 404 on getvariant
-        #   set to False to surpress the exceptions.
+        #   set to False to suppress the exceptions.
         self.raise_for_status = True
         self.default_user_agent = (
             "{package_header}/{client_version} ("
@@ -352,7 +347,7 @@ class BiothingClient(object):
         return self._post(_url, _kwargs, verbose=verbose)
 
     def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
-        """ Function to yield a batch of hits one at a yime. """
+        """ Function to yield a batch of hits one at a time. """
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             for hit in hits:
                 yield hit
