@@ -1,6 +1,6 @@
-'''
+"""
 Python Client for generic Biothings API services
-'''
+"""
 from __future__ import print_function
 
 import logging
@@ -39,8 +39,9 @@ logger = logging.getLogger("biothings.client")
 
 # Future work:
 # Consider use "verbose" settings to control default logging output level
-# by doing this instead of using branching throughout the applicaition,
-# the business logic can be more concise and more readible.
+# by doing this instead of using branching throughout the application,
+# the business logic can be more concise and more readable.
+
 
 class ScanError(Exception):
     # for errors in scan search type
@@ -48,7 +49,7 @@ class ScanError(Exception):
 
 
 def alwayslist(value):
-    '''If input value if not a list/tuple type, return it as a single value list.
+    """If input value if not a list/tuple type, return it as a single value list.
 
     Example:
 
@@ -59,7 +60,7 @@ def alwayslist(value):
     >>> for xx in alwayslist(x):
     ...     print xx
 
-    '''
+    """
     if isinstance(value, (list, tuple)):
         return value
     else:
@@ -67,7 +68,7 @@ def alwayslist(value):
 
 
 def safe_str(s, encoding='utf-8'):
-    '''Perform proper encoding if input is an unicode string.'''
+    """Perform proper encoding if input is an unicode string."""
     try:
         _s = str(s)
     except UnicodeEncodeError:
@@ -76,7 +77,7 @@ def safe_str(s, encoding='utf-8'):
 
 
 def list_itemcnt(li):
-    '''Return number of occurrence for each type of item in the input list.'''
+    """Return number of occurrence for each type of item in the input list."""
     x = {}
     for item in li:
         if item in x:
@@ -87,10 +88,10 @@ def list_itemcnt(li):
 
 
 def iter_n(iterable, n, with_cnt=False):
-    '''
+    """
     Iterate an iterator by chunks (of n)
     if with_cnt is True, return (chunk, cnt) each time
-    '''
+    """
     it = iter(iterable)
     if with_cnt:
         cnt = 0
@@ -106,7 +107,7 @@ def iter_n(iterable, n, with_cnt=False):
 
 
 class BiothingClient(object):
-    '''This is the client for a biothing web service.'''
+    """This is the client for a biothing web service."""
 
     def __init__(self, url=None):
         if url is None:
@@ -137,7 +138,7 @@ class BiothingClient(object):
 
     @staticmethod
     def _dataframe(obj, dataframe, df_index=True):
-        '''Converts object to DataFrame (pandas)'''
+        """Converts object to DataFrame (pandas)"""
         if not df_avail:
             raise RuntimeError(
                 "Error: pandas module must be installed "
@@ -212,7 +213,7 @@ class BiothingClient(object):
         return kwargs
 
     def _repeated_query_old(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        '''This is deprecated, query_li can only be a list'''
+        """This is deprecated, query_li can only be a list"""
         step = min(self.step, self.max_query)
         if len(query_li) <= step:
             # No need to do series of batch queries, turn off verbose output
@@ -231,10 +232,10 @@ class BiothingClient(object):
                 time.sleep(self.delay)
 
     def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        '''Run query_fn for input query_li in a batch (self.step).
+        """Run query_fn for input query_li in a batch (self.step).
            return a generator of query_result in each batch.
            input query_li can be a list/tuple/iterable
-        '''
+        """
         step = min(self.step, self.max_query)
         i = 0
         for batch, cnt in iter_n(query_li, step, with_cnt=True):
@@ -252,12 +253,12 @@ class BiothingClient(object):
 
     @property
     def _from_cache_notification(self):
-        '''Notification to alert user that a cached result is being returned.'''
+        """Notification to alert user that a cached result is being returned."""
         return "[ from cache ]"
 
     def _metadata(self, verbose=True, **kwargs):
-        '''Return a dictionary of Biothing metadata.
-        '''
+        """Return a dictionary of Biothing metadata.
+        """
         _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
@@ -265,9 +266,9 @@ class BiothingClient(object):
         return ret
 
     def _set_caching(self, cache_db=None, verbose=True, **kwargs):
-        '''Installs a local cache for all requests.
+        """Installs a local cache for all requests.
 
-            **cache_db** is the path to the local sqlite cache database.'''
+            **cache_db** is the path to the local sqlite cache database."""
         if caching_avail:
             if cache_db is None:
                 cache_db = self._default_cache_file
@@ -285,14 +286,14 @@ class BiothingClient(object):
             )
 
     def _stop_caching(self):
-        '''Stop caching.'''
+        """Stop caching."""
         if self._cached and caching_avail:
             requests_cache.uninstall_cache()
             self._cached = False
         return
 
     def _clear_cache(self):
-        ''' Clear the globally installed cache. '''
+        """ Clear the globally installed cache. """
         try:
             requests_cache.clear()
         except AttributeError:
@@ -300,14 +301,14 @@ class BiothingClient(object):
             logger.warning("requests_cache is not enabled. Nothing to clear.")
 
     def _get_fields(self, search_term=None, verbose=True):
-        '''Wrapper for /metadata/fields
+        """Wrapper for /metadata/fields
 
             **search_term** is a case insensitive string to search for in available field names.
             If not provided, all available fields will be returned.
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
 
-        '''
+        """
         _url = self.url + self._metadata_fields_endpoint
         if search_term:
             params = {'search': search_term}
@@ -324,7 +325,7 @@ class BiothingClient(object):
         return ret
 
     def _getannotation(self, _id, fields=None, **kwargs):
-        '''Return the object given id.
+        """Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
 
         :param _id: an entity id.
@@ -333,7 +334,7 @@ class BiothingClient(object):
                        are returned.
 
         :return: an entity object as a dictionary, or None if _id is not found.
-        '''
+        """
         verbose = kwargs.pop('verbose', True)
         if fields:
             kwargs['fields'] = fields
@@ -351,20 +352,20 @@ class BiothingClient(object):
         return self._post(_url, _kwargs, verbose=verbose)
 
     def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
-        ''' Function to yield a batch of hits one at a yime. '''
+        """ Function to yield a batch of hits one at a yime. """
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             for hit in hits:
                 yield hit
 
     def _getannotations(self, ids, fields=None, **kwargs):
-        '''Return the list of annotation objects for the given list of ids.
+        """Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
 
         :param ids: a list/tuple/iterable or a string of ids.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
                        are returned.
-        :param as_generator:  if True, will yield the results in a generator.
+        :param as_generator: if True, will yield the results in a generator.
         :param as_dataframe: if True or 1 or 2, return object as DataFrame (requires Pandas).
                                   True or 1: using json_normalize
                                   2        : using DataFrame.from_dict
@@ -382,10 +383,10 @@ class BiothingClient(object):
 
         .. Hint:: If you need to pass a very large list of input ids, you can pass a generator
                   instead of a full list, which is more memory efficient.
-        '''
+        """
         if isinstance(ids, str_types):
             ids = ids.split(',') if ids else []
-        if (not (isinstance(ids, (list, tuple, Iterable)))):
+        if not (isinstance(ids, (list, tuple, Iterable))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
         if fields:
             kwargs['fields'] = fields
@@ -418,7 +419,7 @@ class BiothingClient(object):
         return out
 
     def _query(self, q, **kwargs):
-        '''Return  the query result.
+        """Return the query result.
         This is a wrapper for GET query of biothings query service.
 
         :param q: a query string.
@@ -447,7 +448,7 @@ class BiothingClient(object):
                   **size** parameter. For a query that returns more than 1000 hits, you can pass
                   "fetch_all=True" to return a `generator <http://www.learnpython.org/en/Generators>`_
                   of all matching hits (internally, those hits are requested from the server in blocks of 1000).
-        '''
+        """
         _url = self.url + self._query_endpoint
         verbose = kwargs.pop('verbose', True)
         kwargs = self._handle_common_kwargs(kwargs)
@@ -471,7 +472,7 @@ class BiothingClient(object):
         return out
 
     def _fetch_all(self, url, verbose=True, **kwargs):
-        '''Function that returns a generator to results.  Assumes that 'q' is in kwargs.'''
+        """Function that returns a generator to results. Assumes that 'q' is in kwargs."""
         # function to get the next batch of results, automatically disables cache if we are caching
         def _batch():
             if caching_avail and self._cached:
@@ -507,7 +508,7 @@ class BiothingClient(object):
         return self._post(_url, params=_kwargs, verbose=verbose)
 
     def _querymany(self, qterms, scopes=None, **kwargs):
-        '''Return the batch query result.
+        """Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
@@ -531,10 +532,10 @@ class BiothingClient(object):
         .. Hint:: If you need to pass a very large list of input qterms, you can pass a generator
                   instead of a full list, which is more memory efficient.
 
-        '''
+        """
         if isinstance(qterms, str_types):
             qterms = qterms.split(',') if qterms else []
-        if (not (isinstance(qterms, (list, tuple, Iterable)))):
+        if not (isinstance(qterms, (list, tuple, Iterable))):
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
@@ -602,6 +603,5 @@ class BiothingClient(object):
                 return {'out': out, 'dup': li_dup, 'missing': li_missing}
         else:
             if verbose and (li_dup or li_missing):
-                logger.info(
-                    'Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
+                logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
