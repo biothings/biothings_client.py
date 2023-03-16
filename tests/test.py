@@ -1,23 +1,26 @@
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
 import biothings_client
 
-sys.stdout.write('"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__))
-
-print(sys.path)
+sys.stdout.write(
+    '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
+)
 
 try:
-    from gene import suite as gene_suite
-    from variant import suite as variant_suite
     from chem import suite as chem_suite
+    from gene import suite as gene_suite
+    from geneset import suite as geneset_suite
+    from variant import suite as variant_suite
 except ImportError:
-    from tests.gene import suite as gene_suite
-    from tests.variant import suite as variant_suite
     from tests.chem import suite as chem_suite
+    from tests.gene import suite as gene_suite
+    from tests.geneset import suite as geneset_suite
+    from tests.variant import suite as variant_suite
+
 
 class TestBiothingsClient(unittest.TestCase):
     def setUp(self):
@@ -46,17 +49,24 @@ class TestBiothingsClient(unittest.TestCase):
         taxon_client = biothings_client.get_client("taxon")
         self.assertEqual(type(taxon_client).__name__, "MyTaxonInfo")
 
+        geneset_client = biothings_client.get_client("geneset")
+        self.assertEqual(type(geneset_client).__name__, "MyGenesetInfo")
+
+
 def suite():
     _biothings_suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBiothingsClient)
     _gene_suite = gene_suite()
     _variant_suite = variant_suite()
     _chem_suite = chem_suite()
+    _geneset_suite = geneset_suite()
     _total_suite = unittest.TestSuite()
     _total_suite.addTest(_biothings_suite)
     _total_suite.addTest(_gene_suite)
     _total_suite.addTest(_variant_suite)
     _total_suite.addTest(_chem_suite)
+    _total_suite.addTest(_geneset_suite)
     return _total_suite
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.TextTestRunner().run(suite())
