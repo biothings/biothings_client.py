@@ -1,5 +1,5 @@
 DOCSTRING = {
-    'getchem': '''Return the chemical/drug object for the give id.
+    "getchem": """Return the chemical/drug object for the give id.
         This is a wrapper for GET query of "/chem/<chem_id>" service.
 
         :param _id: a chemical/drug id, supports InchiKey, Drugbank ID, ChEMBL ID, ChEBI ID, PubChem CID and UNII.
@@ -23,8 +23,8 @@ DOCSTRING = {
                   any full chemical/drug object (without **fields**, or **fields="all"**). Note that field name supports dot
                   notation for nested data structure as well, e.g. you can pass "drugbank.id" or
                   "chembl.smiles".
-        ''',
-    'getchems': '''Return the list of chemical/drug annotation objects for the given list of chemical/drug ids.
+        """,
+    "getchems": """Return the list of chemical/drug annotation objects for the given list of chemical/drug ids.
         This is a wrapper for POST query of "/chem" service.
 
         :param ids: a list/tuple/iterable or a string of comma-separated chem/drug ids.
@@ -64,8 +64,8 @@ DOCSTRING = {
 
         .. Hint:: If you need to pass a very large list of input ids, you can pass a generator
                   instead of a full list, which is more memory efficient.
-        ''',
-    'query': '''Return  the query result.
+        """,
+    "query": """Return  the query result.
         This is a wrapper for GET query of "/query?q=<query>" service.
 
         :param q: a query string, detailed query syntax `here <http://docs.mychem.info/en/latest/doc/chem_query_service.html#query-syntax>`_.
@@ -104,8 +104,8 @@ DOCSTRING = {
                   of hits are less than 1000, you can increase the value for **size** parameter. For a query returns
                   more than 1000 hits, you can pass "fetch_all=True" to return a `generator <http://www.learnpython.org/en/Generators>`_
                   of all matching hits (internally, those hits are requested from the server-side in blocks of 1000).
-        ''',
-    'querymany': '''Return the batch query result.
+        """,
+    "querymany": """Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
@@ -148,15 +148,15 @@ DOCSTRING = {
         .. Hint:: If you need to pass a very large list of input qterms, you can pass a generator
                   instead of a full list, which is more memory efficient.
 
-        ''',
-    'metadata': '''Return a dictionary of MyChem.info metadata, a wrapper for http://mychem.info/v1/metadata
+        """,
+    "metadata": """Return a dictionary of MyChem.info metadata, a wrapper for http://mychem.info/v1/metadata
 
         Example:
 
         >>> metadata = mv.metadata()
 
-        ''',
-    'get_fields': '''Wrapper for http://mychem.info/v1/metadata/fields
+        """,
+    "get_fields": """Wrapper for http://mychem.info/v1/metadata/fields
 
         :param search_term: a case insensitive string to search for in available field names.
                             If not provided, all available fields will be returned.
@@ -170,5 +170,5 @@ DOCSTRING = {
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
 
-        '''
+        """,
 }

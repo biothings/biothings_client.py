@@ -1,5 +1,5 @@
 DOCSTRING = {
-    'getgene': '''Return the gene object for the give geneid.
+    "getgene": """Return the gene object for the give geneid.
         This is a wrapper for GET query of "/gene/<geneid>" service.
 
         :param geneid: entrez/ensembl gene id, entrez gene id can be either
@@ -28,8 +28,8 @@ DOCSTRING = {
                   any full gene object (when **fields="all"**). Note that field name supports dot
                   notation for nested data structure as well, e.g. you can pass "refseq.rna" or
                   "pathway.kegg".
-        ''',
-    'getgenes': '''Return the list of gene objects for the given list of geneids.
+        """,
+    "getgenes": """Return the list of gene objects for the given list of geneids.
         This is a wrapper for POST query of "/gene" service.
 
         :param geneids: a list/tuple/iterable or comma-separated entrez/ensembl gene ids
@@ -60,8 +60,8 @@ DOCSTRING = {
                   concatenated together. So, from the user-end, it's exactly the same as
                   passing a shorter list. You don't need to worry about saturating our
                   backend servers.
-        ''',
-    'query': '''Return  the query result.
+        """,
+    "query": """Return  the query result.
         This is a wrapper for GET query of "/query?q=<query>" service.
 
         :param q: a query string, detailed query syntax `here <http://mygene.info/doc/query_service.html#query-syntax>`_
@@ -98,8 +98,8 @@ DOCSTRING = {
         >>> mg.query('symbol:cdk*', species=10090, size=5, as_dataframe=True)
         >>> mg.query('q=chrX:151073054-151383976', species=9606)
 
-        ''',
-    'querymany': '''Return the batch query result.
+        """,
+    "querymany": """Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
@@ -139,15 +139,15 @@ DOCSTRING = {
 
         .. Hint:: Just like :py:meth:`getgenes`, passing a large list of ids (>1000) to :py:meth:`querymany` is perfectly fine.
 
-        ''',
-    'metadata': '''Return a dictionary of MyGene.info metadata.
+        """,
+    "metadata": """Return a dictionary of MyGene.info metadata.
 
         Example:
 
         >>> metadata = mg.metadata
 
-        ''',
-    'get_fields': '''Return all available fields can be return from MyGene.info services.
+        """,
+    "get_fields": """Return all available fields can be return from MyGene.info services.
 
         This is a wrapper for http://mygene.info/metadata/fields
 
@@ -162,5 +162,5 @@ DOCSTRING = {
         >>> mv.get_fields("kegg")
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
-        '''
+        """,
 }

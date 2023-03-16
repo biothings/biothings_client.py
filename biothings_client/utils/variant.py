@@ -8,4 +8,5 @@ MYVARIANT_TOP_LEVEL_JSONLD_URIS = [
     "http://schema.myvariant.info/datasource/evs",
     "http://schema.myvariant.info/datasource/gwassnps",
     "http://schema.myvariant.info/datasource/mutdb",
-    "http://schema.myvariant.info/datasource/snpeff"]
+    "http://schema.myvariant.info/datasource/snpeff",
+]

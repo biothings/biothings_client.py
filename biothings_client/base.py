@@ -22,18 +22,20 @@ except ImportError:
 
 try:
     from pandas import DataFrame, json_normalize
+
     df_avail = True
 except ImportError:
     df_avail = False
 
 try:
     import requests_cache
+
     caching_avail = True
 except ImportError:
     caching_avail = False
 
 
-__version__ = '0.3.0'
+__version__ = "0.3.0"
 
 logging.basicConfig(level="INFO")
 logger = logging.getLogger("biothings.client")
@@ -68,7 +70,7 @@ def alwayslist(value):
         return [value]
 
 
-def safe_str(s, encoding='utf-8'):
+def safe_str(s, encoding="utf-8"):
     """Perform proper encoding if input is an unicode string."""
     try:
         _s = str(s)
@@ -108,7 +110,7 @@ class BiothingClient(object):
         if url is None:
             url = self._default_url
         self.url = url
-        if self.url[-1] == '/':
+        if self.url[-1] == "/":
             self.url = self.url[:-1]
         self.max_query = self._max_query
         # delay and step attributes are for batch queries.
@@ -120,32 +122,28 @@ class BiothingClient(object):
         #   set to False to suppress the exceptions.
         self.raise_for_status = True
         self.default_user_agent = (
-            "{package_header}/{client_version} ("
-            "python:{python_version} "
-            "requests:{requests_version}"
-            ")").format(**{
-                'package_header': self._pkg_user_agent_header,
-                'client_version': __version__,
-                'python_version': platform.python_version(),
-                'requests_version': requests.__version__
-            })
+            "{package_header}/{client_version} (" "python:{python_version} " "requests:{requests_version}" ")"
+        ).format(
+            **{
+                "package_header": self._pkg_user_agent_header,
+                "client_version": __version__,
+                "python_version": platform.python_version(),
+                "requests_version": requests.__version__,
+            }
+        )
         self._cached = False
 
     @staticmethod
     def _dataframe(obj, dataframe, df_index=True):
         """Converts object to DataFrame (pandas)"""
         if not df_avail:
-            raise RuntimeError(
-                "Error: pandas module must be installed "
-                "(or upgraded) for as_dataframe option.")
+            raise RuntimeError("Error: pandas module must be installed " "(or upgraded) for as_dataframe option.")
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
-            raise ValueError(
-                "dataframe must be either 1 (using json_normalize) "
-                "or 2 (using DataFrame.from_dict")
-        if 'hits' in obj:
+            raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
+        if "hits" in obj:
             if dataframe == 1:
-                df = json_normalize(obj['hits'])
+                df = json_normalize(obj["hits"])
             else:
                 df = DataFrame.from_dict(obj)
         else:
@@ -154,16 +152,16 @@ class BiothingClient(object):
             else:
                 df = DataFrame.from_dict(obj)
         if df_index:
-            df = df.set_index('query')
+            df = df.set_index("query")
         return df
 
     def _get(self, url, params=None, none_on_404=False, verbose=True):
         params = params or {}
-        debug = params.pop('debug', False)
-        return_raw = params.pop('return_raw', False)
-        headers = {'user-agent': self.default_user_agent}
+        debug = params.pop("debug", False)
+        return_raw = params.pop("return_raw", False)
+        headers = {"user-agent": self.default_user_agent}
         res = requests.get(url, params=params, headers=headers)
-        from_cache = getattr(res, 'from_cache', False)
+        from_cache = getattr(res, "from_cache", False)
         if debug:
             return from_cache, res
         if none_on_404 and res.status_code == 404:
@@ -177,10 +175,10 @@ class BiothingClient(object):
         return from_cache, ret
 
     def _post(self, url, params, verbose=True):
-        return_raw = params.pop('return_raw', False)
-        headers = {'user-agent': self.default_user_agent}
+        return_raw = params.pop("return_raw", False)
+        headers = {"user-agent": self.default_user_agent}
         res = requests.post(url, data=params, headers=headers)
-        from_cache = getattr(res, 'from_cache', False)
+        from_cache = getattr(res, "from_cache", False)
         if self.raise_for_status:
             # raise requests.exceptions.HTTPError if not 200
             res.raise_for_status()
@@ -190,19 +188,19 @@ class BiothingClient(object):
         return from_cache, ret
 
     @staticmethod
-    def _format_list(a_list, sep=',', quoted=True):
+    def _format_list(a_list, sep=",", quoted=True):
         if isinstance(a_list, (list, tuple)):
             if quoted:
                 _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
             else:
-                _out = sep.join(['{}'.format(safe_str(x)) for x in a_list])
+                _out = sep.join(["{}".format(safe_str(x)) for x in a_list])
         else:
-            _out = a_list     # a_list is already a comma separated string
+            _out = a_list  # a_list is already a comma separated string
         return _out
 
     def _handle_common_kwargs(self, kwargs):
         # handle these common parameters accept field names as the value
-        for kw in ['fields', 'always_list', 'allow_null']:
+        for kw in ["fields", "always_list", "allow_null"]:
             if kw in kwargs:
                 kwargs[kw] = self._format_list(kwargs[kw], quoted=False)
         return kwargs
@@ -217,7 +215,7 @@ class BiothingClient(object):
             is_last_loop = i + step >= len(query_li)
             if verbose:
                 logger.info("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))))
-            query_result = query_fn(query_li[i:i + step], **fn_kwargs)
+            query_result = query_fn(query_li[i : i + step], **fn_kwargs)
 
             yield query_result
 
@@ -228,8 +226,8 @@ class BiothingClient(object):
 
     def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
         """Run query_fn for input query_li in a batch (self.step).
-           return a generator of query_result in each batch.
-           input query_li can be a list/tuple/iterable
+        return a generator of query_result in each batch.
+        input query_li can be a list/tuple/iterable
         """
         step = min(self.step, self.max_query)
         i = 0
@@ -252,8 +250,7 @@ class BiothingClient(object):
         return "[ from cache ]"
 
     def _metadata(self, verbose=True, **kwargs):
-        """Return a dictionary of Biothing metadata.
-        """
+        """Return a dictionary of Biothing metadata."""
         _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
@@ -263,17 +260,14 @@ class BiothingClient(object):
     def _set_caching(self, cache_db=None, verbose=True, **kwargs):
         """Installs a local cache for all requests.
 
-            **cache_db** is the path to the local sqlite cache database."""
+        **cache_db** is the path to the local sqlite cache database."""
         if caching_avail:
             if cache_db is None:
                 cache_db = self._default_cache_file
-            requests_cache.install_cache(
-                cache_name=cache_db, allowable_methods=(
-                    'GET', 'POST'), **kwargs)
+            requests_cache.install_cache(cache_name=cache_db, allowable_methods=("GET", "POST"), **kwargs)
             self._cached = True
             if verbose:
-                logger.info('[ Future queries will be cached in "{0}" ]'.format(
-                    os.path.abspath(cache_db + '.sqlite')))
+                logger.info('[ Future queries will be cached in "{0}" ]'.format(os.path.abspath(cache_db + ".sqlite")))
         else:
             raise RuntimeError(
                 "The requests_cache python module is required to use request caching. See "
@@ -288,7 +282,7 @@ class BiothingClient(object):
         return
 
     def _clear_cache(self):
-        """ Clear the globally installed cache. """
+        """Clear the globally installed cache."""
         try:
             requests_cache.clear()
         except AttributeError:
@@ -306,15 +300,15 @@ class BiothingClient(object):
         """
         _url = self.url + self._metadata_fields_endpoint
         if search_term:
-            params = {'search': search_term}
+            params = {"search": search_term}
         else:
             params = {}
         from_cache, ret = self._get(_url, params=params, verbose=verbose)
-        for (k, v) in ret.items():
+        for k, v in ret.items():
             del k
             # Get rid of the notes column information
             if "notes" in v:
-                del v['notes']
+                del v["notes"]
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
@@ -330,9 +324,9 @@ class BiothingClient(object):
 
         :return: an entity object as a dictionary, or None if _id is not found.
         """
-        verbose = kwargs.pop('verbose', True)
+        verbose = kwargs.pop("verbose", True)
         if fields:
-            kwargs['fields'] = fields
+            kwargs["fields"] = fields
         kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
         from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
@@ -341,13 +335,13 @@ class BiothingClient(object):
         return ret
 
     def _getannotations_inner(self, ids, verbose=True, **kwargs):
-        _kwargs = {'ids': self._format_list(ids)}
+        _kwargs = {"ids": self._format_list(ids)}
         _kwargs.update(kwargs)
         _url = self.url + self._annotation_endpoint
         return self._post(_url, _kwargs, verbose=verbose)
 
     def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
-        """ Function to yield a batch of hits one at a time. """
+        """Function to yield a batch of hits one at a time."""
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             for hit in hits:
                 yield hit
@@ -380,31 +374,33 @@ class BiothingClient(object):
                   instead of a full list, which is more memory efficient.
         """
         if isinstance(ids, str_types):
-            ids = ids.split(',') if ids else []
+            ids = ids.split(",") if ids else []
         if not (isinstance(ids, (list, tuple, Iterable))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
         if fields:
-            kwargs['fields'] = fields
+            kwargs["fields"] = fields
         kwargs = self._handle_common_kwargs(kwargs)
-        verbose = kwargs.pop('verbose', True)
-        dataframe = kwargs.pop('as_dataframe', None)
-        df_index = kwargs.pop('df_index', True)
-        generator = kwargs.pop('as_generator', False)
+        verbose = kwargs.pop("verbose", True)
+        dataframe = kwargs.pop("as_dataframe", None)
+        df_index = kwargs.pop("df_index", True)
+        generator = kwargs.pop("as_generator", False)
         if dataframe in [True, 1]:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        return_raw = kwargs.get('return_raw', False)
+        return_raw = kwargs.get("return_raw", False)
         if return_raw:
             dataframe = None
 
-        def query_fn(ids): return self._getannotations_inner(ids, verbose=verbose, **kwargs)
+        def query_fn(ids):
+            return self._getannotations_inner(ids, verbose=verbose, **kwargs)
+
         if generator:
             return self._annotations_generator(query_fn, ids, verbose=verbose, **kwargs)
         out = []
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             if return_raw:
-                out.append(hits)   # hits is the raw response text
+                out.append(hits)  # hits is the raw response text
             else:
                 out.extend(hits)
         if return_raw and len(out) == 1:
@@ -445,16 +441,18 @@ class BiothingClient(object):
                   of all matching hits (internally, those hits are requested from the server in blocks of 1000).
         """
         _url = self.url + self._query_endpoint
-        verbose = kwargs.pop('verbose', True)
+        verbose = kwargs.pop("verbose", True)
         kwargs = self._handle_common_kwargs(kwargs)
-        kwargs.update({'q': q})
-        fetch_all = kwargs.get('fetch_all')
+        kwargs.update({"q": q})
+        fetch_all = kwargs.get("fetch_all")
         if fetch_all in [True, 1]:
-            if kwargs.get('as_dataframe', None) in [True, 1]:
-                warnings.warn("Ignored 'as_dataframe' because 'fetch_all' is specified. "
-                              "Too many documents to return as a Dataframe.")
+            if kwargs.get("as_dataframe", None) in [True, 1]:
+                warnings.warn(
+                    "Ignored 'as_dataframe' because 'fetch_all' is specified. "
+                    "Too many documents to return as a Dataframe."
+                )
             return self._fetch_all(url=_url, verbose=verbose, **kwargs)
-        dataframe = kwargs.pop('as_dataframe', None)
+        dataframe = kwargs.pop("as_dataframe", None)
         if dataframe in [True, 1]:
             dataframe = 1
         elif dataframe != 2:
@@ -468,6 +466,7 @@ class BiothingClient(object):
 
     def _fetch_all(self, url, verbose=True, **kwargs):
         """Function that returns a generator to results. Assumes that 'q' is in kwargs."""
+
         # function to get the next batch of results, automatically disables cache if we are caching
         def _batch():
             if caching_avail and self._cached:
@@ -479,25 +478,25 @@ class BiothingClient(object):
             else:
                 from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
             return ret
+
         batch = _batch()
         if verbose:
-            logger.info("Fetching {0} {1} . . .".format(
-                batch['total'], self._optionally_plural_object_type))
-        for key in ['q', 'fetch_all']:
+            logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
+        for key in ["q", "fetch_all"]:
             kwargs.pop(key)
-        while not batch.get('error', '').startswith('No results to return'):
-            if 'error' in batch:
-                logger.error(batch['error'])
+        while not batch.get("error", "").startswith("No results to return"):
+            if "error" in batch:
+                logger.error(batch["error"])
                 break
-            if '_warning' in batch and verbose:
-                logger.warning(batch['_warning'])
-            for hit in batch['hits']:
+            if "_warning" in batch and verbose:
+                logger.warning(batch["_warning"])
+            for hit in batch["hits"]:
                 yield hit
-            kwargs.update({'scroll_id': batch['_scroll_id']})
+            kwargs.update({"scroll_id": batch["_scroll_id"]})
             batch = _batch()
 
     def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        _kwargs = {'q': self._format_list(qterms)}
+        _kwargs = {"q": self._format_list(qterms)}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
         return self._post(_url, params=_kwargs, verbose=verbose)
@@ -529,22 +528,22 @@ class BiothingClient(object):
 
         """
         if isinstance(qterms, str_types):
-            qterms = qterms.split(',') if qterms else []
+            qterms = qterms.split(",") if qterms else []
         if not (isinstance(qterms, (list, tuple, Iterable))):
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs['scopes'] = self._format_list(scopes, quoted=False)
+            kwargs["scopes"] = self._format_list(scopes, quoted=False)
         kwargs = self._handle_common_kwargs(kwargs)
-        returnall = kwargs.pop('returnall', False)
-        verbose = kwargs.pop('verbose', True)
-        dataframe = kwargs.pop('as_dataframe', None)
+        returnall = kwargs.pop("returnall", False)
+        verbose = kwargs.pop("verbose", True)
+        dataframe = kwargs.pop("as_dataframe", None)
         if dataframe in [True, 1]:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        df_index = kwargs.pop('df_index', True)
-        return_raw = kwargs.get('return_raw', False)
+        df_index = kwargs.pop("df_index", True)
+        return_raw = kwargs.get("return_raw", False)
         if return_raw:
             dataframe = None
 
@@ -552,17 +551,20 @@ class BiothingClient(object):
         li_missing = []
         li_dup = []
         li_query = []
-        def query_fn(qterms): return self._querymany_inner(qterms, verbose=verbose, **kwargs)
+
+        def query_fn(qterms):
+            return self._querymany_inner(qterms, verbose=verbose, **kwargs)
+
         for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
             if return_raw:
-                out.append(hits)   # hits is the raw response text
+                out.append(hits)  # hits is the raw response text
             else:
                 out.extend(hits)
                 for hit in hits:
-                    if hit.get('notfound', False):
-                        li_missing.append(hit['query'])
+                    if hit.get("notfound", False):
+                        li_missing.append(hit["query"])
                     else:
-                        li_query.append(hit['query'])
+                        li_query.append(hit["query"])
 
         if verbose:
             logger.info("Finished.")
@@ -578,24 +580,22 @@ class BiothingClient(object):
 
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=df_index)
-            li_dup_df = DataFrame.from_records(li_dup,
-                                               columns=['query',
-                                                        'duplicate hits'])
-            li_missing_df = DataFrame(li_missing, columns=['query'])
+            li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
+            li_missing_df = DataFrame(li_missing, columns=["query"])
 
         if verbose:
             if li_dup:
-                logger.warning("{0} input query terms found dup hits:".format(
-                    len(li_dup)) + "\t" + str(li_dup)[:100])
+                logger.warning("{0} input query terms found dup hits:".format(len(li_dup)) + "\t" + str(li_dup)[:100])
             if li_missing:
-                logger.warning("{0} input query terms found no hit:".format(
-                    len(li_missing)) + "\t" + str(li_missing)[:100])
+                logger.warning(
+                    "{0} input query terms found no hit:".format(len(li_missing)) + "\t" + str(li_missing)[:100]
+                )
 
         if returnall:
             if dataframe:
-                return {'out': out, 'dup': li_dup_df, 'missing': li_missing_df}
+                return {"out": out, "dup": li_dup_df, "missing": li_missing_df}
             else:
-                return {'out': out, 'dup': li_dup, 'missing': li_missing}
+                return {"out": out, "dup": li_dup, "missing": li_missing}
         else:
             if verbose and (li_dup or li_missing):
                 logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')

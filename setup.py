@@ -1,6 +1,6 @@
 import os
-from setuptools import setup
-from setuptools import find_packages
+
+from setuptools import find_packages, setup
 
 
 def read(fname):
@@ -17,7 +17,7 @@ setup(
     keywords="biology variant gene taxon species drug annotation web service client api myvariant mygene",
     url="https://github.com/biothings/biothings_client.py",
     packages=find_packages(),
-    long_description=read('README.rst'),
+    long_description=read("README.rst"),
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
@@ -42,13 +42,11 @@ setup(
         "Topic :: Utilities",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
     ],
-    install_requires=[
-        'requests>=2.3.0'
-    ],
+    install_requires=["requests>=2.3.0"],
     extras_require={
-        'dataframe': ["pandas>=0.18.0"],
-        'caching': ["requests_cache>=0.4.13"],
-        'jsonld': ["PyLD>=0.7.2"],
-        'test': ["pytest"]
-    }
+        "dataframe": ["pandas>=0.18.0"],
+        "caching": ["requests_cache>=0.4.13"],
+        "jsonld": ["PyLD>=0.7.2"],
+        "test": ["pytest"],
+    },
 )
