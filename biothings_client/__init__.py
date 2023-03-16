@@ -268,11 +268,16 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
             res = requests.get(url)
             dic = res.json()
             biothing_type = dic.get("biothing_type")
-            assert isinstance(biothing_type, str)
+            if isinstance(biothing_type, list):
+                if len(biothing_type) == 1:
+                    # if a list with only one item, use that item
+                    biothing_type = biothing_type[0]
+                else:
+                    raise RuntimeError("Biothing_type in metadata url is not unique.")
+            if not isinstance(biothing_type, str):
+                raise RuntimeError("Biothing_type in metadata url is not a valid string.")
         except requests.RequestException:
             raise RuntimeError("Cannot access metadata url to determine biothing_type.")
-        except AssertionError:
-            raise RuntimeError("Biothing_type in metadata url is not a valid string.")
     else:
         biothing_type = biothing_type.lower()
     if biothing_type not in CLIENT_SETTINGS and not kwargs.get("url", False):
