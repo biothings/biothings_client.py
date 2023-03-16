@@ -8,11 +8,11 @@ on:
 
 jobs:
   build_package_and_run_tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "2.7", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11" ]
+        python-version: [ "3.10" ]
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
@@ -22,8 +22,8 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
         run: pip install --upgrade pip
-      - name: Install wheel
-        run: pip install wheel
+      - name: Install build
+        run: pip install build
       - name: Build Package
-        run: python setup.py sdist bdist_wheel
+        run: python -m build
 

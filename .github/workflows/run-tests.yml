@@ -25,5 +25,9 @@ jobs:
         run: pip install --upgrade pip
       - name: Install Package and Test Dependencies
         run: pip install ".[test]" .
-      - name: Run Tests
-        run: pytest -v tests/*.py
+      - name: Install coverage
+        run: pip install coverage
+      - name: Run Tests with coverage
+        run: coverage run --source . -m unittest tests/*.py
+      - name: Coverage report
+        run: coverage report -m

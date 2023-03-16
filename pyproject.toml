@@ -1,3 +1,69 @@
+[build-system]
+requires = ["setuptools>=67.4.0", "requests>=2.3.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="biothings_client"
+authors = [
+    {name = "Cyrus Afrasiabi"},
+    {name = "Xinghua Zhou"},
+    {name = "Everaldo Rodolpho"},
+    {name = "Chunlei Wu", email = "cwu@scripps.edu"}
+]
+requires-python = ">=2.7"
+description = "Python Client for BioThings API services."
+readme = "README.rst"
+license = { file = "LICENSE" }
+keywords = ["biology", "variant", "gene", "taxon", "species", "drug", "annotation", "web", "service", "client", "api", "myvariant", "mygene"]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.4",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Utilities",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dynamic = ["version"]
+dependencies = [
+    "requests>=2.3.0",
+]
+
+[project.optional-dependencies]
+dataframe = ["pandas>=0.18.0"]
+caching = ["requests_cache>=0.4.13"]
+jsonld = ["PyLD>=0.7.2"]
+test = ["pytest"]
+
+[project.urls]
+homepage = "https://github.com/biothings/biothings_client.py"
+repository = "https://github.com/biothings/biothings_client.py"
+
+[tool.setuptools]
+zip-safe = true
+# packages = ["biothings_client"]
+
+[tool.setuptools.dynamic]
+version = {attr = "biothings_client.__version__"}
+
+[tool.distutils.bdist_wheel]
+universal = true
+
 [tool.black]
 line-length = 120
 target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
