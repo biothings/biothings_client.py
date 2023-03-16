@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="biothings_client",
-    version="0.2.6",
+    version="0.3.0",
     author="Cyrus Afrasiabi, Xinghua Zhou, Chunlei Wu",
     author_email="cwu@scripps.edu",
     description="Python Client for BioThings API services.",
@@ -29,6 +29,8 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
         "Operating System :: POSIX",

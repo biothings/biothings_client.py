@@ -1,3 +1,6 @@
+v0.3.0 (2022/03/15)
+    Added support for the new MyGeneset.info API
+
 v0.2.6 (2021/04/05)
     Fixed an issue fields parameter were not processed for getgene and getgenes (#18)
 

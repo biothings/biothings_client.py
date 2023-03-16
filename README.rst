@@ -35,14 +35,16 @@ Intro
     * variant - The client MyVariant.Info_, which provides access to genetic variant objects.
     * chem - The client for MyChem.Info_, which provides access to chemical/drug objects.
     * disease - The client for MyDisease.Info_, which provides access to disease objects.
+    * geneset - The client for MyGeneset.Info_, which provides access to geneset/pathway objects.
     * taxon - The client for t.biothings.io_, which provides access to taxon objects.
 
-.. _t.biothings.io: http://t.biothings.io
-.. _Biothings.api: http://biothings.io
-.. _MyGene.Info: http://mygene.info
-.. _MyVariant.Info: http://myvariant.info
-.. _MyChem.Info: http://mychem.info
-.. _MyDisease.Info: http://mydisease.info
+.. _t.biothings.io: https://t.biothings.io
+.. _Biothings.api: https://biothings.io
+.. _MyGene.Info: https://mygene.info
+.. _MyVariant.Info: https://myvariant.info
+.. _MyChem.Info: https://mychem.info
+.. _MyDisease.Info: https://mydisease.info
+.. _MyGeneset.Info: https://mygeneset.info
 .. _requests: https://pypi.python.org/pypi/requests
 
 Requirements
