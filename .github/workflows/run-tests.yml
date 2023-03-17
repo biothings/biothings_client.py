@@ -31,13 +31,28 @@ jobs:
         if: (matrix.python-version == 2.7) || (matrix.python-version == 3.6)
       - name: Install coverage
         run: pip install coverage
+        if: matrix.python-version == 3.10
       - name: Run Tests with coverage
+        # only need to run coverage once on selected Python version
         run: coverage run --source . -m unittest tests/*.py
-        if: (matrix.python-version != 2.7) && (matrix.python-version != 3.6)
-      - name: Run Tests with coverage
+        if: matrix.python-version == 3.10
+      - name: Coverage report
+        run: |
+          coverage report -m
+          # generate coverage.xml output
+          coverage xml
+          # upload coverage to codacy
+          bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        if: matrix.python-version == 3.10
+
+      - name: Run Tests
+        run: python -m unittest tests/*.py
+        if: (matrix.python-version != 2.7) && (matrix.python-version != 3.6) && (matrix.python-version != 3.10)
+      - name: Run Tests
         # since we cannot install packages in Py<3.7, we will use biothings_client
         # directly from the current working directory
-        run: PYTHONPATH=. coverage run --source . -m unittest tests/*.py
+        run: PYTHONPATH=. python -m unittest tests/*.py
         if: (matrix.python-version == 2.7) || (matrix.python-version == 3.6)
-      - name: Coverage report
-        run: coverage report -m
+

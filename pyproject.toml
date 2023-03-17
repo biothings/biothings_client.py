@@ -62,6 +62,7 @@ zip-safe = true
 version = {attr = "biothings_client.__version__"}
 
 [tool.distutils.bdist_wheel]
+# no need to set it after python 2.7 support is dropped
 universal = true
 
 [tool.black]
