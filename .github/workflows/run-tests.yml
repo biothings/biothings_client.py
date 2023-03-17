@@ -53,6 +53,6 @@ jobs:
       - name: Run Tests
         # since we cannot install packages in Py<3.7, we will use biothings_client
         # directly from the current working directory
-        run: PYTHONPATH=. python -m unittest tests/*.py
+        # `python -m unittest tests/*.py` does not work in Py2.7, so we run tests differently below
+        run: PYTHONPATH=. python tests/test.py
         if: (matrix.python-version == 2.7) || (matrix.python-version == 3.6)
-
