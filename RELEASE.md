@@ -1,44 +1,50 @@
-#### This is the procedure we use for "biothings_client" package release
 
-1. requires both `wheel` and `twine` packages installed
-   ```
-   pip install wheel twine
-   ```
+# RELEASE
 
-2. Update version number in both [base.py](biothings_client/base.py) and [setup.py](setup.py).
+## This is the procedure we use for "biothings_client" package release
 
-3. Check and update [setup.py](setup.py) if needed (dependencies, metadata etc.).
+ 1. requires both `build` and `twine` packages installed
 
-4. Build the package locally:
+    ```bash
+    pip install build twine
+    ```
 
-   ```
-   python setup.py sdist bdist_wheel
-   ```
+ 2. Update version number in [base.py](biothings_client/base.py).
 
-5. Test the package built locally:
+ 3. Check and update [pyproject.toml](pyproject.toml) if needed (dependencies, metadata etc.).
 
-   ```
-   pip install dist/biothings_client-0.2.6-py2.py3-none-any.whl
-   ```
+ 4. Build the package locally:
+
+    ```bash
+    python -m build
+    ```
+
+ 5. Test the package built locally:
+
+    ```bash
+    pip install dist/biothings_client-0.3.0-py2.py3-none-any.whl
+    ```
 
    And run any local test as needed.
 
-6. Prepare github repo for the release:
+ 6. Prepare github repo for the release:
 
     * Create a tag for each released version (with "v" prefix):
-      ```
-      git tag -a "v0.2.6" -m "tagging v0.2.6 for release"
+
+      ```bash
+      git tag -a "v0.3.0" -m "tagging v0.3.0 for release"
       ```
 
     * If everything looks good, push to the remote:
-      ```
+
+      ```bash
       git push --tags
       ```
 
-7. Upload to PyPI:
+ 7. Upload to PyPI:
 
-   ```
-   twine upload dist/*
-   ```
+    ```bash
+    twine upload dist/*
+    ```
 
     Note: this step needs to be done by @newgene under ["newgene" PyPI account](https://pypi.org/user/newgene/) or any authorized PyPI user.
