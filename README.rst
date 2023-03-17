@@ -17,6 +17,10 @@
    :alt: Codacy Badge
    :target: https://www.codacy.com/gh/biothings/biothings_client.py/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=biothings/biothings_client.py&amp;utm_campaign=Badge_Grade
 
+.. image:: https://app.codacy.com/project/badge/Coverage/2b716becb6e948a6b576f278e64dd81f
+   :alt: Codacy Coverage Badge
+   :target: https://app.codacy.com/gh/biothings/biothings_client.py/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_coverage
+
 .. image:: https://img.shields.io/pypi/dm/biothings_client.svg
    :alt: PyPI Downloads
    :target: https://pypistats.org/packages/biothings_client
