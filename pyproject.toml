@@ -8,7 +8,7 @@ authors = [
     {name = "Cyrus Afrasiabi"},
     {name = "Xinghua Zhou"},
     {name = "Everaldo Rodolpho"},
-    {name = "Chunlei Wu", email = "cwu@scripps.edu"}
+    {name = "Chunlei Wu", email = "cwu@scripps.edu"},
 ]
 requires-python = ">=2.7"
 description = "Python Client for BioThings API services."
@@ -48,7 +48,6 @@ dependencies = [
 dataframe = ["pandas>=0.18.0"]
 caching = ["requests_cache>=0.4.13"]
 jsonld = ["PyLD>=0.7.2"]
-test = ["pytest"]
 
 [project.urls]
 homepage = "https://github.com/biothings/biothings_client.py"

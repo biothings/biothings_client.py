@@ -1,5 +1,10 @@
-v0.3.0 (2022/03/15)
-    Added support for the new MyGeneset.info API
+v0.3.0 (2022/03/17)
+    Added support for the new MyGeneset.info API (#26)
+    Support using biothing_type metadata as a single value list (#28)
+    Handle more gracefully when the biothing_type value from metadata endpoint is a list (#28)
+    Use more efficient Counter in base.list_itemcnt helper (#29)
+    Changed package building system to pyproject.toml
+    Prepare for dropping Python 2.7 support in future release
 
 v0.2.6 (2021/04/05)
     Fixed an issue fields parameter were not processed for getgene and getgenes (#18)
