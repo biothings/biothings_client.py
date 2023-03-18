@@ -13,7 +13,7 @@ authors = [
 requires-python = ">=2.7"
 description = "Python Client for BioThings API services."
 readme = "README.rst"
-license = { file = "LICENSE" }
+license = { text = "BSD-3-Clause" }
 keywords = ["biology", "variant", "gene", "taxon", "species", "drug", "annotation", "web", "service", "client", "api", "myvariant", "mygene"]
 classifiers = [
     "Programming Language :: Python",
@@ -52,6 +52,7 @@ jsonld = ["PyLD>=0.7.2"]
 [project.urls]
 homepage = "https://github.com/biothings/biothings_client.py"
 repository = "https://github.com/biothings/biothings_client.py"
+documentation = "https://biothings-clientpy.readthedocs.io"
 
 [tool.setuptools]
 zip-safe = true

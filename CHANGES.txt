@@ -1,4 +1,4 @@
-v0.3.0 (2022/03/17)
+v0.3.0 (2022/03/18)
     Added support for the new MyGeneset.info API (#26)
     Support using biothing_type metadata as a single value list (#28)
     Handle more gracefully when the biothing_type value from metadata endpoint is a list (#28)
