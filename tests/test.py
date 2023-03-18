@@ -52,6 +52,14 @@ class TestBiothingsClient(unittest.TestCase):
         geneset_client = biothings_client.get_client("geneset")
         self.assertEqual(type(geneset_client).__name__, "MyGenesetInfo")
 
+        geneset_client = biothings_client.get_client(url= "https://mygeneset.info/v1")
+        self.assertEqual(type(geneset_client).__name__, "MyGenesetInfo")
+
+    def test_generate_settings_from_url(self):
+        client_settings =  biothings_client._generate_settings("geneset", url="https://mygeneset.info/v1")
+        self.assertEqual(client_settings["class_kwargs"]["_default_url"], "https://mygeneset.info/v1")
+        self.assertEqual(client_settings["class_name"], "MyGenesetInfo")
+
 
 def suite():
     _biothings_suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBiothingsClient)
