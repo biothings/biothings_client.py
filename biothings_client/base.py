@@ -37,8 +37,8 @@ except ImportError:
 
 __version__ = "0.3.0"
 
-logging.basicConfig(level="INFO")
 logger = logging.getLogger("biothings.client")
+logger.setLevel(logging.INFO)
 
 # Future work:
 # Consider use "verbose" settings to control default logging output level
