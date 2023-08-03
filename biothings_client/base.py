@@ -13,7 +13,7 @@ from itertools import islice
 
 import requests
 
-from .utils import str_types
+from .utils import str_types, is_py27
 
 try:
     from collections.abc import Iterable
@@ -38,6 +38,13 @@ except ImportError:
 __version__ = "0.3.0"
 
 logger = logging.getLogger("biothings.client")
+if is_py27:
+    # we need to setup default log handler in Py 2.7
+    # Py 3.x does it by default
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 # Future work:
