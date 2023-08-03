@@ -7,7 +7,7 @@ from copy import copy
 
 import requests
 
-from .base import BiothingClient, __version__, alwayslist, caching_avail, df_avail
+from .base import BiothingClient, __version__, alwayslist, caching_avail, df_avail, str_types
 from .docstring.chem import DOCSTRING as CHEM_DOCSTRING
 from .docstring.gene import DOCSTRING as GENE_DOCSTRING
 from .docstring.variant import DOCSTRING as VARIANT_DOCSTRING
@@ -274,7 +274,7 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
                     biothing_type = biothing_type[0]
                 else:
                     raise RuntimeError("Biothing_type in metadata url is not unique.")
-            if not isinstance(biothing_type, str):
+            if not isinstance(biothing_type, str_types):
                 raise RuntimeError("Biothing_type in metadata url is not a valid string.")
         except requests.RequestException:
             raise RuntimeError("Cannot access metadata url to determine biothing_type.")
