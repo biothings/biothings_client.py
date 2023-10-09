@@ -126,7 +126,7 @@ MYTAXON_KWARGS.update(
 MYGENESET_KWARGS = copy(COMMON_KWARGS)
 MYGENESET_KWARGS.update(
     {
-        "_default_url": "https://mygeneset.info/v1",
+        "_default_url": "http://mygeneset.info/v1",
         "_annotation_endpoint": "/geneset/",
         "_optionally_plural_object_type": "geneset(s)",
         "_entity": "geneset",
