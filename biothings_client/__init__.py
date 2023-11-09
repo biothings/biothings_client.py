@@ -72,7 +72,7 @@ COMMON_KWARGS = {
 MYGENE_KWARGS = copy(COMMON_KWARGS)
 MYGENE_KWARGS.update(
     {
-        "_default_url": "http://mygene.info/v3",
+        "_default_url": "https://mygene.info/v3",
         "_annotation_endpoint": "/gene/",
         "_optionally_plural_object_type": "gene(s)",
         "_default_cache_file": "mygene_cache",
@@ -83,7 +83,7 @@ MYGENE_KWARGS.update(
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update(
     {
-        "_default_url": "http://myvariant.info/v1",
+        "_default_url": "https://myvariant.info/v1",
         "_annotation_endpoint": "/variant/",
         "_optionally_plural_object_type": "variant(s)",
         "_default_cache_file": "myvariant_cache",
@@ -95,7 +95,7 @@ MYVARIANT_KWARGS.update(
 MYCHEM_KWARGS = copy(COMMON_KWARGS)
 MYCHEM_KWARGS.update(
     {
-        "_default_url": "http://mychem.info/v1",
+        "_default_url": "https://mychem.info/v1",
         "_annotation_endpoint": "/chem/",
         "_optionally_plural_object_type": "chem(s)",
         "_entity": "chem",
@@ -106,7 +106,7 @@ MYCHEM_KWARGS.update(
 MYDISEASE_KWARGS = copy(COMMON_KWARGS)
 MYDISEASE_KWARGS.update(
     {
-        "_default_url": "http://mydisease.info/v1",
+        "_default_url": "https://mydisease.info/v1",
         "_annotation_endpoint": "/disease/",
         "_optionally_plural_object_type": "disease(s)",
         "_entity": "disease",
@@ -116,7 +116,7 @@ MYDISEASE_KWARGS.update(
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
 MYTAXON_KWARGS.update(
     {
-        "_default_url": "http://t.biothings.io/v1",
+        "_default_url": "https://t.biothings.io/v1",
         "_annotation_endpoint": "/taxon/",
         "_optionally_plural_object_type": "taxon/taxa",
         "_entity": "taxon",
