@@ -9,7 +9,6 @@ DOCSTRING = {
         :param species: optionally, you can pass comma-separated species names
                         or taxonomy ids
         :param email: optionally, pass your email to help us to track usage
-        :param filter: alias for **fields** parameter
 
         :return: a gene object as a dictionary, or None if geneid is not valid.
 
@@ -38,7 +37,6 @@ DOCSTRING = {
         :param species: optionally, you can pass comma-separated species names
                         or taxonomy ids
         :param email: optionally, pass your email to help us to track usage
-        :param filter: alias for fields
         :param as_dataframe: if True, return object as DataFrame (requires Pandas).
         :param df_index: if True (default), index returned DataFrame by 'query',
                          otherwise, index by number. Only applicable if as_dataframe=True.
