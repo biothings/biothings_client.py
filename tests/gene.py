@@ -33,6 +33,16 @@ class TestGeneClient(unittest.TestCase):
             "1431_at",
         ]
 
+    def test_http(self):
+        # this is the default
+        self.mg.url.startswith("https://")
+        # switch to http
+        self.mg.use_http()
+        self.mg.url.startswith("http://")
+        # reset to default
+        self.mg.use_https()
+        self.mg.url.startswith("https://")
+
     def test_metadata(self):
         meta = self.mg.metadata()
         self.assertTrue("stats" in meta)

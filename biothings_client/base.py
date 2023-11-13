@@ -140,6 +140,16 @@ class BiothingClient(object):
         )
         self._cached = False
 
+    def use_http(self):
+        """Use http instead of https for API calls."""
+        if self.url:
+            self.url = self.url.replace("https://", "http://")
+
+    def use_https(self):
+        """Use https instead of http for API calls. This is the default."""
+        if self.url:
+            self.url = self.url.replace("http://", "https://")
+
     @staticmethod
     def _dataframe(obj, dataframe, df_index=True):
         """Converts object to DataFrame (pandas)"""
