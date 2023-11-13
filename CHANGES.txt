@@ -1,3 +1,9 @@
+v0.3.1 (2023/11/13)
+    Use https URL for all BioThings APIs by default (thanks @@skumar951)
+    Added use_http and use_https methods for easy switch
+    Remove deprecated filter param
+    Set log level for biothings_client only (thanks @simonvh)
+
 v0.3.0 (2022/03/18)
     Added support for the new MyGeneset.info API (#26)
     Support using biothing_type metadata as a single value list (#28)
