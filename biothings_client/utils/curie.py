@@ -5,7 +5,9 @@ Methods that provide CURIE ID query support to the biothings client
 import functools
 import logging
 import re
+from typing import Iterable
 
+from . import str_types
 
 logger = logging.getLogger("biothings.client")
 
@@ -87,13 +89,13 @@ def transform_query(func):
         query = ""
         fields = ""
         if len(args) == 0:
-            query = kwargs.get("_id", query)
+            query = str(kwargs.get("_id", query))
             fields = kwargs.get("fields", fields)
         elif len(args) == 1:
-            query = args[0]
+            query = str(args[0])
             fields = kwargs.get("fields", fields)
         elif len(args) == 2:
-            query = args[0]
+            query = str(args[0])
             fields = args[1]
 
         input_fields = self._format_list(fields)
@@ -122,7 +124,6 @@ def transform_query(func):
 
         This method handles the POST request method _get_annotations which expects a collection of
         ID values
-
         """
         query_collection = []
         fields = []
@@ -130,19 +131,31 @@ def transform_query(func):
             query_collection = kwargs.get("ids", query_collection)
             fields = kwargs.get("fields", fields)
         elif len(args) == 1:
-            query = args[0]
+            query_collection = args[0]
             fields = kwargs.get("fields", fields)
         elif len(args) == 2:
-            query = args[0]
+            query_collection = args[0]
             fields = args[1]
+
+        if isinstance(query_collection, str_types):
+            if query_collection == "":
+                query_collection = []
+            else:
+                query_delimiter = ","
+                query_collection = query_collection.split(query_delimiter)
+
+        if not (isinstance(query_collection, (list, tuple, Iterable))):
+            raise ValueError(f'Input "ids" must be an iterable type. "ids" is of type {type(query_collection)}')
 
         logger.debug(f"Input prior to transformation <query values: {query_collection}> <fields: {fields}>")
 
         query_aggregation = []
         field_aggregation = self._format_list(fields)
         for query_entry in query_collection:
-            query, discovered_fields = parse_query(query_entry, self.annotation_prefix_patterns)
+            query, discovered_fields = parse_query(str(query_entry), self.annotation_prefix_patterns)
             discovered_fields = self._format_list(discovered_fields)
+
+            query_aggregation.append(query)
             field_aggregation += discovered_fields
 
         args = ()

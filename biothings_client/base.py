@@ -396,10 +396,6 @@ class BiothingClient(object):
         .. Hint:: If you need to pass a very large list of input ids, you can pass a generator
                   instead of a full list, which is more memory efficient.
         """
-        if isinstance(ids, str_types):
-            ids = ids.split(",") if ids else []
-        if not (isinstance(ids, (list, tuple, Iterable))):
-            raise ValueError('input "ids" must be a list, tuple or iterable.')
         if fields:
             kwargs["fields"] = fields
         kwargs = self._handle_common_kwargs(kwargs)
