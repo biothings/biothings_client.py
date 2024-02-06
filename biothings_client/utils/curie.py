@@ -83,8 +83,9 @@ def transform_query(func):
 
         This method handles the GET request method _get_annotation which expects a singular ID
         """
+
         query = ""
-        fields = []
+        fields = ""
         if len(args) == 0:
             query = kwargs.get("_id", query)
             fields = kwargs.get("fields", fields)
@@ -95,13 +96,16 @@ def transform_query(func):
             query = args[0]
             fields = args[1]
 
+        input_fields = self._format_list(fields)
+
         logger.debug(f"Input prior to transformation <query: {query}> <fields: {fields}>")
         query, discovered_fields = parse_query(query, self.annotation_prefix_patterns)
-        fields.extend(discovered_fields)
+        discovered_fields = self._format_list(discovered_fields)
+        total_fields = input_fields + discovered_fields
 
         args = ()
         kwargs["_id"] = query
-        kwargs["fields"] = fields
+        kwargs["fields"] = total_fields
 
         return func(self, *args, **kwargs)
 
@@ -135,14 +139,15 @@ def transform_query(func):
         logger.debug(f"Input prior to transformation <query values: {query_collection}> <fields: {fields}>")
 
         query_aggregation = []
+        field_aggregation = self._format_list(fields)
         for query_entry in query_collection:
             query, discovered_fields = parse_query(query_entry, self.annotation_prefix_patterns)
-            query_aggregation.append(query)
-            fields.extend(discovered_fields)
+            discovered_fields = self._format_list(discovered_fields)
+            field_aggregation += discovered_fields
 
         args = ()
         kwargs["ids"] = query_aggregation
-        kwargs["fields"] = fields
+        kwargs["fields"] = field_aggregation
 
         return func(self, *args, **kwargs)
 
