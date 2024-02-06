@@ -14,7 +14,6 @@ from itertools import islice
 import requests
 
 from .utils import str_types, is_py27
-from .utils.curie import generate_annotation_prefix_patterns, transform_query
 
 try:
     from collections.abc import Iterable
@@ -142,7 +141,6 @@ class BiothingClient(object):
             }
         )
         self._cached = False
-        self.annotation_prefix_patterns = generate_annotation_prefix_patterns(self._biolink_model_prefix_mapping)
 
     def use_http(self):
         """Use http instead of https for API calls."""
@@ -334,7 +332,6 @@ class BiothingClient(object):
             logger.info(self._from_cache_notification)
         return ret
 
-    @transform_query
     def _getannotation(self, _id, fields=None, **kwargs):
         """Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
@@ -368,7 +365,6 @@ class BiothingClient(object):
             for hit in hits:
                 yield hit
 
-    @transform_query
     def _getannotations(self, ids, fields=None, **kwargs):
         """Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
