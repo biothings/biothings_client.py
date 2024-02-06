@@ -94,7 +94,7 @@ MYVARIANT_KWARGS.update(
         "_entity": "variant",
         "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS,
         "_docstring_obj": VARIANT_DOCSTRING,
-        "_biolink_model_prefix_mapping": [],
+        "_biolink_model_prefix_mapping": {}
     }
 )
 MYCHEM_KWARGS = copy(COMMON_KWARGS)
@@ -106,7 +106,7 @@ MYCHEM_KWARGS.update(
         "_entity": "chem",
         "_default_cache_file": "mychem_cache",
         "_docstring_obj": CHEM_DOCSTRING,
-        "_biolink_model_prefix_mapping": [],
+        "_biolink_model_prefix_mapping": {}
     }
 )
 MYDISEASE_KWARGS = copy(COMMON_KWARGS)
@@ -117,7 +117,7 @@ MYDISEASE_KWARGS.update(
         "_optionally_plural_object_type": "disease(s)",
         "_entity": "disease",
         "_default_cache_file": "mydisease_cache",
-        "_biolink_model_prefix_mapping": [],
+        "_biolink_model_prefix_mapping": {}
     }
 )
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
@@ -128,7 +128,7 @@ MYTAXON_KWARGS.update(
         "_optionally_plural_object_type": "taxon/taxa",
         "_entity": "taxon",
         "_default_cache_file": "mytaxon_cache",
-        "_biolink_model_prefix_mapping": [],
+        "_biolink_model_prefix_mapping": {}
     }
 )
 MYGENESET_KWARGS = copy(COMMON_KWARGS)
@@ -139,7 +139,7 @@ MYGENESET_KWARGS.update(
         "_optionally_plural_object_type": "geneset(s)",
         "_entity": "geneset",
         "_default_cache_file": "mygeneset_cache",
-        "_biolink_model_prefix_mapping": [],
+        "_biolink_model_prefix_mapping": {}
     }
 )
 
