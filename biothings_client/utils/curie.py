@@ -27,12 +27,6 @@ def generate_annotation_prefix_patterns(prefix_mapping):
         field_match = mapping["field"]
         pattern = (expression, field_match)
         biolink_curie_regex_list.append(pattern)
-
-    default_pattern = (
-        re.compile(r"(?P<scope>\w+):(?P<term>[^:]+)"),
-        [],
-    )
-    biolink_curie_regex_list.append(default_pattern)
     return biolink_curie_regex_list
 
 
@@ -58,7 +52,7 @@ def parse_query(query, regex_mapping):
             logger.debug(f"Discovered match: {regex} -> {query}")
             named_groups = match.groupdict()
             query = named_groups.get("term", query)
-            discovered_fields = named_groups.get("scopes", [])
+            discovered_fields = named_groups.get("scope", [])
             logger.debug(f"Transformed query: {query} Discovered fields: {fields}")
             break
     return (query, discovered_fields)
