@@ -3,8 +3,6 @@ import sys
 import types
 import unittest
 
-import pytest
-
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
 try:
