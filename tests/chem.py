@@ -54,6 +54,120 @@ class TestChemClient(unittest.TestCase):
         self.assertTrue("pubchem" in c)
         self.assertTrue("cid" in c["pubchem"])
 
+    def test_curie_id_query(self):
+        """
+        Tests the annotation endpoint support for the biolink CURIE ID.
+
+        If support is enabled then we should retrieve the exact same document for all the provided
+        queries
+        """
+        curie_id_testing_collection = [
+            ("57966", "CHEMBL.COMPOUND:57966", "chembl.molecule_chembl_id:57966"),
+            (57966, "chembl.compound:57966", "chembl.molecule_chembl_id:57966"),
+            (57966, "CheMBL.compOUND:57966", "chembl.molecule_chembl_id:57966"),
+            ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
+            (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
+            ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
+            (57966, "CHEBI:57966", "chebi.id:57966"),
+            ("57966", "chebi:57966", "chebi.id:57966"),
+            (57966, "CheBi:57966", "chebi.id:57966"),
+            ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("dB03107", "DRUGBANK:dB03107", "drugbank.id:dB03107"),
+            ("dB03107", "drugbank:dB03107", "drugbank.id:dB03107"),
+            ("dB03107", "DrugBaNK:dB03107", "drugbank.id:dB03107"),
+        ]
+
+        results_aggregation = []
+        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
+            id_query_result = self.mc.getchem(_id=id_query)
+            biothings_term_query_result = self.mc.getchem(_id=biothings_query)
+            biolink_term_query_result = self.mc.getchem(_id=biolink_query)
+            results_aggregation.append(
+                (
+                    id_query_result == biothings_term_query_result,
+                    id_query_result == biolink_term_query_result,
+                    biothings_term_query_result == biolink_term_query_result,
+                )
+            )
+
+        results_validation = []
+        failure_messages = []
+        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
+            cumulative_result = all(result)
+            if not cumulative_result:
+                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
+            results_validation.append(cumulative_result)
+
+        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+
+    def test_multiple_curie_id_query(self):
+        """
+        Tests the annotations endpoint support for the biolink CURIE ID.
+
+        Batch query testing against the POST endpoint to verify that the CURIE ID can work with
+        multiple
+
+        If support is enabled then we should retrieve the exact same document for all the provided
+        queries
+        """
+        curie_id_testing_collection = [
+            ("57966", "CHEMBL.COMPOUND:57966", "chembl.molecule_chembl_id:57966"),
+            (57966, "chembl.compound:57966", "chembl.molecule_chembl_id:57966"),
+            (57966, "CheMBL.compOUND:57966", "chembl.molecule_chembl_id:57966"),
+            ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
+            (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
+            ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
+            (57966, "CHEBI:57966", "chebi.id:57966"),
+            ("57966", "chebi:57966", "chebi.id:57966"),
+            (57966, "CheBi:57966", "chebi.id:57966"),
+            ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
+            ("dB03107", "DRUGBANK:dB03107", "drugbank.id:dB03107"),
+            ("dB03107", "drugbank:dB03107", "drugbank.id:dB03107"),
+            ("dB03107", "DrugBaNK:dB03107", "drugbank.id:dB03107"),
+        ]
+
+        results_aggregation = []
+        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
+            base_result = self.mc.getchem(_id=id_query)
+
+            batch_query = [id_query, biothings_query, biolink_query]
+            query_results = self.mc.getchems(ids=batch_query)
+            assert len(query_results) == len(batch_query)
+
+            batch_id_query = query_results[0]
+            batch_biothings_query = query_results[1]
+            batch_biolink_query = query_results[2]
+
+            batch_id_query_return_value = batch_id_query.pop("query")
+            assert batch_id_query_return_value == str(id_query)
+
+            batch_biothings_query_return_value = batch_biothings_query.pop("query")
+            assert batch_biothings_query_return_value == str(biothings_query)
+
+            batch_biolink_query_return_value = batch_biolink_query.pop("query")
+            assert batch_biolink_query_return_value == str(biolink_query)
+
+            batch_result = (
+                base_result == batch_id_query,
+                base_result == batch_biothings_query,
+                base_result == batch_biolink_query,
+            )
+            results_aggregation.append(batch_result)
+
+        results_validation = []
+        failure_messages = []
+        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
+            cumulative_result = all(result)
+            if not cumulative_result:
+                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
+            results_validation.append(cumulative_result)
+
+        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+
     @unittest.expectedFailure
     def get_getdrug(self):
         c = self.mc.getdrug("CHEMBL1308")
