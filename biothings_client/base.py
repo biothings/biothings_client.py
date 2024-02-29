@@ -38,8 +38,6 @@ except ImportError:
 __version__ = "0.3.1"
 
 logger = logging.getLogger("biothings.client")
-logger.setLevel(logging.INFO)
-
 if is_py27:
     # we need to setup default log handler in Py 2.7
     # Py 3.x does it by default
@@ -47,6 +45,7 @@ if is_py27:
     # formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
     # handler.setFormatter(formatter)
     logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 # Future work:
 # Consider use "verbose" settings to control default logging output level
@@ -121,7 +120,6 @@ class BiothingClient(object):
         if self.url[-1] == "/":
             self.url = self.url[:-1]
         self.max_query = self._max_query
-
         # delay and step attributes are for batch queries.
         self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
