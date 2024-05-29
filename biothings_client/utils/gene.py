@@ -1,4 +1,5 @@
 """ Gene specific utils. """
+
 from collections import OrderedDict
 
 from biothings_client import get_client
