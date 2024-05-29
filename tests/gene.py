@@ -61,6 +61,106 @@ class TestGeneClient(unittest.TestCase):
         self.assertTrue("refseq" in g)
         self.assertFalse("summary" in g)
 
+    def test_curie_id_query(self):
+        """
+        Tests the annotation endpoint support for the biolink CURIE ID.
+
+        If support is enabled then we should retrieve the exact same document for all the provided
+        queries
+        """
+        curie_id_testing_collection = [
+            ("1017", "entrezgene:1017", "NCBIgene:1017"),
+            (1017, "entrezgene:1017", "ncbigene:1017"),
+            ("1017", "entrezgene:1017", "NCBIGENE:1017"),
+            ("1018", "ensembl.gene:ENSG00000250506", "ENSEMBL:ENSG00000250506"),
+            (1018, "ensembl.gene:ENSG00000250506", "ensembl:ENSG00000250506"),
+            ("5995", "uniprot.Swiss-Prot:P47804", "UniProtKB:P47804"),
+            (5995, "uniprot.Swiss-Prot:P47804", "UNIPROTKB:P47804"),
+            ("5995", "uniprot.Swiss-Prot:P47804", "uniprotkb:P47804"),
+        ]
+
+        results_aggregation = []
+        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
+            id_query_result = self.mg.getgene(_id=id_query)
+            biothings_term_query_result = self.mg.getgene(_id=biothings_query)
+            biolink_term_query_result = self.mg.getgene(_id=biolink_query)
+            results_aggregation.append(
+                (
+                    id_query_result == biothings_term_query_result,
+                    id_query_result == biolink_term_query_result,
+                    biothings_term_query_result == biolink_term_query_result,
+                )
+            )
+
+        results_validation = []
+        failure_messages = []
+        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
+            cumulative_result = all(result)
+            if not cumulative_result:
+                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
+            results_validation.append(cumulative_result)
+
+        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+
+    def test_multiple_curie_id_query(self):
+        """
+        Tests the annotations endpoint support for the biolink CURIE ID.
+
+        Batch query testing against the POST endpoint to verify that the CURIE ID can work with
+        multiple
+
+        If support is enabled then we should retrieve the exact same document for all the provided
+        queries
+        """
+        curie_id_testing_collection = [
+            ("1017", "entrezgene:1017", "NCBIgene:1017"),
+            (1017, "entrezgene:1017", "ncbigene:1017"),
+            ("1017", "entrezgene:1017", "NCBIGENE:1017"),
+            ("1018", "ensembl.gene:ENSG00000250506", "ENSEMBL:ENSG00000250506"),
+            (1018, "ensembl.gene:ENSG00000250506", "ensembl:ENSG00000250506"),
+            ("5995", "uniprot.Swiss-Prot:P47804", "UniProtKB:P47804"),
+            (5995, "uniprot.Swiss-Prot:P47804", "UNIPROTKB:P47804"),
+            ("5995", "uniprot.Swiss-Prot:P47804", "uniprotkb:P47804"),
+        ]
+
+        results_aggregation = []
+        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
+            base_result = self.mg.getgene(_id=id_query)
+
+            batch_query = [id_query, biothings_query, biolink_query]
+            query_results = self.mg.getgenes(ids=batch_query)
+            assert len(query_results) == len(batch_query)
+
+            batch_id_query = query_results[0]
+            batch_biothings_query = query_results[1]
+            batch_biolink_query = query_results[2]
+
+            batch_id_query_return_value = batch_id_query.pop("query")
+            assert batch_id_query_return_value == str(id_query)
+
+            batch_biothings_query_return_value = batch_biothings_query.pop("query")
+            assert batch_biothings_query_return_value == str(biothings_query)
+
+            batch_biolink_query_return_value = batch_biolink_query.pop("query")
+            assert batch_biolink_query_return_value == str(biolink_query)
+
+            batch_result = (
+                base_result == batch_id_query,
+                base_result == batch_biothings_query,
+                base_result == batch_biolink_query,
+            )
+            results_aggregation.append(batch_result)
+
+        results_validation = []
+        failure_messages = []
+        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
+            cumulative_result = all(result)
+            if not cumulative_result:
+                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
+            results_validation.append(cumulative_result)
+
+        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+
     def test_getgene_with_fields_as_list(self):
         g1 = self.mg.getgene("1017", fields="name,symbol,refseq")
         g2 = self.mg.getgene("1017", fields=["name", "symbol", "refseq"])
@@ -230,10 +330,8 @@ class TestGeneClient(unittest.TestCase):
 
             self.assertTrue(
                 all(
-                    [
-                        x == pre_cache_r
-                        for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]
-                    ]
+                    x == pre_cache_r
+                    for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]
                 )
             )
 
