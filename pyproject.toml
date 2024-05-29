@@ -7,7 +7,7 @@ name="biothings_client"
 authors = [
     {name = "Cyrus Afrasiabi"},
     {name = "Xinghua Zhou"},
-    {name = "Everaldo Rodolpho"},
+    {name = "Everaldo Rodolpho", email="erodolpho@scripps.edu"},
     {name = "Chunlei Wu", email = "cwu@scripps.edu"},
 ]
 requires-python = ">=2.7"
