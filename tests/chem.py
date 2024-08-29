@@ -62,15 +62,15 @@ class TestChemClient(unittest.TestCase):
         queries
         """
         curie_id_testing_collection = [
-            ("57966", "CHEMBL.COMPOUND:57966", "chembl.molecule_chembl_id:57966"),
-            (57966, "chembl.compound:57966", "chembl.molecule_chembl_id:57966"),
-            (57966, "CheMBL.compOUND:57966", "chembl.molecule_chembl_id:57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CHEMBL.COMPOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "chembl.compound:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CheMBL.compOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
             ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
             (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
             ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
-            (57966, "CHEBI:57966", "chebi.id:57966"),
-            ("57966", "chebi:57966", "chebi.id:57966"),
-            (57966, "CheBi:57966", "chebi.id:57966"),
+            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CHEBI:57966", "chebi.id:CHEBI:57966"),
+            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "chebi:57966", "chebi.id:CHEBI:57966"),
+            (("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CheBi:57966", "chebi.id:CHEBI:57966")),
             ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
             ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
             ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
@@ -113,15 +113,15 @@ class TestChemClient(unittest.TestCase):
         queries
         """
         curie_id_testing_collection = [
-            ("57966", "CHEMBL.COMPOUND:57966", "chembl.molecule_chembl_id:57966"),
-            (57966, "chembl.compound:57966", "chembl.molecule_chembl_id:57966"),
-            (57966, "CheMBL.compOUND:57966", "chembl.molecule_chembl_id:57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CHEMBL.COMPOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "chembl.compound:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
+            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CheMBL.compOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
             ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
             (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
             ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
-            (57966, "CHEBI:57966", "chebi.id:57966"),
-            ("57966", "chebi:57966", "chebi.id:57966"),
-            (57966, "CheBi:57966", "chebi.id:57966"),
+            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CHEBI:57966", "chebi.id:CHEBI:57966"),
+            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "chebi:57966", "chebi.id:CHEBI:57966"),
+            (("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CheBi:57966", "chebi.id:CHEBI:57966")),
             ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
             ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
             ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
