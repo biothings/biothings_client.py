@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=67.4.0", "requests>=2.3.0"]
+requires = ["setuptools>=67.4.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -10,24 +10,31 @@ authors = [
     {name = "Everaldo Rodolpho", email="erodolpho@scripps.edu"},
     {name = "Chunlei Wu", email = "cwu@scripps.edu"},
 ]
-requires-python = ">=2.7"
+requires-python = ">=3.8"
 description = "Python Client for BioThings API services."
 readme = "README.rst"
 license = { text = "BSD-3-Clause" }
-keywords = ["biology", "variant", "gene", "taxon", "species", "drug", "annotation", "web", "service", "client", "api", "myvariant", "mygene"]
+keywords = [
+    "biology", 
+    "variant", 
+    "gene", 
+    "taxon", 
+    "species", 
+    "drug", 
+    "annotation", 
+    "web", 
+    "service", 
+    "client", 
+    "api", 
+    "myvariant", 
+    "mygene"
+]
 classifiers = [
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 2",
-    "Programming Language :: Python :: 2.7",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.4",
-    "Programming Language :: Python :: 3.5",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
     "Operating System :: POSIX",
@@ -41,12 +48,12 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "requests>=2.3.0",
+    "hishel>=0.0.31",
+    "httpx>=0.27.2",
 ]
 
 [project.optional-dependencies]
 dataframe = ["pandas>=0.18.0"]
-caching = ["requests_cache>=0.4.13"]
 jsonld = ["PyLD>=0.7.2"]
 
 [project.urls]
@@ -61,13 +68,9 @@ zip-safe = true
 [tool.setuptools.dynamic]
 version = {attr = "biothings_client.__version__"}
 
-[tool.distutils.bdist_wheel]
-# no need to set it after python 2.7 support is dropped
-universal = true
-
 [tool.black]
 line-length = 120
-target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
 
 [tool.isort]
 profile = "black"
