@@ -49,20 +49,14 @@ Intro
 .. _MyChem.Info: https://mychem.info
 .. _MyDisease.Info: https://mydisease.info
 .. _MyGeneset.Info: https://mygeneset.info
-.. _requests: https://pypi.python.org/pypi/requests
 
-Requirements
+Support
 ============
-    python >=2.7 (including all python3 versions)
-
-    (It may still work under python 2.6, but it's not supported any more.)
-
-    requests_ (install using "pip install requests")
+    python >=3.8
 
 Optional dependencies
 ======================
     * `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of variant objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
-    * `requests_cache <https://pypi.python.org/pypi/requests-cache>`_ (install using "pip install requests_cache") is required for local caching of API requests.
 
 Installation
 =============
@@ -72,12 +66,7 @@ Installation
 
            pip install biothings_client
 
-    Option 2
-          download/extract the source code and run::
-
-           python setup.py install
-
-    Option 3
+    Option 2 
           install the latest code directly from the repository::
 
             pip install -e git+https://github.com/biothings/biothings_client.py#egg=biothings_client
