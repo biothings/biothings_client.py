@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import types
@@ -15,6 +16,8 @@ import biothings_client
 sys.stdout.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
+
+requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 class TestGenesetClient(unittest.TestCase):
@@ -148,7 +151,7 @@ class TestGenesetClient(unittest.TestCase):
         self.assertIn("smpdb", smpdb["hits"][0].keys())
         self.assertEqual(smpdb["hits"][0]["source"], "smpdb")
 
-    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
+    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
     def test_caching(self):
         def _getgeneset():
             return self.mgs.getgeneset("WP100")

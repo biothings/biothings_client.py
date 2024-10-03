@@ -3,6 +3,7 @@ Python Client for generic Biothings API services
 """
 
 from collections.abc import Iterable
+from copy import copy
 import logging
 import os
 import platform
@@ -11,8 +12,31 @@ import warnings
 
 import requests
 
-from biothings_client import __version__
-from biothings_client.utils.iteration import list_itemcnt, iter_n, safe_str
+from biothings_client.utils.iteration import (
+    iter_n,
+    list_itemcnt,
+    safe_str,
+)
+from biothings_client.client.settings import (
+    COMMON_ALIASES,
+    COMMON_KWARGS,
+    MYCHEM_ALIASES,
+    MYCHEM_KWARGS,
+    MYDISEASE_ALIASES,
+    MYDISEASE_KWARGS,
+    MYGENESET_ALIASES,
+    MYGENESET_KWARGS,
+    MYGENE_ALIASES,
+    MYGENE_KWARGS,
+    MYTAXON_ALIASES,
+    MYTAXON_KWARGS,
+    MYVARIANT_ALIASES,
+    MYVARIANT_KWARGS,
+)
+from biothings_client.mixins.gene import MyGeneClientMixin
+from biothings_client.mixins.variant import MyVariantClientMixin
+from biothings_client.utils.copy import copy_func
+from biothings_client.version import __version__
 
 try:
     from pandas import DataFrame, json_normalize
@@ -548,6 +572,7 @@ class BiothingClient:
                 logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
 
+
 def get_client(biothing_type=None, instance=True, *args, **kwargs):
     """
     Function to return a new python client for a Biothings API service.
@@ -588,7 +613,7 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
     _settings = (
         CLIENT_SETTINGS[biothing_type]
         if biothing_type in CLIENT_SETTINGS
-        else _generate_settings(biothing_type, kwargs.get("url"))
+        else generate_settings(biothing_type, kwargs.get("url"))
     )
     _class = type(
         _settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]), _settings["class_kwargs"]
@@ -605,3 +630,113 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
                 _func.__func__.__doc__ = _docstring
     _client = _class(*args, **kwargs) if instance else _class
     return _client
+
+
+# ***********************************************
+# *  Client settings
+# *
+# *  This object contains the client-specific settings necessary to
+# *  instantiate a new biothings client.  The currently supported
+# *  clients are the keys of this object.
+# *
+# *  class - the client Class name
+# *  class_kwargs - keyword arguments passed to Class on creation
+# *  function_aliases - client specific function aliases in Class
+# *  ancestors - a list of classes that Class inherits from
+# ***********************************************
+CLIENT_SETTINGS = {
+    "gene": {
+        "class_name": "MyGeneInfo",
+        "class_kwargs": MYGENE_KWARGS,
+        "attr_aliases": MYGENE_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [MyGeneClientMixin],
+    },
+    "variant": {
+        "class_name": "MyVariantInfo",
+        "class_kwargs": MYVARIANT_KWARGS,
+        "attr_aliases": MYVARIANT_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [MyVariantClientMixin],
+    },
+    "taxon": {
+        "class_name": "MyTaxonInfo",
+        "class_kwargs": MYTAXON_KWARGS,
+        "attr_aliases": MYTAXON_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "drug": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "chem": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "compound": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "disease": {
+        "class_name": "MyDiseaseInfo",
+        "class_kwargs": MYDISEASE_KWARGS,
+        "attr_aliases": MYDISEASE_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "geneset": {
+        "class_name": "MyGenesetInfo",
+        "class_kwargs": MYGENESET_KWARGS,
+        "attr_aliases": MYGENESET_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+}
+
+
+def generate_settings(biothing_type: str, url: str):
+    """
+    Tries to generate a settings dictionary for a client that isn't explicitly listed in
+    {
+        CLIENT_SETTINGS,
+        ASYNC_CLIENT_SETTINGS
+    }
+    """
+
+    def _pluralize(s, optional=True):
+        _append = "({})" if optional else "{}"
+        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
+
+    _kwargs = copy(COMMON_KWARGS)
+    _aliases = copy(COMMON_ALIASES)
+    _kwargs.update(
+        {
+            "_default_url": url,
+            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
+            "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
+            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
+        }
+    )
+    _aliases.update(
+        {
+            "_getannotation": "get" + biothing_type.lower(),
+            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
+        }
+    )
+    return {
+        "class_name": "My" + biothing_type.title() + "Info",
+        "class_kwargs": _kwargs,
+        "mixins": [],
+        "attr_aliases": _aliases,
+        "base_class": BiothingClient,
+    }

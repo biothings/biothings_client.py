@@ -3,11 +3,13 @@ Async Python Client for generic Biothings API services
 """
 
 from collections.abc import Iterable
+from copy import copy
 import logging
 import os
 import platform
 import time
 import warnings
+
 import httpx
 
 
@@ -18,8 +20,32 @@ try:
 except ImportError:
     df_avail = False
 
-from biothings_client import __version__
-from biothings_client.utils.iteration import list_itemcnt, iter_n, safe_str
+from biothings_client.utils.iteration import (
+    iter_n,
+    list_itemcnt,
+    safe_str,
+)
+from biothings_client.utils.copy import copy_func
+
+from biothings_client.version import __version__
+from biothings_client.client.settings import (
+    COMMON_ALIASES,
+    COMMON_KWARGS,
+    MYCHEM_ALIASES,
+    MYCHEM_KWARGS,
+    MYDISEASE_ALIASES,
+    MYDISEASE_KWARGS,
+    MYGENESET_ALIASES,
+    MYGENESET_KWARGS,
+    MYGENE_ALIASES,
+    MYGENE_KWARGS,
+    MYTAXON_ALIASES,
+    MYTAXON_KWARGS,
+    MYVARIANT_ALIASES,
+    MYVARIANT_KWARGS,
+)
+from biothings_client.mixins.gene import MyGeneClientMixin
+from biothings_client.mixins.variant import MyVariantClientMixin
 
 
 logger = logging.getLogger("biothings.client")
@@ -30,7 +56,7 @@ logger.setLevel(logging.INFO)
 # Consider use "verbose" settings to control default logging output level
 # by doing this instead of using branching throughout the application,
 # the business logic can be more concise and more readable.
-class AsyncBiothingsClient:
+class AsyncBiothingClient:
     """
     This is the asynchronous client for a biothing web service.
     """
@@ -196,53 +222,21 @@ class AsyncBiothingsClient:
         return "[ from cache ]"
 
     async def _metadata(self, verbose=True, **kwargs):
-        """Return a dictionary of Biothing metadata."""
+        """
+        Return a dictionary of Biothing metadata.
+        """
         _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
 
-    async def _set_caching(self, cache_db=None, verbose=True, **kwargs):
-        """
-        Installs a local cache for all requests.
-
-        **cache_db** is the path to the local sqlite cache database.
-        """
-        if self.enable_cache:
-            if cache_db is None:
-                cache_db = self._default_cache_file
-            requests_cache.install_cache(cache_name=cache_db, allowable_methods=("GET", "POST"), **kwargs)
-            self._cached = True
-            if verbose:
-                logger.info('[ Future queries will be cached in "{0}" ]'.format(os.path.abspath(cache_db + ".sqlite")))
-        else:
-            raise RuntimeError(
-                "The requests_cache python module is required to use request caching. See "
-                "https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation"
-            )
-
-    async def _stop_caching(self):
-        """
-        Disable local caching for the biothings-client
-        """
-        self.enable_cache = False
-
-    async def _clear_cache(self):
-        """
-        Clear the globally installed cache.
-        """
-        try:
-            requests_cache.clear()
-        except AttributeError:
-            # requests_cache is not enabled
-            logger.warning("requests_cache is not enabled. Nothing to clear.")
-
     async def _get_fields(self, search_term=None, verbose=True):
-        """Wrapper for /metadata/fields
+        """
+        Wrapper for /metadata/fields
 
-            **search_term** is a case insensitive string to search for in available field names.
-            If not provided, all available fields will be returned.
+        **search_term** is a case insensitive string to search for in available field names.
+        If not provided, all available fields will be returned.
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
 
@@ -294,8 +288,9 @@ class AsyncBiothingsClient:
         """
         Function to yield a batch of hits one at a time.
         """
-        for hits in self._repeated_query(query_fn, ids, verbose=verbose):
-            yield from hits
+        async for hits in await self._repeated_query(query_fn, ids, verbose=verbose):
+            async for hit in hits:
+                yield hit
 
     async def _getannotations(self, ids, fields=None, **kwargs):
         """Return the list of annotation objects for the given list of ids.
@@ -422,14 +417,7 @@ class AsyncBiothingsClient:
 
         # function to get the next batch of results, automatically disables cache if we are caching
         async def _batch():
-            if caching_avail and self._cached:
-                self._cached = False
-                with requests_cache.disabled():
-                    from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-                    del from_cache
-                self._cached = True
-            else:
-                from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
+            from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
             return ret
 
         batch = _batch()
@@ -508,7 +496,7 @@ class AsyncBiothingsClient:
         async def query_fn(qterms):
             return self._querymany_inner(qterms, verbose=verbose, **kwargs)
 
-        for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
+        for hits in await self._repeated_query(query_fn, qterms, verbose=verbose):
             if return_raw:
                 out.append(hits)  # hits is the raw response text
             else:
@@ -555,7 +543,7 @@ class AsyncBiothingsClient:
             return out
 
 
-async def get_async_client(biothing_type: str=None, instance:bool =True, *args, **kwargs):
+def get_async_client(biothing_type: str = None, instance: bool = True, *args, **kwargs):
     """
     Function to return a new python asynchronous client for a Biothings API service.
 
@@ -586,16 +574,16 @@ async def get_async_client(biothing_type: str=None, instance:bool =True, *args, 
             raise RuntimeError("Cannot access metadata url to determine biothing_type.") from request_error
     else:
         biothing_type = biothing_type.lower()
-    if biothing_type not in CLIENT_SETTINGS and not kwargs.get("url", False):
+    if biothing_type not in ASYNC_CLIENT_SETTINGS and not kwargs.get("url", False):
         raise Exception(
             "No client named '{0}', currently available clients are: {1}".format(
-                biothing_type, list(CLIENT_SETTINGS.keys())
+                biothing_type, list(ASYNC_CLIENT_SETTINGS.keys())
             )
         )
     _settings = (
-        CLIENT_SETTINGS[biothing_type]
-        if biothing_type in CLIENT_SETTINGS
-        else _generate_settings(biothing_type, kwargs.get("url"))
+        ASYNC_CLIENT_SETTINGS[biothing_type]
+        if biothing_type in ASYNC_CLIENT_SETTINGS
+        else generate_async_settings(biothing_type, kwargs.get("url"))
     )
     _class = type(
         _settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]), _settings["class_kwargs"]
@@ -603,6 +591,7 @@ async def get_async_client(biothing_type: str=None, instance:bool =True, *args, 
     for src_attr, target_attr in _settings["attr_aliases"].items():
         if getattr(_class, src_attr, False):
             setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
+
     for _name, _docstring in _settings["class_kwargs"]["_docstring_obj"].items():
         _func = getattr(_class, _name, None)
         if _func:
@@ -612,3 +601,113 @@ async def get_async_client(biothing_type: str=None, instance:bool =True, *args, 
                 _func.__func__.__doc__ = _docstring
     _client = _class(*args, **kwargs) if instance else _class
     return _client
+
+
+# ***********************************************
+# *  Client settings
+# *
+# *  This object contains the client-specific settings necessary to
+# *  instantiate a new biothings client.  The currently supported
+# *  clients are the keys of this object.
+# *
+# *  class - the client Class name
+# *  class_kwargs - keyword arguments passed to Class on creation
+# *  function_aliases - client specific function aliases in Class
+# *  ancestors - a list of classes that Class inherits from
+# ***********************************************
+ASYNC_CLIENT_SETTINGS = {
+    "gene": {
+        "class_name": "AsyncMyGeneInfo",
+        "class_kwargs": MYGENE_KWARGS,
+        "attr_aliases": MYGENE_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [MyGeneClientMixin],
+    },
+    "variant": {
+        "class_name": "AsyncMyVariantInfo",
+        "class_kwargs": MYVARIANT_KWARGS,
+        "attr_aliases": MYVARIANT_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [MyVariantClientMixin],
+    },
+    "taxon": {
+        "class_name": "AsyncMyTaxonInfo",
+        "class_kwargs": MYTAXON_KWARGS,
+        "attr_aliases": MYTAXON_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "drug": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "chem": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "compound": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "disease": {
+        "class_name": "AsyncMyDiseaseInfo",
+        "class_kwargs": MYDISEASE_KWARGS,
+        "attr_aliases": MYDISEASE_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "geneset": {
+        "class_name": "AsyncMyGenesetInfo",
+        "class_kwargs": MYGENESET_KWARGS,
+        "attr_aliases": MYGENESET_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+}
+
+
+def generate_async_settings(biothing_type: str, url: str):
+    """
+    Tries to generate a settings dictionary for a client that isn't explicitly listed in
+    {
+        CLIENT_SETTINGS,
+        ASYNC_CLIENT_SETTINGS
+    }
+    """
+
+    def _pluralize(s, optional=True):
+        _append = "({})" if optional else "{}"
+        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
+
+    _kwargs = copy(COMMON_KWARGS)
+    _aliases = copy(COMMON_ALIASES)
+    _kwargs.update(
+        {
+            "_default_url": url,
+            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
+            "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
+            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
+        }
+    )
+    _aliases.update(
+        {
+            "_getannotation": "get" + biothing_type.lower(),
+            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
+        }
+    )
+    return {
+        "class_name": "My" + biothing_type.title() + "Info",
+        "class_kwargs": _kwargs,
+        "mixins": [],
+        "attr_aliases": _aliases,
+        "base_class": AsyncBiothingClient,
+    }

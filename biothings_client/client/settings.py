@@ -4,13 +4,11 @@ Settings and configuration values for the different biothings-clients
 
 from copy import copy
 
-from biothings_client.client import AsyncBiothingClient, BiothingClient
 from biothings_client.docstring.chem import DOCSTRING as CHEM_DOCSTRING
 from biothings_client.docstring.gene import DOCSTRING as GENE_DOCSTRING
 from biothings_client.docstring.variant import DOCSTRING as VARIANT_DOCSTRING
-from biothings_client.mixins.gene import MyGeneClientMixin
-from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
+
 
 # ***********************************************
 # *  Aliases.
@@ -44,13 +42,13 @@ MYDISEASE_ALIASES.update({"_getannotation": "getdisease", "_getannotations": "ge
 MYGENESET_ALIASES = copy(COMMON_ALIASES)
 MYGENESET_ALIASES.update({"_getannotation": "getgeneset", "_getannotations": "getgenesets"})
 
+
 # ***********************************************
 # *  Kwargs.
 # *
 # *  These keyword arguments are attached to the returned client class
 # *  on class creation.
 # ***********************************************
-
 # Object creation kwargs common to all clients
 COMMON_KWARGS = {
     "_pkg_user_agent_header": "biothings_client.py",
@@ -129,167 +127,3 @@ MYGENESET_KWARGS.update(
         "_default_cache_file": "mygeneset_cache",
     }
 )
-
-# ***********************************************
-# *  Client settings
-# *
-# *  This object contains the client-specific settings necessary to
-# *  instantiate a new biothings client.  The currently supported
-# *  clients are the keys of this object.
-# *
-# *  class - the client Class name
-# *  class_kwargs - keyword arguments passed to Class on creation
-# *  function_aliases - client specific function aliases in Class
-# *  ancestors - a list of classes that Class inherits from
-# ***********************************************
-
-CLIENT_SETTINGS = {
-    "gene": {
-        "class_name": "MyGeneInfo",
-        "class_kwargs": MYGENE_KWARGS,
-        "attr_aliases": MYGENE_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [MyGeneClientMixin],
-    },
-    "variant": {
-        "class_name": "MyVariantInfo",
-        "class_kwargs": MYVARIANT_KWARGS,
-        "attr_aliases": MYVARIANT_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [MyVariantClientMixin],
-    },
-    "taxon": {
-        "class_name": "MyTaxonInfo",
-        "class_kwargs": MYTAXON_KWARGS,
-        "attr_aliases": MYTAXON_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-    "drug": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-    "chem": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-    "compound": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-    "disease": {
-        "class_name": "MyDiseaseInfo",
-        "class_kwargs": MYDISEASE_KWARGS,
-        "attr_aliases": MYDISEASE_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-    "geneset": {
-        "class_name": "MyGenesetInfo",
-        "class_kwargs": MYGENESET_KWARGS,
-        "attr_aliases": MYGENESET_ALIASES,
-        "base_class": BiothingClient,
-        "mixins": [],
-    },
-}
-
-ASYNC_CLIENT_SETTINGS = {
-    "gene": {
-        "class_name": "MyGeneInfo",
-        "class_kwargs": MYGENE_KWARGS,
-        "attr_aliases": MYGENE_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [MyGeneClientMixin],
-    },
-    "variant": {
-        "class_name": "MyVariantInfo",
-        "class_kwargs": MYVARIANT_KWARGS,
-        "attr_aliases": MYVARIANT_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [MyVariantClientMixin],
-    },
-    "taxon": {
-        "class_name": "MyTaxonInfo",
-        "class_kwargs": MYTAXON_KWARGS,
-        "attr_aliases": MYTAXON_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-    "drug": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-    "chem": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-    "compound": {
-        "class_name": "MyChemInfo",
-        "class_kwargs": MYCHEM_KWARGS,
-        "attr_aliases": MYCHEM_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-    "disease": {
-        "class_name": "MyDiseaseInfo",
-        "class_kwargs": MYDISEASE_KWARGS,
-        "attr_aliases": MYDISEASE_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-    "geneset": {
-        "class_name": "MyGenesetInfo",
-        "class_kwargs": MYGENESET_KWARGS,
-        "attr_aliases": MYGENESET_ALIASES,
-        "base_class": AsyncBiothingClient,
-        "mixins": [],
-    },
-}
-
-def generate_settings(biothing_type, url):
-    """
-    Tries to generate a settings dictionary for a client that isn't explicitly listed in CLIENT_SETTINGS.
-    """
-
-    def _pluralize(s, optional=True):
-        _append = "({})" if optional else "{}"
-        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
-
-    _kwargs = copy(COMMON_KWARGS)
-    _aliases = copy(COMMON_ALIASES)
-    _kwargs.update(
-        {
-            "_default_url": url,
-            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
-            "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
-            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
-        }
-    )
-    _aliases.update(
-        {
-            "_getannotation": "get" + biothing_type.lower(),
-            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
-        }
-    )
-    return {
-        "class_name": "My" + biothing_type.title() + "Info",
-        "class_kwargs": _kwargs,
-        "mixins": [],
-        "attr_aliases": _aliases,
-        "base_class": BiothingClient,
-    }

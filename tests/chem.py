@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import types
@@ -15,6 +16,9 @@ import biothings_client
 sys.stdout.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
+
+pandas_available = importlib.util.find_spec("pandas") is not None
+requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 class TestChemClient(unittest.TestCase):
@@ -325,7 +329,7 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": "NA_TEST", "notfound": True})
 
-    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
+    @unittest.skipIf(not pandas_available, "pandas not available")
     def test_querymany_dataframe(self):
         from pandas import DataFrame
 
@@ -352,7 +356,7 @@ class TestChemClient(unittest.TestCase):
         fields = self.mc.get_fields("unii")
         self.assertTrue("unii.molecular_formula" in fields.keys())
 
-    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
+    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
     def test_caching(self):
         def _getchem():
             return self.mc.getchem("ZRALSGWEFCBTJO-UHFFFAOYSA-N")
