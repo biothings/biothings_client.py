@@ -46,7 +46,6 @@ class TestBiothingsClient(unittest.TestCase):
         disease_client = biothings_client.get_client("disease")
         self.assertEqual(type(disease_client).__name__, "MyDiseaseInfo")
 
-        breakpoint()
         taxon_client = biothings_client.get_client("taxon")
         self.assertEqual(type(taxon_client).__name__, "MyTaxonInfo")
 
