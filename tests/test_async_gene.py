@@ -199,9 +199,13 @@ async def test_query_fetch_all(async_gene_client: AsyncMyGeneInfo):
     qres = await async_gene_client.query("_exists_:pdb")
     total = qres["total"]
 
-    qres = await async_gene_client.query("_exists_:pdb", fields="pdb", fetch_all=True)
+    qres_generator = await async_gene_client.query("_exists_:pdb", fields="pdb", fetch_all=True)
     assert isinstance(qres, types.AsyncGeneratorType)
-    assert total == len(list(qres))
+
+    async_count = 0
+    async for async_res in qres_generator:
+        async_count += 1
+    assert total == async_count
 
 
 @pytest.mark.asyncio
