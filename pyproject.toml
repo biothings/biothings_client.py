@@ -58,6 +58,10 @@ jsonld = ["PyLD>=0.7.2"]
 async = [
     "hishel>=0.0.31",
 ]
+tests = [
+    "pytest>=8.3.2",
+    "pytest-asyncio>=0.23.8"
+]
 
 
 
@@ -82,3 +86,45 @@ profile = "black"
 combine_as_imports = true
 line_length = 120
 src_paths = ["."]
+
+# pytest configuration
+[tool.pytest.ini_options]
+minversion = "6.2.5"
+pythonpath = ["."]
+
+
+# Options
+addopts = [
+    "-rA",
+    "-vv",
+    "--doctest-modules",
+    "--setup-show",
+    "--capture=no",
+    "--tb=line",
+    "--durations=0",
+    "--showlocals",
+    "--strict-markers",
+    "--color=yes",
+    "--code-highlight=yes"
+]
+
+# Path
+norecursedirs = [
+    ".svn",
+    ".git",
+    "_build",
+    "tmp*",
+    "lib",
+    "lib64",
+]
+testpaths = ["test"]
+
+markers = [
+    "unit",
+]
+
+# Logging
+log_cli = true
+log_cli_level = "DEBUG"
+log_cli_format = "%(asctime)s [%(levelname)] %(message)s"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"

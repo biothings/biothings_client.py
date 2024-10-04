@@ -205,7 +205,7 @@ class AsyncBiothingClient:
             if verbose:
                 logger.info("querying {0}-{1}...".format(i + 1, cnt))
             i = cnt
-            from_cache, query_result = query_fn(batch, **fn_kwargs)
+            from_cache, query_result = await query_fn(batch, **fn_kwargs)
             yield query_result
             if verbose:
                 cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
@@ -226,7 +226,7 @@ class AsyncBiothingClient:
         Return a dictionary of Biothing metadata.
         """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
+        from_cache, ret = await self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
@@ -246,7 +246,7 @@ class AsyncBiothingClient:
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = self._get(_url, params=params, verbose=verbose)
+        from_cache, ret = await self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
@@ -270,9 +270,9 @@ class AsyncBiothingClient:
         verbose = kwargs.pop("verbose", True)
         if fields:
             kwargs["fields"] = fields
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
+        from_cache, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
@@ -288,8 +288,8 @@ class AsyncBiothingClient:
         """
         Function to yield a batch of hits one at a time.
         """
-        async for hits in await self._repeated_query(query_fn, ids, verbose=verbose):
-            async for hit in hits:
+        for hits in self._repeated_query(query_fn, ids, verbose=verbose):
+            for hit in hits:
                 yield hit
 
     async def _getannotations(self, ids, fields=None, **kwargs):
@@ -325,7 +325,7 @@ class AsyncBiothingClient:
             raise ValueError('input "ids" must be a list, tuple or iterable.')
         if fields:
             kwargs["fields"] = fields
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         verbose = kwargs.pop("verbose", True)
         dataframe = kwargs.pop("as_dataframe", None)
         df_index = kwargs.pop("df_index", True)
@@ -338,13 +338,13 @@ class AsyncBiothingClient:
         if return_raw:
             dataframe = None
 
-        def query_fn(ids):
-            return self._getannotations_inner(ids, verbose=verbose, **kwargs)
+        async def query_fn(ids):
+            return await self._getannotations_inner(ids, verbose=verbose, **kwargs)
 
         if generator:
             return self._annotations_generator(query_fn, ids, verbose=verbose, **kwargs)
         out = []
-        for hits in self._repeated_query(query_fn, ids, verbose=verbose):
+        async for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             if return_raw:
                 out.append(hits)  # hits is the raw response text
             else:
@@ -352,7 +352,7 @@ class AsyncBiothingClient:
         if return_raw and len(out) == 1:
             out = out[0]
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=df_index)
+            out = await self._dataframe(out, dataframe, df_index=df_index)
         return out
 
     async def _query(self, q: str, **kwargs):
@@ -388,7 +388,7 @@ class AsyncBiothingClient:
         """
         _url = self.url + self._query_endpoint
         verbose = kwargs.pop("verbose", True)
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         kwargs.update({"q": q})
         fetch_all = kwargs.get("fetch_all")
         if fetch_all in [True, 1]:
@@ -397,30 +397,24 @@ class AsyncBiothingClient:
                     "Ignored 'as_dataframe' because 'fetch_all' is specified. "
                     "Too many documents to return as a Dataframe."
                 )
-            return self._fetch_all(url=_url, verbose=verbose, **kwargs)
+            return await self._fetch_all(url=_url, verbose=verbose, **kwargs)
         dataframe = kwargs.pop("as_dataframe", None)
         if dataframe in [True, 1]:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = self._get(_url, kwargs, verbose=verbose)
+        from_cache, out = await self._get(_url, kwargs, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=False)
+            out = await self._dataframe(out, dataframe, df_index=False)
         return out
 
     async def _fetch_all(self, url, verbose=True, **kwargs):
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
         """
-
-        # function to get the next batch of results, automatically disables cache if we are caching
-        async def _batch():
-            from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-            return ret
-
-        batch = _batch()
+        from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
@@ -434,10 +428,11 @@ class AsyncBiothingClient:
             for hit in batch["hits"]:
                 yield hit
             kwargs.update({"scroll_id": batch["_scroll_id"]})
-            batch = _batch()
+            from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
 
     async def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        _kwargs = {"q": self._format_list(qterms)}
+        query_term_collection = await self._format_list(qterms)
+        _kwargs = {"q": query_term_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
         return await self._post(_url, params=_kwargs, verbose=verbose)
@@ -474,8 +469,8 @@ class AsyncBiothingClient:
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs["scopes"] = self._format_list(scopes, quoted=False)
-        kwargs = self._handle_common_kwargs(kwargs)
+            kwargs["scopes"] = await self._format_list(scopes, quoted=False)
+        kwargs = await self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop("returnall", False)
         verbose = kwargs.pop("verbose", True)
         dataframe = kwargs.pop("as_dataframe", None)
@@ -494,9 +489,9 @@ class AsyncBiothingClient:
         li_query = []
 
         async def query_fn(qterms):
-            return self._querymany_inner(qterms, verbose=verbose, **kwargs)
+            return await self._querymany_inner(qterms, verbose=verbose, **kwargs)
 
-        for hits in await self._repeated_query(query_fn, qterms, verbose=verbose):
+        async for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
             if return_raw:
                 out.append(hits)  # hits is the raw response text
             else:
@@ -520,7 +515,7 @@ class AsyncBiothingClient:
             del li_query
 
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=df_index)
+            out = await self._dataframe(out, dataframe, df_index=df_index)
             li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
             li_missing_df = DataFrame(li_missing, columns=["query"])
 
@@ -705,7 +700,7 @@ def generate_async_settings(biothing_type: str, url: str):
         }
     )
     return {
-        "class_name": "My" + biothing_type.title() + "Info",
+        "class_name": "Async" + "My" + biothing_type.title() + "Info",
         "class_kwargs": _kwargs,
         "mixins": [],
         "attr_aliases": _aliases,
