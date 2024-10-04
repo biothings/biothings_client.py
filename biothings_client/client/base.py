@@ -36,7 +36,7 @@ from biothings_client.client.settings import (
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
-from biothings_client.version import __version__
+from biothings_client.__version__ import __version__
 
 try:
     from pandas import DataFrame, json_normalize

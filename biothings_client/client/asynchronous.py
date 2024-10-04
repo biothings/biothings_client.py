@@ -27,7 +27,7 @@ from biothings_client.utils.iteration import (
 )
 from biothings_client.utils.copy import copy_func
 
-from biothings_client.version import __version__
+from biothings_client.__version__ import __version__
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -356,7 +356,8 @@ class AsyncBiothingClient:
         return out
 
     async def _query(self, q: str, **kwargs):
-        """Return the query result.
+        """
+        Return the query result.
         This is a wrapper for GET query of biothings query service.
 
         :param q: a query string.
@@ -410,7 +411,7 @@ class AsyncBiothingClient:
             out = await self._dataframe(out, dataframe, df_index=False)
         return out
 
-    async def _fetch_all(self, url, verbose=True, **kwargs):
+    async def _fetch_all(self, url: str, verbose: bool = True, **kwargs):
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
         """
@@ -536,6 +537,58 @@ class AsyncBiothingClient:
             if verbose and (li_dup or li_missing):
                 logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
+
+
+# class FetchAll:
+#     def __init__():
+#         pass
+
+#     async def _fetch_all(self, biothing_client: AsyncBiothingClient, url: str, verbose: bool=True, **kwargs):
+#         """
+#         Function that returns a generator to results. Assumes that 'q' is in kwargs.
+#         """
+#         from_cache, batch = await biothings_client._get(url, params=kwargs, verbose=verbose)
+#         if verbose:
+#             logger.info("Fetching {0} {1} . . .".format(batch["total"], biothings_client._optionally_plural_object_type))
+#         for key in ["q", "fetch_all"]:
+#             kwargs.pop(key)
+#         while not batch.get("error", "").startswith("No results to return"):
+#             if "error" in batch:
+#                 logger.error(batch["error"])
+#                 break
+#             if "_warning" in batch and verbose:
+#                 logger.warning(batch["_warning"])
+#             for hit in batch["hits"]:
+#                 yield hit
+#             kwargs.update({"scroll_id": batch["_scroll_id"]})
+#             from_cache, batch = await biothings_client._get(url, params=kwargs, verbose=verbose)
+
+#     async def __aiter__(self):
+#         async for payload in generate_fb_payload():
+#             if type(payload) != str:
+#                 yield payload
+#             else:
+#                 StopAsyncIteration
+
+#     async def operation()
+#         """
+#         Function that returns a generator to results. Assumes that 'q' is in kwargs.
+#         """
+#         from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
+#         if verbose:
+#             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
+#         for key in ["q", "fetch_all"]:
+#             kwargs.pop(key)
+#         while not batch.get("error", "").startswith("No results to return"):
+#             if "error" in batch:
+#                 logger.error(batch["error"])
+#                 break
+#             if "_warning" in batch and verbose:
+#                 logger.warning(batch["_warning"])
+#             for hit in batch["hits"]:
+#                 yield hit
+#             kwargs.update({"scroll_id": batch["_scroll_id"]})
+#             from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
 
 
 def get_async_client(biothing_type: str = None, instance: bool = True, *args, **kwargs):

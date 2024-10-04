@@ -2,6 +2,11 @@
 requires = ["setuptools>=67.4.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."] # list of folders that the contains the packages. We need it to be at root due to flat-layout
+include = ["biothings_client*"]  # package names should match these glob patterns
+exclude = ["tests*"]  # exclude packages matching these glob patterns
+namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
 [project]
 name="biothings_client"
 authors = [
@@ -9,6 +14,7 @@ authors = [
     {name = "Xinghua Zhou"},
     {name = "Everaldo Rodolpho", email="erodolpho@scripps.edu"},
     {name = "Chunlei Wu", email = "cwu@scripps.edu"},
+    {name = "Johnathan Schaff", email = "jschaff@scripps.edu"},
 ]
 requires-python = ">=3.8"
 description = "Python Client for BioThings API services."
@@ -46,11 +52,11 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-dynamic = ["version"]
 dependencies = [
     "httpx>=0.27.2",
     "requests>=2.32.3"
 ]
+version = "0.3.1"
 
 [project.optional-dependencies]
 dataframe = ["pandas>=0.18.0"]
@@ -72,10 +78,6 @@ documentation = "https://biothings-clientpy.readthedocs.io"
 
 [tool.setuptools]
 zip-safe = true
-# packages = ["biothings_client"]
-
-[tool.setuptools.dynamic]
-version = {attr = "biothings_client.__version__"}
 
 [tool.black]
 line-length = 120

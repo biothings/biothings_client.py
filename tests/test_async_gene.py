@@ -1,3 +1,9 @@
+"""
+Mirror of the gene tests but two main differences:
+> asynchronous
+> implemented in pytest for asyncio marker
+"""
+
 import importlib.util
 import types
 
@@ -5,7 +11,6 @@ import pytest
 
 from tests.utils import descore
 
-import biothings_client
 from biothings_client.client.definitions import AsyncMyGeneInfo
 
 

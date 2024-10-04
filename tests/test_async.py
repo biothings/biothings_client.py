@@ -25,6 +25,7 @@ async def test_get_async_client(client_name: List[str], client_url: str, class_n
     """
     Tests our ability to generate async clients
     """
+    breakpoint()
     client_name_instances = [biothings_client.get_async_client(name) for name in client_name]
     client_url_instance = biothings_client.get_async_client(url=client_url)
     clients = [client_url_instance, *client_name_instances]
