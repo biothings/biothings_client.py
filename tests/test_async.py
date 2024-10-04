@@ -17,7 +17,7 @@ import biothings_client
         (["variant"], "https://myvariant.info/v1", "AsyncMyVariantInfo"),
         (["chem", "drug"], "https://mychem.info/v1", "AsyncMyChemInfo"),
         (["disease"], "https://mydisease.info/v1", "AsyncMyDiseaseInfo"),
-        (["taxon"], "https://t.biothings.info/v1", "AsyncMyTaxonInfo"),
+        (["taxon"], "https://t.biothings.io/v1", "AsyncMyTaxonInfo"),
         (["geneset"], "https://mygeneset.info/v1", "AsyncMyGenesetInfo"),
     ],
 )
@@ -40,7 +40,7 @@ async def test_get_async_client(client_name: List[str], client_url: str, class_n
         ("variant", "https://mychem.info/v1", "AsyncMyVariantInfo"),
         ("chem", "https://mychem.info/v1", "AsyncMyChemInfo"),
         ("disease", "https://mydisease.info/v1", "AsyncMyDiseaseInfo"),
-        ("taxon", "https://t.biothings.info/v1", "AsyncMyTaxonInfo"),
+        ("taxon", "https://t.biothings.io/v1", "AsyncMyTaxonInfo"),
         ("geneset", "https://mygeneset.info/v1", "AsyncMyGenesetInfo"),
     ],
 )

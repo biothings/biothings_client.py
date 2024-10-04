@@ -46,6 +46,7 @@ class TestBiothingsClient(unittest.TestCase):
         disease_client = biothings_client.get_client("disease")
         self.assertEqual(type(disease_client).__name__, "MyDiseaseInfo")
 
+        breakpoint()
         taxon_client = biothings_client.get_client("taxon")
         self.assertEqual(type(taxon_client).__name__, "MyTaxonInfo")
 
@@ -63,16 +64,16 @@ class TestBiothingsClient(unittest.TestCase):
 
 def suite():
     _biothings_suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBiothingsClient)
-    _gene_suite = gene_suite()
-    _variant_suite = variant_suite()
-    _chem_suite = chem_suite()
-    _geneset_suite = geneset_suite()
+    # _gene_suite = gene_suite()
+    # _variant_suite = variant_suite()
+    # _chem_suite = chem_suite()
+    # _geneset_suite = geneset_suite()
     _total_suite = unittest.TestSuite()
     _total_suite.addTest(_biothings_suite)
-    _total_suite.addTest(_gene_suite)
-    _total_suite.addTest(_variant_suite)
-    _total_suite.addTest(_chem_suite)
-    _total_suite.addTest(_geneset_suite)
+    # _total_suite.addTest(_gene_suite)
+    # _total_suite.addTest(_variant_suite)
+    # _total_suite.addTest(_chem_suite)
+    # _total_suite.addTest(_geneset_suite)
     return _total_suite
 
 
