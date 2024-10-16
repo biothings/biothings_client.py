@@ -1,4 +1,5 @@
 """ Utils used for testing in biothings_client tests """
+
 import logging
 
 try:

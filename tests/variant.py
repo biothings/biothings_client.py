@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import types
@@ -15,6 +16,9 @@ import biothings_client
 sys.stderr.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
+
+pandas_available = importlib.util.find_spec("pandas") is not None
+requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 class TestVariantClient(unittest.TestCase):
@@ -193,7 +197,7 @@ class TestVariantClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": "NA_TEST", "notfound": True})
 
-    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
+    @unittest.skipIf(not pandas_available, "pandas not available")
     def test_querymany_dataframe(self):
         from pandas import DataFrame
 
@@ -218,7 +222,7 @@ class TestVariantClient(unittest.TestCase):
         self.assertTrue("dbsnp.chrom" in fields.keys())
         self.assertTrue("clinvar.chrom" in fields.keys())
 
-    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
+    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
     def test_caching(self):
         def _getvariant():
             return self.mv.getvariant("chr9:g.107620835G>A")
