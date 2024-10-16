@@ -4,6 +4,7 @@ Async Python Client for generic Biothings API services
 
 from collections.abc import Iterable
 from copy import copy
+import asyncio
 import logging
 import os
 import platform
@@ -212,7 +213,7 @@ class AsyncBiothingClient:
                 logger.info("done.{0}".format(cache_str))
             if not from_cache and self.delay:
                 # no need to delay if requests are from cache.
-                time.sleep(self.delay)
+                await asyncio.sleep(self.delay)
 
     @property
     async def _from_cache_notification(self):
