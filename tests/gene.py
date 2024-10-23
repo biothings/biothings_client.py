@@ -1,3 +1,4 @@
+import importlib.util
 import os
 import sys
 import types
@@ -5,16 +6,16 @@ import unittest
 
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-try:
-    from utils import cache_request, descore
-except ImportError:
-    from tests.utils import descore, cache_request
-
+from biothings_client.utils.cache import cache_request
+from biothings_client.utils.score import descore
 import biothings_client
 
 sys.stdout.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
+
+pandas_available = importlib.util.find_spec("pandas") is not None
+requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 class TestGeneClient(unittest.TestCase):
@@ -249,7 +250,7 @@ class TestGeneClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": "NA_TEST", "notfound": True})
 
-    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
+    @unittest.skipIf(not pandas_available, "pandas not available")
     def test_querymany_dataframe(self):
         from pandas import DataFrame
 
@@ -276,7 +277,7 @@ class TestGeneClient(unittest.TestCase):
         fields = self.mg.get_fields("kegg")
         self.assertTrue("pathway.kegg" in fields.keys())
 
-    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
+    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
     def test_caching(self):
         def _getgene():
             return self.mg.getgene("1017")

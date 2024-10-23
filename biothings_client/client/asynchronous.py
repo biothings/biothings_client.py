@@ -1,25 +1,18 @@
 """
-Python Client for generic Biothings API services
+Async Python Client for generic Biothings API services
 """
 
-from __future__ import print_function
-
+from collections.abc import Iterable
+from copy import copy
+import asyncio
 import logging
 import os
 import platform
 import time
 import warnings
-from collections import Counter
-from itertools import islice
 
-import requests
+import httpx
 
-from .utils import str_types, is_py27
-
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
 
 try:
     from pandas import DataFrame, json_normalize
@@ -28,132 +21,99 @@ try:
 except ImportError:
     df_avail = False
 
-try:
-    import requests_cache
+from biothings_client.utils.iteration import (
+    iter_n,
+    list_itemcnt,
+    safe_str,
+)
+from biothings_client.utils.copy import copy_func
 
-    caching_avail = True
-except ImportError:
-    caching_avail = False
+from biothings_client.__version__ import __version__
+from biothings_client.client.settings import (
+    COMMON_ALIASES,
+    COMMON_KWARGS,
+    MYCHEM_ALIASES,
+    MYCHEM_KWARGS,
+    MYDISEASE_ALIASES,
+    MYDISEASE_KWARGS,
+    MYGENESET_ALIASES,
+    MYGENESET_KWARGS,
+    MYGENE_ALIASES,
+    MYGENE_KWARGS,
+    MYTAXON_ALIASES,
+    MYTAXON_KWARGS,
+    MYVARIANT_ALIASES,
+    MYVARIANT_KWARGS,
+)
+from biothings_client.mixins.gene import MyGeneClientMixin
+from biothings_client.mixins.variant import MyVariantClientMixin
 
-
-__version__ = "0.3.1"
 
 logger = logging.getLogger("biothings.client")
-if is_py27:
-    # we need to setup default log handler in Py 2.7
-    # Py 3.x does it by default
-    handler = logging.StreamHandler()
-    # formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-    # handler.setFormatter(formatter)
-    logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
 
 # Future work:
 # Consider use "verbose" settings to control default logging output level
 # by doing this instead of using branching throughout the application,
 # the business logic can be more concise and more readable.
-
-
-class ScanError(Exception):
-    # for errors in scan search type
-    pass
-
-
-def alwayslist(value):
-    """If input value if not a list/tuple type, return it as a single value list.
-
-    Example:
-
-    >>> x = 'abc'
-    >>> for xx in alwayslist(x):
-    ...     print xx
-    >>> x = ['abc', 'def']
-    >>> for xx in alwayslist(x):
-    ...     print xx
-
+class AsyncBiothingClient:
     """
-    if isinstance(value, (list, tuple)):
-        return value
-    else:
-        return [value]
-
-
-def safe_str(s, encoding="utf-8"):
-    """Perform proper encoding if input is an unicode string."""
-    try:
-        _s = str(s)
-    except UnicodeEncodeError:
-        _s = s.encode(encoding)
-    return _s
-
-
-def list_itemcnt(li):
-    """Return number of occurrence for each item in the list."""
-    return list(Counter(li).items())
-
-
-def iter_n(iterable, n, with_cnt=False):
+    This is the asynchronous client for a biothing web service.
     """
-    Iterate an iterator by chunks (of n)
-    if with_cnt is True, return (chunk, cnt) each time
-    """
-    it = iter(iterable)
-    if with_cnt:
-        cnt = 0
-    while True:
-        chunk = tuple(islice(it, n))
-        if not chunk:
-            return
-        if with_cnt:
-            cnt += len(chunk)
-            yield (chunk, cnt)
-        else:
-            yield chunk
 
-
-class BiothingClient(object):
-    """This is the client for a biothing web service."""
-
-    def __init__(self, url=None):
+    def __init__(self, url: str = None, enable_cache: bool = None):
         if url is None:
             url = self._default_url
         self.url = url
         if self.url[-1] == "/":
             self.url = self.url[:-1]
+
+        if enable_cache is None:
+            enable_cache = False
+        self.enable_cache = enable_cache
+
         self.max_query = self._max_query
+
         # delay and step attributes are for batch queries.
         self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
         self.scroll_size = self._scroll_size
-        # raise requests.exceptions.HTTPError for status_code > 400
-        #   but not for 404 on getvariant
-        #   set to False to suppress the exceptions.
+
+        # raise httpx.HTTPError for status_code > 400
+        # > but not for 404 on getvariant
+        # > set to False to suppress the exceptions.
         self.raise_for_status = True
         self.default_user_agent = (
-            "{package_header}/{client_version} (" "python:{python_version} " "requests:{requests_version}" ")"
+            "{package_header}/{client_version} (" "python:{python_version} " "httpx:{httpx_version}" ")"
         ).format(
             **{
                 "package_header": self._pkg_user_agent_header,
                 "client_version": __version__,
                 "python_version": platform.python_version(),
-                "requests_version": requests.__version__,
+                "httpx_version": httpx.__version__,
             }
         )
-        self._cached = False
 
-    def use_http(self):
-        """Use http instead of https for API calls."""
+    async def use_http(self):
+        """
+        Use http instead of https for API calls.
+        """
         if self.url:
             self.url = self.url.replace("https://", "http://")
 
-    def use_https(self):
-        """Use https instead of http for API calls. This is the default."""
+    async def use_https(self):
+        """
+        Use https instead of http for API calls. This is the default.
+        """
         if self.url:
             self.url = self.url.replace("http://", "https://")
 
     @staticmethod
-    def _dataframe(obj, dataframe, df_index=True):
-        """Converts object to DataFrame (pandas)"""
+    async def _dataframe(obj, dataframe, df_index=True):
+        """
+        Converts object to DataFrame (pandas)
+        """
         if not df_avail:
             raise RuntimeError("Error: pandas module must be installed " "(or upgraded) for as_dataframe option.")
         # if dataframe not in ["by_source", "normal"]:
@@ -173,40 +133,51 @@ class BiothingClient(object):
             df = df.set_index("query")
         return df
 
-    def _get(self, url, params=None, none_on_404=False, verbose=True):
-        params = params or {}
+    async def _get(
+        self, url: str, params: dict = None, none_on_404: bool = False, verbose: bool = True
+    ) -> tuple[bool, httpx.Response]:
+        """
+        Wrapper around the httpx.get method
+        """
+        if params is None:
+            params = {}
         debug = params.pop("debug", False)
         return_raw = params.pop("return_raw", False)
+
         headers = {"user-agent": self.default_user_agent}
-        res = requests.get(url, params=params, headers=headers)
+        async with httpx.AsyncClient() as client:
+            res = await client.get(url, params=params, headers=headers)
         from_cache = getattr(res, "from_cache", False)
+
         if debug:
             return from_cache, res
         if none_on_404 and res.status_code == 404:
             return from_cache, None
         if self.raise_for_status:
-            # raise requests.exceptions.HTTPError if not 200
-            res.raise_for_status()
+            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
         if return_raw:
             return from_cache, res.text
         ret = res.json()
         return from_cache, ret
 
-    def _post(self, url, params, verbose=True):
+    async def _post(self, url: str, params: dict, verbose: bool = True):
+        """
+        Wrapper around the httpx.post method
+        """
         return_raw = params.pop("return_raw", False)
         headers = {"user-agent": self.default_user_agent}
-        res = requests.post(url, data=params, headers=headers)
+        async with httpx.AsyncClient() as client:
+            res = await client.post(url, data=params, headers=headers)
         from_cache = getattr(res, "from_cache", False)
         if self.raise_for_status:
-            # raise requests.exceptions.HTTPError if not 200
-            res.raise_for_status()
+            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
         if return_raw:
             return from_cache, res
         ret = res.json()
         return from_cache, ret
 
     @staticmethod
-    def _format_list(a_list, sep=",", quoted=True):
+    async def _format_list(a_list, sep=",", quoted=True):
         if isinstance(a_list, (list, tuple)):
             if quoted:
                 _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
@@ -216,34 +187,16 @@ class BiothingClient(object):
             _out = a_list  # a_list is already a comma separated string
         return _out
 
-    def _handle_common_kwargs(self, kwargs):
+    async def _handle_common_kwargs(self, kwargs):
         # handle these common parameters accept field names as the value
         for kw in ["fields", "always_list", "allow_null"]:
             if kw in kwargs:
-                kwargs[kw] = self._format_list(kwargs[kw], quoted=False)
+                kwargs[kw] = await self._format_list(kwargs[kw], quoted=False)
         return kwargs
 
-    def _repeated_query_old(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        """This is deprecated, query_li can only be a list"""
-        step = min(self.step, self.max_query)
-        if len(query_li) <= step:
-            # No need to do series of batch queries, turn off verbose output
-            verbose = False
-        for i in range(0, len(query_li), step):
-            is_last_loop = i + step >= len(query_li)
-            if verbose:
-                logger.info("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))))
-            query_result = query_fn(query_li[i : i + step], **fn_kwargs)
-
-            yield query_result
-
-            if verbose:
-                logger.info("done.")
-            if not is_last_loop and self.delay:
-                time.sleep(self.delay)
-
-    def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        """Run query_fn for input query_li in a batch (self.step).
+    async def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
+        """
+        Run query_fn for input query_li in a batch (self.step).
         return a generator of query_result in each batch.
         input query_li can be a list/tuple/iterable
         """
@@ -253,65 +206,38 @@ class BiothingClient(object):
             if verbose:
                 logger.info("querying {0}-{1}...".format(i + 1, cnt))
             i = cnt
-            from_cache, query_result = query_fn(batch, **fn_kwargs)
+            from_cache, query_result = await query_fn(batch, **fn_kwargs)
             yield query_result
             if verbose:
                 cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
                 logger.info("done.{0}".format(cache_str))
             if not from_cache and self.delay:
                 # no need to delay if requests are from cache.
-                time.sleep(self.delay)
+                await asyncio.sleep(self.delay)
 
     @property
-    def _from_cache_notification(self):
-        """Notification to alert user that a cached result is being returned."""
+    async def _from_cache_notification(self):
+        """
+        Notification to alert user that a cached result is being returned.
+        """
         return "[ from cache ]"
 
-    def _metadata(self, verbose=True, **kwargs):
-        """Return a dictionary of Biothing metadata."""
+    async def _metadata(self, verbose=True, **kwargs):
+        """
+        Return a dictionary of Biothing metadata.
+        """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
+        from_cache, ret = await self._get(_url, params=kwargs, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
 
-    def _set_caching(self, cache_db=None, verbose=True, **kwargs):
-        """Installs a local cache for all requests.
+    async def _get_fields(self, search_term=None, verbose=True):
+        """
+        Wrapper for /metadata/fields
 
-        **cache_db** is the path to the local sqlite cache database."""
-        if caching_avail:
-            if cache_db is None:
-                cache_db = self._default_cache_file
-            requests_cache.install_cache(cache_name=cache_db, allowable_methods=("GET", "POST"), **kwargs)
-            self._cached = True
-            if verbose:
-                logger.info('[ Future queries will be cached in "{0}" ]'.format(os.path.abspath(cache_db + ".sqlite")))
-        else:
-            raise RuntimeError(
-                "The requests_cache python module is required to use request caching. See "
-                "https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation"
-            )
-
-    def _stop_caching(self):
-        """Stop caching."""
-        if self._cached and caching_avail:
-            requests_cache.uninstall_cache()
-            self._cached = False
-        return
-
-    def _clear_cache(self):
-        """Clear the globally installed cache."""
-        try:
-            requests_cache.clear()
-        except AttributeError:
-            # requests_cache is not enabled
-            logger.warning("requests_cache is not enabled. Nothing to clear.")
-
-    def _get_fields(self, search_term=None, verbose=True):
-        """Wrapper for /metadata/fields
-
-            **search_term** is a case insensitive string to search for in available field names.
-            If not provided, all available fields will be returned.
+        **search_term** is a case insensitive string to search for in available field names.
+        If not provided, all available fields will be returned.
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
 
@@ -321,7 +247,7 @@ class BiothingClient(object):
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = self._get(_url, params=params, verbose=verbose)
+        from_cache, ret = await self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
@@ -331,7 +257,7 @@ class BiothingClient(object):
             logger.info(self._from_cache_notification)
         return ret
 
-    def _getannotation(self, _id, fields=None, **kwargs):
+    async def _getannotation(self, _id, fields=None, **kwargs):
         """Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
 
@@ -345,26 +271,29 @@ class BiothingClient(object):
         verbose = kwargs.pop("verbose", True)
         if fields:
             kwargs["fields"] = fields
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
+        from_cache, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
 
-    def _getannotations_inner(self, ids, verbose=True, **kwargs):
-        _kwargs = {"ids": self._format_list(ids)}
+    async def _getannotations_inner(self, ids, verbose=True, **kwargs):
+        id_collection = await self._format_list(ids)
+        _kwargs = {"ids": id_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._annotation_endpoint
-        return self._post(_url, _kwargs, verbose=verbose)
+        return await self._post(_url, _kwargs, verbose=verbose)
 
-    def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
-        """Function to yield a batch of hits one at a time."""
+    async def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
+        """
+        Function to yield a batch of hits one at a time.
+        """
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             for hit in hits:
                 yield hit
 
-    def _getannotations(self, ids, fields=None, **kwargs):
+    async def _getannotations(self, ids, fields=None, **kwargs):
         """Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
 
@@ -391,13 +320,13 @@ class BiothingClient(object):
         .. Hint:: If you need to pass a very large list of input ids, you can pass a generator
                   instead of a full list, which is more memory efficient.
         """
-        if isinstance(ids, str_types):
+        if isinstance(ids, str):
             ids = ids.split(",") if ids else []
         if not (isinstance(ids, (list, tuple, Iterable))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
         if fields:
             kwargs["fields"] = fields
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         verbose = kwargs.pop("verbose", True)
         dataframe = kwargs.pop("as_dataframe", None)
         df_index = kwargs.pop("df_index", True)
@@ -410,13 +339,13 @@ class BiothingClient(object):
         if return_raw:
             dataframe = None
 
-        def query_fn(ids):
-            return self._getannotations_inner(ids, verbose=verbose, **kwargs)
+        async def query_fn(ids):
+            return await self._getannotations_inner(ids, verbose=verbose, **kwargs)
 
         if generator:
             return self._annotations_generator(query_fn, ids, verbose=verbose, **kwargs)
         out = []
-        for hits in self._repeated_query(query_fn, ids, verbose=verbose):
+        async for hits in self._repeated_query(query_fn, ids, verbose=verbose):
             if return_raw:
                 out.append(hits)  # hits is the raw response text
             else:
@@ -424,11 +353,12 @@ class BiothingClient(object):
         if return_raw and len(out) == 1:
             out = out[0]
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=df_index)
+            out = await self._dataframe(out, dataframe, df_index=df_index)
         return out
 
-    def _query(self, q, **kwargs):
-        """Return the query result.
+    async def _query(self, q: str, **kwargs):
+        """
+        Return the query result.
         This is a wrapper for GET query of biothings query service.
 
         :param q: a query string.
@@ -460,7 +390,7 @@ class BiothingClient(object):
         """
         _url = self.url + self._query_endpoint
         verbose = kwargs.pop("verbose", True)
-        kwargs = self._handle_common_kwargs(kwargs)
+        kwargs = await self._handle_common_kwargs(kwargs)
         kwargs.update({"q": q})
         fetch_all = kwargs.get("fetch_all")
         if fetch_all in [True, 1]:
@@ -475,29 +405,18 @@ class BiothingClient(object):
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = self._get(_url, kwargs, verbose=verbose)
+        from_cache, out = await self._get(_url, kwargs, verbose=verbose)
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=False)
+            out = await self._dataframe(out, dataframe, df_index=False)
         return out
 
-    def _fetch_all(self, url, verbose=True, **kwargs):
-        """Function that returns a generator to results. Assumes that 'q' is in kwargs."""
-
-        # function to get the next batch of results, automatically disables cache if we are caching
-        def _batch():
-            if caching_avail and self._cached:
-                self._cached = False
-                with requests_cache.disabled():
-                    from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-                    del from_cache
-                self._cached = True
-            else:
-                from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-            return ret
-
-        batch = _batch()
+    async def _fetch_all(self, url: str, verbose: bool = True, **kwargs):
+        """
+        Function that returns a generator to results. Assumes that 'q' is in kwargs.
+        """
+        from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
@@ -511,15 +430,16 @@ class BiothingClient(object):
             for hit in batch["hits"]:
                 yield hit
             kwargs.update({"scroll_id": batch["_scroll_id"]})
-            batch = _batch()
+            from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
 
-    def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        _kwargs = {"q": self._format_list(qterms)}
+    async def _querymany_inner(self, qterms, verbose=True, **kwargs):
+        query_term_collection = await self._format_list(qterms)
+        _kwargs = {"q": query_term_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
-        return self._post(_url, params=_kwargs, verbose=verbose)
+        return await self._post(_url, params=_kwargs, verbose=verbose)
 
-    def _querymany(self, qterms, scopes=None, **kwargs):
+    async def _querymany(self, qterms, scopes=None, **kwargs):
         """Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
@@ -545,14 +465,14 @@ class BiothingClient(object):
                   instead of a full list, which is more memory efficient.
 
         """
-        if isinstance(qterms, str_types):
+        if isinstance(qterms, str):
             qterms = qterms.split(",") if qterms else []
         if not (isinstance(qterms, (list, tuple, Iterable))):
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs["scopes"] = self._format_list(scopes, quoted=False)
-        kwargs = self._handle_common_kwargs(kwargs)
+            kwargs["scopes"] = await self._format_list(scopes, quoted=False)
+        kwargs = await self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop("returnall", False)
         verbose = kwargs.pop("verbose", True)
         dataframe = kwargs.pop("as_dataframe", None)
@@ -570,10 +490,10 @@ class BiothingClient(object):
         li_dup = []
         li_query = []
 
-        def query_fn(qterms):
-            return self._querymany_inner(qterms, verbose=verbose, **kwargs)
+        async def query_fn(qterms):
+            return await self._querymany_inner(qterms, verbose=verbose, **kwargs)
 
-        for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
+        async for hits in self._repeated_query(query_fn, qterms, verbose=verbose):
             if return_raw:
                 out.append(hits)  # hits is the raw response text
             else:
@@ -597,7 +517,7 @@ class BiothingClient(object):
             del li_query
 
         if dataframe:
-            out = self._dataframe(out, dataframe, df_index=df_index)
+            out = await self._dataframe(out, dataframe, df_index=df_index)
             li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
             li_missing_df = DataFrame(li_missing, columns=["query"])
 
@@ -618,3 +538,173 @@ class BiothingClient(object):
             if verbose and (li_dup or li_missing):
                 logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
+
+
+def get_async_client(biothing_type: str = None, instance: bool = True, *args, **kwargs):
+    """
+    Function to return a new python asynchronous client for a Biothings API service.
+
+    :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease', 'geneset'
+    :param instance: if True, return an instance of the derived client,
+                     if False, return the class of the derived client
+
+    All other args/kwargs are passed to the derived client instantiation (if applicable)
+    """
+    if not biothing_type:
+        url = kwargs.get("url", False)
+        if not url:
+            raise RuntimeError("No biothings_type or url specified.")
+        try:
+            url += "metadata" if url.endswith("/") else "/metadata"
+            res = httpx.get(url)
+            dic = res.json()
+            biothing_type = dic.get("biothing_type")
+            if isinstance(biothing_type, list):
+                if len(biothing_type) == 1:
+                    # if a list with only one item, use that item
+                    biothing_type = biothing_type[0]
+                else:
+                    raise RuntimeError("Biothing_type in metadata url is not unique.")
+            if not isinstance(biothing_type, str):
+                raise RuntimeError("Biothing_type in metadata url is not a valid string.")
+        except httpx.RequestError as request_error:
+            raise RuntimeError("Cannot access metadata url to determine biothing_type.") from request_error
+    else:
+        biothing_type = biothing_type.lower()
+    if biothing_type not in ASYNC_CLIENT_SETTINGS and not kwargs.get("url", False):
+        raise Exception(
+            "No client named '{0}', currently available clients are: {1}".format(
+                biothing_type, list(ASYNC_CLIENT_SETTINGS.keys())
+            )
+        )
+    _settings = (
+        ASYNC_CLIENT_SETTINGS[biothing_type]
+        if biothing_type in ASYNC_CLIENT_SETTINGS
+        else generate_async_settings(biothing_type, kwargs.get("url"))
+    )
+    _class = type(
+        _settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]), _settings["class_kwargs"]
+    )
+    for src_attr, target_attr in _settings["attr_aliases"].items():
+        if getattr(_class, src_attr, False):
+            setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
+
+    for _name, _docstring in _settings["class_kwargs"]["_docstring_obj"].items():
+        _func = getattr(_class, _name, None)
+        if _func:
+            try:
+                _func.__doc__ = _docstring
+            except AttributeError:
+                _func.__func__.__doc__ = _docstring
+    _client = _class(*args, **kwargs) if instance else _class
+    return _client
+
+
+# ***********************************************
+# *  Client settings
+# *
+# *  This object contains the client-specific settings necessary to
+# *  instantiate a new biothings client.  The currently supported
+# *  clients are the keys of this object.
+# *
+# *  class - the client Class name
+# *  class_kwargs - keyword arguments passed to Class on creation
+# *  function_aliases - client specific function aliases in Class
+# *  ancestors - a list of classes that Class inherits from
+# ***********************************************
+ASYNC_CLIENT_SETTINGS = {
+    "gene": {
+        "class_name": "AsyncMyGeneInfo",
+        "class_kwargs": MYGENE_KWARGS,
+        "attr_aliases": MYGENE_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [MyGeneClientMixin],
+    },
+    "variant": {
+        "class_name": "AsyncMyVariantInfo",
+        "class_kwargs": MYVARIANT_KWARGS,
+        "attr_aliases": MYVARIANT_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [MyVariantClientMixin],
+    },
+    "taxon": {
+        "class_name": "AsyncMyTaxonInfo",
+        "class_kwargs": MYTAXON_KWARGS,
+        "attr_aliases": MYTAXON_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "drug": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "chem": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "compound": {
+        "class_name": "AsyncMyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "disease": {
+        "class_name": "AsyncMyDiseaseInfo",
+        "class_kwargs": MYDISEASE_KWARGS,
+        "attr_aliases": MYDISEASE_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+    "geneset": {
+        "class_name": "AsyncMyGenesetInfo",
+        "class_kwargs": MYGENESET_KWARGS,
+        "attr_aliases": MYGENESET_ALIASES,
+        "base_class": AsyncBiothingClient,
+        "mixins": [],
+    },
+}
+
+
+def generate_async_settings(biothing_type: str, url: str):
+    """
+    Tries to generate a settings dictionary for a client that isn't explicitly listed in
+    {
+        CLIENT_SETTINGS,
+        ASYNC_CLIENT_SETTINGS
+    }
+    """
+
+    def _pluralize(s, optional=True):
+        _append = "({})" if optional else "{}"
+        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
+
+    _kwargs = copy(COMMON_KWARGS)
+    _aliases = copy(COMMON_ALIASES)
+    _kwargs.update(
+        {
+            "_default_url": url,
+            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
+            "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
+            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
+        }
+    )
+    _aliases.update(
+        {
+            "_getannotation": "get" + biothing_type.lower(),
+            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
+        }
+    )
+    return {
+        "class_name": "Async" + "My" + biothing_type.title() + "Info",
+        "class_kwargs": _kwargs,
+        "mixins": [],
+        "attr_aliases": _aliases,
+        "base_class": AsyncBiothingClient,
+    }

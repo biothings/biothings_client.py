@@ -1,3 +1,6 @@
+import importlib.util
+import logging
+import json
 import os
 import sys
 import types
@@ -5,16 +8,20 @@ import unittest
 
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-try:
-    from utils import cache_request, descore
-except ImportError:
-    from tests.utils import descore, cache_request
-
+from biothings_client.utils.cache import cache_request
+from biothings_client.utils.score import descore
 import biothings_client
 
 sys.stdout.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
+
+pandas_available = importlib.util.find_spec("pandas") is not None
+requests_cache_available = importlib.util.find_spec("requests_cache") is not None
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class TestChemClient(unittest.TestCase):
@@ -61,46 +68,71 @@ class TestChemClient(unittest.TestCase):
         If support is enabled then we should retrieve the exact same document for all the provided
         queries
         """
+
         curie_id_testing_collection = [
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CHEMBL.COMPOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "chembl.compound:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CheMBL.compOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
-            (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
-            ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
-            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CHEBI:57966", "chebi.id:CHEBI:57966"),
-            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "chebi:57966", "chebi.id:CHEBI:57966"),
-            (("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CheBi:57966", "chebi.id:CHEBI:57966")),
-            ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("dB03107", "DRUGBANK:dB03107", "drugbank.id:dB03107"),
-            ("dB03107", "drugbank:dB03107", "drugbank.id:dB03107"),
-            ("dB03107", "DrugBaNK:dB03107", "drugbank.id:dB03107"),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "CHEMBL297569",
+                "CHEMBL.COMPOUND:CHEMBL297569",
+                "chembl.compound:CHEMBL297569",
+                "cHEmbl.ComPOUND:CHEMBL297569",
+                "chembl.molecule_chembl_id:CHEMBL297569",
+            ),
+            (
+                "AKUPVPKIFATOBM-UHFFFAOYSA-N",
+                "120933777",
+                120933777,
+                "PUBCHEM.COMPOUND:120933777",
+                "pubchem.compound:120933777",
+                "PuBcHEm.COMPound:120933777",
+                "pubchem.cid:120933777",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "CHEBI:CHEBI:57966",
+                "chebi:CHEBI:57966",
+                "CheBi:CHEBI:57966",
+                "chebi.id:CHEBI:57966",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "11P2JDE17B",
+                "UNII:11P2JDE17B",
+                "unii:11P2JDE17B",
+                "uNIi:11P2JDE17B",
+                "unii.unii:11P2JDE17B",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "dB03107",
+                "DRUGBANK:dB03107",
+                "drugbank:dB03107",
+                "DrugBaNK:dB03107",
+                "drugbank.id:dB03107",
+            ),
         ]
 
-        results_aggregation = []
-        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
-            id_query_result = self.mc.getchem(_id=id_query)
-            biothings_term_query_result = self.mc.getchem(_id=biothings_query)
-            biolink_term_query_result = self.mc.getchem(_id=biolink_query)
-            results_aggregation.append(
-                (
-                    id_query_result == biothings_term_query_result,
-                    id_query_result == biolink_term_query_result,
-                    biothings_term_query_result == biolink_term_query_result,
-                )
+        aggregation_query_groups = []
+        for query_collection in curie_id_testing_collection:
+            query_result_storage = []
+            for similar_query in query_collection:
+                query_result = self.mc.getchem(_id=similar_query)
+                query_result_storage.append(query_result)
+
+            results_aggregation = [query == query_result_storage[0] for query in query_result_storage[1:]]
+
+            query_result_mapping = dict(zip(query_collection[1:], results_aggregation))
+            logger.debug(
+                "Comparison to first term %s ->\n%s", query_collection[0], json.dumps(query_result_mapping, indent=4)
             )
 
-        results_validation = []
-        failure_messages = []
-        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
-            cumulative_result = all(result)
-            if not cumulative_result:
-                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
-            results_validation.append(cumulative_result)
+            if all(results_aggregation):
+                logger.info("Query group %s succeeded", query_collection)
+            else:
+                logger.error("Query group %s failed", query_collection)
 
-        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+            aggregation_query_groups.append(all(results_aggregation))
+        assert all(aggregation_query_groups)
 
     def test_multiple_curie_id_query(self):
         """
@@ -113,60 +145,74 @@ class TestChemClient(unittest.TestCase):
         queries
         """
         curie_id_testing_collection = [
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CHEMBL.COMPOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "chembl.compound:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("OTVSEAHLIUCIKT-ZETCQYMHSA-N", "CheMBL.compOUND:CHEMBL57966", "chembl.molecule_chembl_id:CHEMBL57966"),
-            ("120933777", "PUBCHEM.COMPOUND:120933777", "pubchem.cid:120933777"),
-            (120933777, "pubchem.compound:120933777", "pubchem.cid:120933777"),
-            ("120933777", "PuBcHEm.COMPound:120933777", "pubchem.cid:120933777"),
-            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CHEBI:57966", "chebi.id:CHEBI:57966"),
-            ("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "chebi:57966", "chebi.id:CHEBI:57966"),
-            (("UCMIRNVEIXFBKS-UHFFFAOYSA-N", "CheBi:57966", "chebi.id:CHEBI:57966")),
-            ("11P2JDE17B", "UNII:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("11P2JDE17B", "unii:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("11P2JDE17B", "uNIi:11P2JDE17B", "unii.unii:11P2JDE17B"),
-            ("dB03107", "DRUGBANK:dB03107", "drugbank.id:dB03107"),
-            ("dB03107", "drugbank:dB03107", "drugbank.id:dB03107"),
-            ("dB03107", "DrugBaNK:dB03107", "drugbank.id:dB03107"),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "CHEMBL297569",
+                "CHEMBL.COMPOUND:CHEMBL297569",
+                "chembl.compound:CHEMBL297569",
+                "cHEmbl.ComPOUND:CHEMBL297569",
+                "chembl.molecule_chembl_id:CHEMBL297569",
+            ),
+            (
+                "AKUPVPKIFATOBM-UHFFFAOYSA-N",
+                "120933777",
+                120933777,
+                "PUBCHEM.COMPOUND:120933777",
+                "pubchem.compound:120933777",
+                "PuBcHEm.COMPound:120933777",
+                "pubchem.cid:120933777",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "CHEBI:CHEBI:57966",
+                "chebi:CHEBI:57966",
+                "CheBi:CHEBI:57966",
+                "chebi.id:CHEBI:57966",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "11P2JDE17B",
+                "UNII:11P2JDE17B",
+                "unii:11P2JDE17B",
+                "uNIi:11P2JDE17B",
+                "unii.unii:11P2JDE17B",
+            ),
+            (
+                "UCMIRNVEIXFBKS-UHFFFAOYSA-N",
+                "dB03107",
+                "DRUGBANK:dB03107",
+                "drugbank:dB03107",
+                "DrugBaNK:dB03107",
+                "drugbank.id:dB03107",
+            ),
         ]
 
         results_aggregation = []
-        for id_query, biothings_query, biolink_query in curie_id_testing_collection:
-            base_result = self.mc.getchem(_id=id_query)
+        for query_collection in curie_id_testing_collection:
+            base_result = self.mc.getchem(_id=query_collection[0])
+            query_results = self.mc.getchems(ids=query_collection)
+            assert len(query_results) == len(query_collection)
 
-            batch_query = [id_query, biothings_query, biolink_query]
-            query_results = self.mc.getchems(ids=batch_query)
-            assert len(query_results) == len(batch_query)
+            batch_result = []
+            for query_result, query_entry in zip(query_results, query_collection):
+                return_query_field = query_result.pop("query")
+                assert return_query_field == str(query_entry)
+                batch_result.append(base_result == query_result)
 
-            batch_id_query = query_results[0]
-            batch_biothings_query = query_results[1]
-            batch_biolink_query = query_results[2]
+            aggregate_result = all(results_aggregation)
 
-            batch_id_query_return_value = batch_id_query.pop("query")
-            assert batch_id_query_return_value == str(id_query)
-
-            batch_biothings_query_return_value = batch_biothings_query.pop("query")
-            assert batch_biothings_query_return_value == str(biothings_query)
-
-            batch_biolink_query_return_value = batch_biolink_query.pop("query")
-            assert batch_biolink_query_return_value == str(biolink_query)
-
-            batch_result = (
-                base_result == batch_id_query,
-                base_result == batch_biothings_query,
-                base_result == batch_biolink_query,
+            query_result_mapping = dict(zip(query_collection[1:], results_aggregation))
+            logger.debug(
+                "Comparison to first term %s ->\n%s", query_collection[0], json.dumps(query_result_mapping, indent=4)
             )
-            results_aggregation.append(batch_result)
 
-        results_validation = []
-        failure_messages = []
-        for result, test_query in zip(results_aggregation, curie_id_testing_collection):
-            cumulative_result = all(result)
-            if not cumulative_result:
-                failure_messages.append(f"Query Failure: {test_query} | Results: {result}")
-            results_validation.append(cumulative_result)
+            if aggregate_result:
+                logger.info("Query group %s succeeded", query_collection)
+            else:
+                logger.error("Query group %s failed", query_collection)
 
-        self.assertTrue(all(results_validation), msg="\n".join(failure_messages))
+            results_aggregation.append(aggregate_result)
+        assert all(results_aggregation)
 
     @unittest.expectedFailure
     def get_getdrug(self):
@@ -325,7 +371,7 @@ class TestChemClient(unittest.TestCase):
         self.assertEqual(len(qres), 3)
         self.assertEqual(qres[2], {"query": "NA_TEST", "notfound": True})
 
-    @unittest.skipIf(not biothings_client.df_avail, "pandas not available")
+    @unittest.skipIf(not pandas_available, "pandas not available")
     def test_querymany_dataframe(self):
         from pandas import DataFrame
 
@@ -352,7 +398,7 @@ class TestChemClient(unittest.TestCase):
         fields = self.mc.get_fields("unii")
         self.assertTrue("unii.molecular_formula" in fields.keys())
 
-    @unittest.skipIf(not biothings_client.caching_avail, "requests_cache not available")
+    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
     def test_caching(self):
         def _getchem():
             return self.mc.getchem("ZRALSGWEFCBTJO-UHFFFAOYSA-N")

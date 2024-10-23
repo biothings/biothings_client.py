@@ -20,7 +20,7 @@ def get_homologs(gene_list, fields="all", species="all"):
             if not clean_species or taxid in clean_species:
                 initial[gene["_id"]].setdefault(taxid, []).append(geneid)
                 qset.add(geneid)
-    gene_dict = dict([(g["_id"], g) for g in gene_client.getgenes(iter(qset), fields=fields, species="all")])
+    gene_dict = {g["_id"]: g for g in gene_client.getgenes(iter(qset), fields=fields, species="all")}
 
     ret = []
     for geneid, homolog_dict in initial.items():
