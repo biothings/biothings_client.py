@@ -5,7 +5,7 @@ Client fixtures for usage across the biothings_client testing
 import pytest
 
 from biothings_client import get_async_client
-from biothings_client.client.definitions import AsyncMyGeneInfo, AsyncMyChemInfo, AsyncMyVariantInfo
+from biothings_client.client.definitions import AsyncMyChemInfo, AsyncMyGeneInfo, AsyncMyGenesetInfo, AsyncMyVariantInfo
 
 
 @pytest.fixture(scope="session")
@@ -36,3 +36,13 @@ def async_variant_client() -> AsyncMyVariantInfo:
     client = "variant"
     variant_client = get_async_client(client)
     return variant_client
+
+
+@pytest.fixture(scope="session")
+def async_geneset_client() -> AsyncMyGenesetInfo:
+    """
+    Fixture for generating an asynchronous mygeneset client
+    """
+    client = "geneset"
+    geneset_client = get_async_client(client)
+    return geneset_client
