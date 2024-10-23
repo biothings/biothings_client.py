@@ -9,9 +9,9 @@ import types
 
 import pytest
 
-from tests.utils import descore
 
 from biothings_client.client.definitions import AsyncMyGeneInfo
+from biothings_client.utils.score import descore
 
 
 pandas_available = importlib.util.find_spec("pandas") is not None

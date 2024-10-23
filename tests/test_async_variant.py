@@ -1,13 +1,11 @@
 import importlib.util
 import types
 
-try:
-    from utils import descore
-except ImportError:
-    from tests.utils import descore
 
 import pytest
+
 from biothings_client.client.definitions import AsyncMyVariantInfo
+from biothings_client.utils.score import descore
 
 pandas_available = importlib.util.find_spec("pandas") is not None
 requests_cache_available = importlib.util.find_spec("requests_cache") is not None

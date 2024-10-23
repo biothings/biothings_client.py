@@ -11,12 +11,9 @@ import types
 
 import pytest
 
-try:
-    from utils import descore
-except ImportError:
-    from tests.utils import descore
 
 from biothings_client.client.definitions import AsyncMyChemInfo
+from biothings_client.utils.score import descore
 
 
 pandas_available = importlib.util.find_spec("pandas") is not None

@@ -6,11 +6,8 @@ import unittest
 
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-try:
-    from utils import cache_request, descore
-except ImportError:
-    from tests.utils import descore, cache_request
-
+from biothings_client.utils.cache import cache_request
+from biothings_client.utils.score import descore
 import biothings_client
 
 sys.stdout.write(
