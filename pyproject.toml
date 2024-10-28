@@ -57,7 +57,7 @@ dependencies = [
     "httpx>=0.27.2; python_version>='3.8'",
     "httpx==0.24.1; python_version=='3.7'",
     "requests==2.32.3; python_version>='3.8'",
-    "requests==2.32.0; python_version=='3.7'",
+    "requests==2.31.0; python_version=='3.7'",
 ]
 version = "0.3.1"
 
