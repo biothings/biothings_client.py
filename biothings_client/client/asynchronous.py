@@ -4,11 +4,10 @@ Async Python Client for generic Biothings API services
 
 from collections.abc import Iterable
 from copy import copy
+from typing import Tuple
 import asyncio
 import logging
-import os
 import platform
-import time
 import warnings
 
 import httpx
@@ -115,10 +114,10 @@ class AsyncBiothingClient:
         Converts object to DataFrame (pandas)
         """
         if not df_avail:
-            raise RuntimeError("Error: pandas module must be installed " "(or upgraded) for as_dataframe option.")
+            raise RuntimeError("pandas module must be installed (or upgraded) for as_dataframe option.")
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
-            raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
+            raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
         if "hits" in obj:
             if dataframe == 1:
                 df = json_normalize(obj["hits"])
@@ -135,7 +134,7 @@ class AsyncBiothingClient:
 
     async def _get(
         self, url: str, params: dict = None, none_on_404: bool = False, verbose: bool = True
-    ) -> tuple[bool, httpx.Response]:
+    ) -> Tuple[bool, httpx.Response]:
         """
         Wrapper around the httpx.get method
         """
@@ -440,7 +439,8 @@ class AsyncBiothingClient:
         return await self._post(_url, params=_kwargs, verbose=verbose)
 
     async def _querymany(self, qterms, scopes=None, **kwargs):
-        """Return the batch query result.
+        """
+        Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
