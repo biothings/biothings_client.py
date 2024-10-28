@@ -69,8 +69,10 @@ caching = [
     "requests_cache>=0.4.13"
 ]
 tests = [
-    "pytest>=8.3.2",
-    "pytest-asyncio>=0.23.8"
+    "pytest>=8.3.3; python_version>='3.8'",
+    "pytest>=7.4.4; python_version=='3.7'"
+    "pytest-asyncio>=0.23.8; python_version>='3.8'"
+    "pytest-asyncio>=0.21.2; python_version=='3.7'"
 ]
 
 
