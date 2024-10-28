@@ -30,7 +30,7 @@ jobs:
         if: matrix.python-version == 3.12
       - name: Run Tests with coverage
         # only need to run coverage once on selected Python version
-        run: coverage run --source . -m unittest tests/*.py -m pytest tests/
+        run: coverage run --source . -m pytest tests/
         if: matrix.python-version == 3.12
       - name: Coverage report
         run: |
@@ -44,5 +44,5 @@ jobs:
         if: matrix.python-version == 3.12
 
       - name: Run Tests
-        run: python -m unittest tests/*.py -m pytest tests/
+        run: python -m pytest tests
         if: matrix.python-version != 3.12
