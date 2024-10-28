@@ -24,7 +24,7 @@ jobs:
       - name: Upgrade pip
         run: pip install --upgrade pip
       - name: Install Package Dependencies
-        run: pip install .[
+        run: pip install .[caching,dataframe,jsonld,tests]
       - name: Install coverage
         run: pip install coverage
         if: matrix.python-version == 3.12
