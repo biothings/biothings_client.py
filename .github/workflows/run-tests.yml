@@ -46,7 +46,6 @@ jobs:
       - name: Run Tests
         run: python -m pytest tests
         if: matrix.python-version != 3.12
-
   build_package_and_run_legacy_tests_python3.7:
     runs-on: ubuntu-22.04
     strategy:
@@ -67,7 +66,6 @@ jobs:
 
       - name: Run Tests
         run: python -m pytest tests
-
   build_package_and_run_legacy_tests_python3.6:
     runs-on: ubuntu-20.04
     strategy:
