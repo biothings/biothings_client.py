@@ -13,27 +13,35 @@ authors = [
     {name = "Cyrus Afrasiabi"},
     {name = "Xinghua Zhou"},
     {name = "Everaldo Rodolpho", email="erodolpho@scripps.edu"},
-    {name = "Chunlei Wu", email = "cwu@scripps.edu"},
     {name = "Johnathan Schaff", email = "jschaff@scripps.edu"},
+    {name = "Chunlei Wu", email = "cwu@scripps.edu"},
 ]
 requires-python = ">=3.7"
 description = "Python Client for BioThings API services."
 readme = "README.rst"
 license = { text = "BSD-3-Clause" }
 keywords = [
-    "biology", 
-    "variant", 
-    "gene", 
-    "taxon", 
-    "species", 
-    "drug", 
-    "annotation", 
-    "web", 
-    "service", 
-    "client", 
-    "api", 
-    "myvariant", 
-    "mygene"
+    "biology",
+    "variant",
+    "gene",
+    "taxon",
+    "taxonomy",
+    "species",
+    "drug",
+    "chemical",
+    "disease",
+    "phenotype",
+    "geneset",
+    "annotation",
+    "web",
+    "service",
+    "client",
+    "api",
+    "mygene.info",
+    "myvariant.info",
+    "mychem.info",
+    "mydisease.info",
+    "mygeneset.info",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -127,7 +135,7 @@ norecursedirs = [
     "lib",
     "lib64",
 ]
-testpaths = ["test"]
+testpaths = ["tests"]
 
 markers = [
     "unit",
