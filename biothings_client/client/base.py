@@ -2,24 +2,41 @@
 Python Client for generic Biothings API services
 """
 
-from __future__ import print_function
-
+from collections.abc import Iterable
+from copy import copy
 import logging
 import os
 import platform
 import time
 import warnings
-from collections import Counter
-from itertools import islice
 
 import requests
 
-from .utils import str_types, is_py27
-
-try:
-    from collections.abc import Iterable
-except ImportError:
-    from collections import Iterable
+from biothings_client.utils.iteration import (
+    iter_n,
+    list_itemcnt,
+    safe_str,
+)
+from biothings_client.client.settings import (
+    COMMON_ALIASES,
+    COMMON_KWARGS,
+    MYCHEM_ALIASES,
+    MYCHEM_KWARGS,
+    MYDISEASE_ALIASES,
+    MYDISEASE_KWARGS,
+    MYGENESET_ALIASES,
+    MYGENESET_KWARGS,
+    MYGENE_ALIASES,
+    MYGENE_KWARGS,
+    MYTAXON_ALIASES,
+    MYTAXON_KWARGS,
+    MYVARIANT_ALIASES,
+    MYVARIANT_KWARGS,
+)
+from biothings_client.mixins.gene import MyGeneClientMixin
+from biothings_client.mixins.variant import MyVariantClientMixin
+from biothings_client.utils.copy import copy_func
+from biothings_client.__version__ import __version__
 
 try:
     from pandas import DataFrame, json_normalize
@@ -36,16 +53,7 @@ except ImportError:
     caching_avail = False
 
 
-__version__ = "0.3.1"
-
 logger = logging.getLogger("biothings.client")
-if is_py27:
-    # we need to setup default log handler in Py 2.7
-    # Py 3.x does it by default
-    handler = logging.StreamHandler()
-    # formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-    # handler.setFormatter(formatter)
-    logger.addHandler(handler)
 logger.setLevel(logging.INFO)
 
 # Future work:
@@ -54,65 +62,10 @@ logger.setLevel(logging.INFO)
 # the business logic can be more concise and more readable.
 
 
-class ScanError(Exception):
-    # for errors in scan search type
-    pass
-
-
-def alwayslist(value):
-    """If input value if not a list/tuple type, return it as a single value list.
-
-    Example:
-
-    >>> x = 'abc'
-    >>> for xx in alwayslist(x):
-    ...     print xx
-    >>> x = ['abc', 'def']
-    >>> for xx in alwayslist(x):
-    ...     print xx
-
+class BiothingClient:
     """
-    if isinstance(value, (list, tuple)):
-        return value
-    else:
-        return [value]
-
-
-def safe_str(s, encoding="utf-8"):
-    """Perform proper encoding if input is an unicode string."""
-    try:
-        _s = str(s)
-    except UnicodeEncodeError:
-        _s = s.encode(encoding)
-    return _s
-
-
-def list_itemcnt(li):
-    """Return number of occurrence for each item in the list."""
-    return list(Counter(li).items())
-
-
-def iter_n(iterable, n, with_cnt=False):
+    This is the client for a biothing web service.
     """
-    Iterate an iterator by chunks (of n)
-    if with_cnt is True, return (chunk, cnt) each time
-    """
-    it = iter(iterable)
-    if with_cnt:
-        cnt = 0
-    while True:
-        chunk = tuple(islice(it, n))
-        if not chunk:
-            return
-        if with_cnt:
-            cnt += len(chunk)
-            yield (chunk, cnt)
-        else:
-            yield chunk
-
-
-class BiothingClient(object):
-    """This is the client for a biothing web service."""
 
     def __init__(self, url=None):
         if url is None:
@@ -391,7 +344,7 @@ class BiothingClient(object):
         .. Hint:: If you need to pass a very large list of input ids, you can pass a generator
                   instead of a full list, which is more memory efficient.
         """
-        if isinstance(ids, str_types):
+        if isinstance(ids, str):
             ids = ids.split(",") if ids else []
         if not (isinstance(ids, (list, tuple, Iterable))):
             raise ValueError('input "ids" must be a list, tuple or iterable.')
@@ -545,7 +498,7 @@ class BiothingClient(object):
                   instead of a full list, which is more memory efficient.
 
         """
-        if isinstance(qterms, str_types):
+        if isinstance(qterms, str):
             qterms = qterms.split(",") if qterms else []
         if not (isinstance(qterms, (list, tuple, Iterable))):
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
@@ -618,3 +571,172 @@ class BiothingClient(object):
             if verbose and (li_dup or li_missing):
                 logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
+
+
+def get_client(biothing_type=None, instance=True, *args, **kwargs):
+    """
+    Function to return a new python client for a Biothings API service.
+
+    :param biothing_type: the type of biothing client, currently one of: 'gene', 'variant', 'taxon', 'chem', 'disease', 'geneset'
+    :param instance: if True, return an instance of the derived client,
+                     if False, return the class of the derived client
+
+    All other args/kwargs are passed to the derived client instantiation (if applicable)
+    """
+    if not biothing_type:
+        url = kwargs.get("url", False)
+        if not url:
+            raise RuntimeError("No biothings_type or url specified.")
+        try:
+            url += "metadata" if url.endswith("/") else "/metadata"
+            res = requests.get(url)
+            dic = res.json()
+            biothing_type = dic.get("biothing_type")
+            if isinstance(biothing_type, list):
+                if len(biothing_type) == 1:
+                    # if a list with only one item, use that item
+                    biothing_type = biothing_type[0]
+                else:
+                    raise RuntimeError("Biothing_type in metadata url is not unique.")
+            if not isinstance(biothing_type, str):
+                raise RuntimeError("Biothing_type in metadata url is not a valid string.")
+        except requests.RequestException as request_error:
+            raise RuntimeError("Cannot access metadata url to determine biothing_type.") from request_error
+    else:
+        biothing_type = biothing_type.lower()
+    if biothing_type not in CLIENT_SETTINGS and not kwargs.get("url", False):
+        raise Exception(
+            "No client named '{0}', currently available clients are: {1}".format(
+                biothing_type, list(CLIENT_SETTINGS.keys())
+            )
+        )
+    _settings = (
+        CLIENT_SETTINGS[biothing_type]
+        if biothing_type in CLIENT_SETTINGS
+        else generate_settings(biothing_type, kwargs.get("url"))
+    )
+    _class = type(
+        _settings["class_name"], tuple([_settings["base_class"]] + _settings["mixins"]), _settings["class_kwargs"]
+    )
+    for src_attr, target_attr in _settings["attr_aliases"].items():
+        if getattr(_class, src_attr, False):
+            setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
+    for _name, _docstring in _settings["class_kwargs"]["_docstring_obj"].items():
+        _func = getattr(_class, _name, None)
+        if _func:
+            try:
+                _func.__doc__ = _docstring
+            except AttributeError:
+                _func.__func__.__doc__ = _docstring
+    _client = _class(*args, **kwargs) if instance else _class
+    return _client
+
+
+# ***********************************************
+# *  Client settings
+# *
+# *  This object contains the client-specific settings necessary to
+# *  instantiate a new biothings client.  The currently supported
+# *  clients are the keys of this object.
+# *
+# *  class - the client Class name
+# *  class_kwargs - keyword arguments passed to Class on creation
+# *  function_aliases - client specific function aliases in Class
+# *  ancestors - a list of classes that Class inherits from
+# ***********************************************
+CLIENT_SETTINGS = {
+    "gene": {
+        "class_name": "MyGeneInfo",
+        "class_kwargs": MYGENE_KWARGS,
+        "attr_aliases": MYGENE_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [MyGeneClientMixin],
+    },
+    "variant": {
+        "class_name": "MyVariantInfo",
+        "class_kwargs": MYVARIANT_KWARGS,
+        "attr_aliases": MYVARIANT_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [MyVariantClientMixin],
+    },
+    "taxon": {
+        "class_name": "MyTaxonInfo",
+        "class_kwargs": MYTAXON_KWARGS,
+        "attr_aliases": MYTAXON_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "drug": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "chem": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "compound": {
+        "class_name": "MyChemInfo",
+        "class_kwargs": MYCHEM_KWARGS,
+        "attr_aliases": MYCHEM_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "disease": {
+        "class_name": "MyDiseaseInfo",
+        "class_kwargs": MYDISEASE_KWARGS,
+        "attr_aliases": MYDISEASE_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+    "geneset": {
+        "class_name": "MyGenesetInfo",
+        "class_kwargs": MYGENESET_KWARGS,
+        "attr_aliases": MYGENESET_ALIASES,
+        "base_class": BiothingClient,
+        "mixins": [],
+    },
+}
+
+
+def generate_settings(biothing_type: str, url: str):
+    """
+    Tries to generate a settings dictionary for a client that isn't explicitly listed in
+    {
+        CLIENT_SETTINGS,
+        ASYNC_CLIENT_SETTINGS
+    }
+    """
+
+    def _pluralize(s, optional=True):
+        _append = "({})" if optional else "{}"
+        return s + _append.format("es") if s.endswith("s") else s + _append.format("s")
+
+    _kwargs = copy(COMMON_KWARGS)
+    _aliases = copy(COMMON_ALIASES)
+    _kwargs.update(
+        {
+            "_default_url": url,
+            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
+            "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
+            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
+        }
+    )
+    _aliases.update(
+        {
+            "_getannotation": "get" + biothing_type.lower(),
+            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
+        }
+    )
+    return {
+        "class_name": "My" + biothing_type.title() + "Info",
+        "class_kwargs": _kwargs,
+        "mixins": [],
+        "attr_aliases": _aliases,
+        "base_class": BiothingClient,
+    }

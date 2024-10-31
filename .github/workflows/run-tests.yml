@@ -9,11 +9,11 @@ on:
 
 jobs:
   build_package_and_run_tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.6", "3.7", "3.8", "3.9", "3.10", "3.11" ]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
@@ -24,18 +24,14 @@ jobs:
       - name: Upgrade pip
         run: pip install --upgrade pip
       - name: Install Package Dependencies
-        run: pip install .
-        if: (matrix.python-version != 2.7) && (matrix.python-version != 3.6)
-      - name: Install Dependencies mannually for Py2.7 or Py3.6
-        run: pip install requests
-        if: (matrix.python-version == 2.7) || (matrix.python-version == 3.6)
+        run: pip install .[caching,dataframe,jsonld,tests]
       - name: Install coverage
         run: pip install coverage
-        if: matrix.python-version == 3.10
+        if: matrix.python-version == 3.12
       - name: Run Tests with coverage
         # only need to run coverage once on selected Python version
-        run: coverage run --source . -m unittest tests/*.py
-        if: matrix.python-version == 3.10
+        run: coverage run --source . -m pytest tests/
+        if: matrix.python-version == 3.12
       - name: Coverage report
         run: |
           coverage report -m
@@ -45,14 +41,30 @@ jobs:
           bash <(curl -Ls https://coverage.codacy.com/get.sh) report -r coverage.xml
         env:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        if: matrix.python-version == 3.10
+        if: matrix.python-version == 3.12
 
       - name: Run Tests
-        run: python -m unittest tests/*.py
-        if: (matrix.python-version != 2.7) && (matrix.python-version != 3.6) && (matrix.python-version != 3.10)
+        run: python -m pytest tests
+        if: matrix.python-version != 3.12
+
+  build_package_and_run_legacy_tests:
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.7", "3.8", "3.9"]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+      - name: Install Package Dependencies
+        run: pip install .[caching,dataframe,jsonld,tests]
+
       - name: Run Tests
-        # since we cannot install packages in Py<3.7, we will use biothings_client
-        # directly from the current working directory
-        # `python -m unittest tests/*.py` does not work in Py2.7, so we run tests differently below
-        run: PYTHONPATH=. python tests/test.py
-        if: (matrix.python-version == 2.7) || (matrix.python-version == 3.6)
+        run: python -m pytest tests
+

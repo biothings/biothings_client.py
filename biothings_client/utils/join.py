@@ -79,7 +79,7 @@ def join(
                         outer_doc_chunk[index].setdefault(e2_client._entity, []).extend(
                             e2_val_join_dict[merge_join_field]
                         )
-                for p in set([p for v in chunk_intersection for p in outer_join_val_dict[v]]):
+                for p in {p for v in chunk_intersection for p in outer_join_val_dict[v]}:
                     ret_chunk.append(outer_doc_chunk[p])
                     if len(ret_chunk) == size:
                         yield ret_chunk

@@ -1,6 +1,3 @@
-from ..utils import str_types
-
-
 class MyVariantClientMixin:
     """Adding some utility methods specific to MyVariant.info API."""
 
@@ -17,7 +14,7 @@ class MyVariantClientMixin:
                   module.
 
         """
-        if isinstance(input_vcf, str_types):
+        if isinstance(input_vcf, str):
             # if input_vcf is a string, open it as a file
             in_f = open(input_vcf)
         else:
