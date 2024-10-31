@@ -9,9 +9,9 @@
     pip install build twine
     ```
 
- 2. Update version number in [base.py](biothings_client/base.py).
+ 2. Update version number in [pyproject.toml](pyproject.toml).
 
- 3. Check and update [pyproject.toml](pyproject.toml) if needed (dependencies, metadata etc.).
+ 3. Check and update other sections of [pyproject.toml](pyproject.toml) if needed (dependencies, metadata etc.).
 
  4. Build the package locally:
 
