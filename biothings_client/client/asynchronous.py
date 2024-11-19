@@ -4,7 +4,8 @@ Async Python Client for generic Biothings API services
 
 from collections.abc import Iterable
 from copy import copy
-from typing import Tuple
+from pathlib import Path
+from typing import Union, Tuple
 import asyncio
 import logging
 import platform
@@ -12,22 +13,7 @@ import warnings
 
 import httpx
 
-
-try:
-    from pandas import DataFrame, json_normalize
-
-    df_avail = True
-except ImportError:
-    df_avail = False
-
-from biothings_client.utils.iteration import (
-    iter_n,
-    list_itemcnt,
-    safe_str,
-)
-from biothings_client.utils.copy import copy_func
-
-from biothings_client.__version__ import __version__
+from biothings_client.utils.iteration import iter_n, list_itemcnt, safe_str, concatenate_list
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -44,8 +30,18 @@ from biothings_client.client.settings import (
     MYVARIANT_ALIASES,
     MYVARIANT_KWARGS,
 )
+from biothings_client.__version__ import __version__
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
+from biothings_client.utils.copy import copy_func
+from biothings_client.cache.storage import BiothingsClientSqlite3Cache
+
+try:
+    from pandas import DataFrame, json_normalize
+
+    df_avail = True
+except ImportError:
+    df_avail = False
 
 
 logger = logging.getLogger("biothings.client")
@@ -58,31 +54,29 @@ logger.setLevel(logging.INFO)
 # the business logic can be more concise and more readable.
 class AsyncBiothingClient:
     """
-    This is the asynchronous client for a biothing web service.
+    async http client class for accessing the biothings web services
     """
 
-    def __init__(self, url: str = None, enable_cache: bool = None):
+    def __init__(self, url: str = None):
         if url is None:
             url = self._default_url
         self.url = url
         if self.url[-1] == "/":
             self.url = self.url[:-1]
 
-        if enable_cache is None:
-            enable_cache = False
-        self.enable_cache = enable_cache
-
         self.max_query = self._max_query
 
         # delay and step attributes are for batch queries.
         self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
+
         self.scroll_size = self._scroll_size
 
         # raise httpx.HTTPError for status_code > 400
         # > but not for 404 on getvariant
         # > set to False to suppress the exceptions.
         self.raise_for_status = True
+
         self.default_user_agent = (
             "{package_header}/{client_version} (" "python:{python_version} " "httpx:{httpx_version}" ")"
         ).format(
@@ -93,15 +87,48 @@ class AsyncBiothingClient:
                 "httpx_version": httpx.__version__,
             }
         )
+        self.client_storage = build_client_cache()
+        self.http_client, self.cache_storage = self._build_http_client()
+        self.caching_enabled = False
 
-    async def use_http(self):
+    def _build_http_client(self, cache_db: Union[str, Path] = None) -> tuple[httpx.Client, BiothingsClientSqlite3Cache]:
+        """
+        Builds the client instance for usage through the lifetime
+        of the biothings_client
+        """
+        if cache_db is None:
+            cache_db = self._default_cache_file
+        cache_db = Path(cache_db).resolve().absolute()
+
+        client_connection, cache_db = BiothingsClientSqlite3Cache.database_connection(cache_db)
+        cache_storage = BiothingsClientSqlite3Cache(connection=client_connection)
+        cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=cache_storage)
+        cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+        http_client = hishel.AsyncCacheClient(
+            controller=cache_controller, transport=cache_transport, storage=cache_storage
+        )
+        return (http_client, cache_storage)
+
+    def __del__(self):
+        """
+        Destructor for the client to ensure that we close any potential
+        connections to the cache database
+        """
+        try:
+            if self.http_client is not None:
+                self.http_client.close()
+        except Exception as gen_exc:
+            logger.exception(gen_exc)
+            logger.error("Unable to close the httpx client instance %s", self.http_client)
+
+    def use_http(self):
         """
         Use http instead of https for API calls.
         """
         if self.url:
             self.url = self.url.replace("https://", "http://")
 
-    async def use_https(self):
+    def use_https(self):
         """
         Use https instead of http for API calls. This is the default.
         """
@@ -115,9 +142,11 @@ class AsyncBiothingClient:
         """
         if not df_avail:
             raise RuntimeError("pandas module must be installed (or upgraded) for as_dataframe option.")
+
         # if dataframe not in ["by_source", "normal"]:
         if dataframe not in [1, 2]:
             raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
+
         if "hits" in obj:
             if dataframe == 1:
                 df = json_normalize(obj["hits"])
@@ -140,57 +169,60 @@ class AsyncBiothingClient:
         """
         if params is None:
             params = {}
+
         debug = params.pop("debug", False)
         return_raw = params.pop("return_raw", False)
-
         headers = {"user-agent": self.default_user_agent}
-        async with httpx.AsyncClient() as client:
-            res = await client.get(url, params=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
+        response = await self.http_client.get(
+            url=url, params=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-        if debug:
-            return from_cache, res
-        if none_on_404 and res.status_code == 404:
-            return from_cache, None
-        if self.raise_for_status:
-            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
-        if return_raw:
-            return from_cache, res.text
-        ret = res.json()
-        return from_cache, ret
+        response_extensions = response.get("extensions", {})
+        from_cache = response_extensions.get("from_cache", False)
+
+        if response.is_success:
+            if debug or return_raw:
+                get_response = (from_cache, response)
+            else:
+                get_response = (from_cache, response.json())
+        else:
+            if none_on_404 and response.status_code == 404:
+                get_response = (from_cache, None)
+            elif self.raise_for_status:
+                response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
+        return get_response
 
     async def _post(self, url: str, params: dict, verbose: bool = True):
         """
         Wrapper around the httpx.post method
         """
+        if params is None:
+            params = {}
         return_raw = params.pop("return_raw", False)
         headers = {"user-agent": self.default_user_agent}
-        async with httpx.AsyncClient() as client:
-            res = await client.post(url, data=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
-        if self.raise_for_status:
-            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
-        if return_raw:
-            return from_cache, res
-        ret = res.json()
-        return from_cache, ret
+        response = await self.http_client.post(
+            url=url, data=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-    @staticmethod
-    async def _format_list(a_list, sep=",", quoted=True):
-        if isinstance(a_list, (list, tuple)):
-            if quoted:
-                _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
+        from_cache = getattr(response, "from_cache", False)
+        if response.is_success:
+            if return_raw:
+                post_response = (from_cache, response)
             else:
-                _out = sep.join(["{}".format(safe_str(x)) for x in a_list])
+                response.read()
+                post_response = (from_cache, response.json())
         else:
-            _out = a_list  # a_list is already a comma separated string
-        return _out
+            if self.raise_for_status:
+                response.raise_for_status()
+            else:
+                post_response = (from_cache, response)
+        return post_response
 
     async def _handle_common_kwargs(self, kwargs):
         # handle these common parameters accept field names as the value
         for kw in ["fields", "always_list", "allow_null"]:
             if kw in kwargs:
-                kwargs[kw] = await self._format_list(kwargs[kw], quoted=False)
+                kwargs[kw] = concatenate_list(kwargs[kw], quoted=False)
         return kwargs
 
     async def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
@@ -207,12 +239,10 @@ class AsyncBiothingClient:
             i = cnt
             from_cache, query_result = await query_fn(batch, **fn_kwargs)
             yield query_result
+
             if verbose:
                 cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
                 logger.info("done.{0}".format(cache_str))
-            if not from_cache and self.delay:
-                # no need to delay if requests are from cache.
-                await asyncio.sleep(self.delay)
 
     @property
     async def _from_cache_notification(self):
@@ -257,7 +287,8 @@ class AsyncBiothingClient:
         return ret
 
     async def _getannotation(self, _id, fields=None, **kwargs):
-        """Return the object given id.
+        """
+        Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
 
         :param _id: an entity id.
@@ -278,7 +309,7 @@ class AsyncBiothingClient:
         return ret
 
     async def _getannotations_inner(self, ids, verbose=True, **kwargs):
-        id_collection = await self._format_list(ids)
+        id_collection = concatenate_list(ids)
         _kwargs = {"ids": id_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._annotation_endpoint
@@ -293,7 +324,8 @@ class AsyncBiothingClient:
                 yield hit
 
     async def _getannotations(self, ids, fields=None, **kwargs):
-        """Return the list of annotation objects for the given list of ids.
+        """
+        Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
 
         :param ids: a list/tuple/iterable or a string of ids.
@@ -414,7 +446,12 @@ class AsyncBiothingClient:
     async def _fetch_all(self, url: str, verbose: bool = True, **kwargs):
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
+        Implicitly disables caching to ensure we actually hit the endpoint rather than
+        pulling from local cache
         """
+        logger.warning("fetch_all implicitly disables HTTP request caching")
+        self.stop_caching()
+
         from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
@@ -432,7 +469,7 @@ class AsyncBiothingClient:
             from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
 
     async def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        query_term_collection = await self._format_list(qterms)
+        query_term_collection = concatenate_list(qterms)
         _kwargs = {"q": query_term_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
@@ -471,7 +508,7 @@ class AsyncBiothingClient:
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs["scopes"] = await self._format_list(scopes, quoted=False)
+            kwargs["scopes"] = concatenate_list(scopes, quoted=False)
         kwargs = await self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop("returnall", False)
         verbose = kwargs.pop("verbose", True)
@@ -572,10 +609,8 @@ def get_async_client(biothing_type: str = None, instance: bool = True, *args, **
     else:
         biothing_type = biothing_type.lower()
     if biothing_type not in ASYNC_CLIENT_SETTINGS and not kwargs.get("url", False):
-        raise Exception(
-            "No client named '{0}', currently available clients are: {1}".format(
-                biothing_type, list(ASYNC_CLIENT_SETTINGS.keys())
-            )
+        raise TypeError(
+            f"No client named '{biothing_type}', currently available clients are: {list(ASYNC_CLIENT_SETTINGS.keys())}"
         )
     _settings = (
         ASYNC_CLIENT_SETTINGS[biothing_type]
@@ -588,7 +623,6 @@ def get_async_client(biothing_type: str = None, instance: bool = True, *args, **
     for src_attr, target_attr in _settings["attr_aliases"].items():
         if getattr(_class, src_attr, False):
             setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
-
     for _name, _docstring in _settings["class_kwargs"]["_docstring_obj"].items():
         _func = getattr(_class, _name, None)
         if _func:
