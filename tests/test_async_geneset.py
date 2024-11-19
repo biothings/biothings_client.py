@@ -8,9 +8,6 @@ from biothings_client.client.definitions import AsyncMyGenesetInfo
 from biothings_client.utils.score import descore
 
 
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
-
-
 @pytest.mark.asyncio
 async def test_metadata(async_geneset_client: AsyncMyGenesetInfo):
     meta = await async_geneset_client.metadata()

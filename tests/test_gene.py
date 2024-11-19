@@ -7,12 +7,9 @@ import unittest
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
 from biothings_client.client.definitions import MyGeneInfo
-from biothings_client.utils.cache import cache_request
 from biothings_client.utils.score import descore
-import biothings_client
 
 pandas_available = importlib.util.find_spec("pandas") is not None
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 def test_metadata(gene_client: MyGeneInfo):

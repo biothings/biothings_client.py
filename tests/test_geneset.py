@@ -6,7 +6,6 @@ import unittest
 
 sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-from biothings_client.utils.cache import cache_request
 from biothings_client.utils.score import descore
 import biothings_client
 
@@ -14,8 +13,6 @@ import biothings_client
 sys.stdout.write(
     '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
 )
-
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
 
 
 class TestGenesetClient(unittest.TestCase):
