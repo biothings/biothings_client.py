@@ -55,12 +55,15 @@ def concatenate_list(sequence: Iterable, sep: str = ",", quoted: bool = True) ->
     Output:
     string value representing the concatenated values
     """
-    if isinstance(sequence, Iterable):
+    if isinstance(sequence, (list, tuple)):
         if quoted:
             string_transform = sep.join(['"{}"'.format(safe_str(x)) for x in sequence])
         else:
             string_transform = sep.join(["{}".format(safe_str(x)) for x in sequence])
+    elif isinstance(sequence, str):
+        logger.warning("Input sequence provided is already in string format. No operation performed")
+        string_transform = sequence
     else:
-        logger.debug("Input sequence non-iterable %s. Unable to perform concatenation operation", sequence)
+        logger.warning("Input sequence non-iterable %s. Unable to perform concatenation operation", sequence)
         string_transform = sequence
     return string_transform

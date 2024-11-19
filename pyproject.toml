@@ -65,6 +65,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
+    "anysqlite", 
     "hishel[sqlite]",
     "httpx>0.24.1; python_version>='3.8'",
     "httpx<=0.24.1; python_version=='3.7'",
@@ -106,6 +107,7 @@ src_paths = ["."]
 # pytest configuration
 [tool.pytest.ini_options]
 minversion = "6.2.5"
+asyncio_mode = "auto"
 pythonpath = ["."]
 
 

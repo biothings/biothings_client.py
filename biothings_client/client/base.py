@@ -91,24 +91,29 @@ class BiothingClient:
             }
         )
 
-        self.http_client, self.cache_storage = self._build_http_client()
+        self.http_client = None
+        self.cache_storage = None
+        self.client_setup_completed = False
         self.caching_enabled = False
 
-    def _build_http_client(self, cache_db: Union[str, Path] = None) -> tuple[httpx.Client, BiothingsClientSqlite3Cache]:
+    def _build_http_client(self, cache_db: Union[str, Path] = None) -> None:
         """
         Builds the client instance for usage through the lifetime
         of the biothings_client
         """
-        if cache_db is None:
-            cache_db = self._default_cache_file
-        cache_db = Path(cache_db).resolve().absolute()
+        if not self.client_setup_completed:
+            if cache_db is None:
+                cache_db = self._default_cache_file
+            cache_db = Path(cache_db).resolve().absolute()
 
-        client_connection, cache_db = BiothingsClientSqlite3Cache.database_connection(cache_db)
-        cache_storage = BiothingsClientSqlite3Cache(connection=client_connection)
-        cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=cache_storage)
-        cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
-        http_client = hishel.CacheClient(controller=cache_controller, transport=cache_transport, storage=cache_storage)
-        return (http_client, cache_storage)
+            self.cache_storage = BiothingsClientSqlite3Cache()
+            self.cache_storage.setup_database_connection(cache_db)
+            cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=self.cache_storage)
+            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            self.http_client = hishel.CacheClient(
+                controller=cache_controller, transport=cache_transport, storage=self.cache_storage
+            )
+            self.client_setup_completed = True
 
     def __del__(self):
         """
@@ -168,6 +173,7 @@ class BiothingClient:
         """
         Wrapper around the httpx.get method
         """
+        self._build_http_client()
         if params is None:
             params = {}
 
@@ -178,8 +184,9 @@ class BiothingClient:
             url=url, params=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
         )
 
-        response_extensions = response.get("extensions", {})
+        response_extensions = response.extensions
         from_cache = response_extensions.get("from_cache", False)
+
         if response.is_success:
             if debug or return_raw:
                 get_response = (from_cache, response)
@@ -196,6 +203,7 @@ class BiothingClient:
         """
         Wrapper around the httpx.post method
         """
+        self._build_http_client()
         if params is None:
             params = {}
         return_raw = params.pop("return_raw", False)
@@ -204,7 +212,9 @@ class BiothingClient:
             url=url, data=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
         )
 
-        from_cache = getattr(response, "from_cache", False)
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
+
         if response.is_success:
             if return_raw:
                 post_response = (from_cache, response)
@@ -276,15 +286,13 @@ class BiothingClient:
         :return: None
         """
         self.caching_enabled = True
-        logger.debug("Enabled client caching: %s", self)
-
-        if cache_db is None:
-            cache_db = self._default_cache_file
-        cache_db = Path(cache_db).resolve().absolute()
-
-        client_connection, cache_db = BiothingsClientSqlite3Cache.database_connection(cache_db)
-
-        logger.debug('Future queries will be cached in "%s" ', Path(cache_db).resolve().absolute())
+        logger.debug(
+            (
+                "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                self,
+                self.cache_storage.cache_filepath,
+            )
+        )
 
     def _stop_caching(self):
         """
@@ -512,7 +520,7 @@ class BiothingClient:
 
         from_cache, response = self._get(url, params=kwargs, verbose=verbose)
         if verbose:
-            logger.info("Fetching {0} {1} . . .".format(resposne["total"], self._optionally_plural_object_type))
+            logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
             kwargs.pop(key)
         while not response.get("error", "").startswith("No results to return"):

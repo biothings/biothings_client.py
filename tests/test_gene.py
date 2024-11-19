@@ -255,10 +255,10 @@ def test_querymany_dataframe(gene_client: MyGeneInfo):
         "1431_at",
     ]
 
-    qres = gene_client.querymany(self.query_list1, scopes="reporter", as_dataframe=True)
+    qres = gene_client.querymany(query_list1, scopes="reporter", as_dataframe=True)
     assert isinstance(qres, DataFrame)
     assert "name" in qres.columns
-    assert set(self.query_list1) == set(qres.index)
+    assert set(query_list1) == set(qres.index)
 
 
 def test_querymany_step(gene_client: MyGeneInfo):
@@ -274,10 +274,10 @@ def test_querymany_step(gene_client: MyGeneInfo):
         "1405_i_at",
         "1431_at",
     ]
-    qres1 = gene_client.querymany(self.query_list1, scopes="reporter")
+    qres1 = gene_client.querymany(query_list1, scopes="reporter")
     default_step = gene_client.step
     gene_client.step = 3
-    qres2 = gene_client.querymany(self.query_list1, scopes="reporter")
+    qres2 = gene_client.querymany(query_list1, scopes="reporter")
     gene_client.step = default_step
     qres1 = descore(sorted(qres1, key=lambda doc: doc["_id"]))
     qres2 = descore(sorted(qres2, key=lambda doc: doc["_id"]))

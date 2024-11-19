@@ -8,13 +8,15 @@ from typing import Callable
 
 import pytest
 
-from biothings_client.client.base import get_client, get_async_client
+from biothings_client.client.asynchronous import get_async_client
+from biothings_client.client.base import get_client
 
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "method,client,function,function_arguments",
     [
@@ -72,6 +74,7 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
     """
     try:
         client_instance = get_client(client)
+        client_instance._build_http_client()
         client_instance.set_caching()
         assert client_instance.caching_enabled
         client_instance.clear_cache()
@@ -110,6 +113,7 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
         raise gen_exc
 
 
+@pytest.mark.unit
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     "method,client,function,function_arguments",
@@ -167,21 +171,22 @@ async def test_async_caching(method: str, client: str, function: str, function_a
     Tests async caching methods for a variety of data
     """
     try:
-        client_instance = get_client(client)
+        client_instance = get_async_client(client)
+        await client_instance._build_http_client()
         client_instance.set_caching()
         assert client_instance.caching_enabled
-        client_instance.clear_cache()
+        await client_instance.clear_cache()
 
         client_callback = getattr(client_instance, function)
         assert isinstance(client_callback, Callable)
         cold_response = await client_callback(**function_arguments)
         hot_response = await client_callback(**function_arguments)
 
-        client_instance.stop_caching()
+        await client_instance.stop_caching()
         forced_cold_response = await client_callback(**function_arguments)
         client_instance.set_caching()
         cold_response2 = await client_callback(**function_arguments)
-        client_instance.clear_cache()
+        await client_instance.clear_cache()
         forced_cold_response2 = await client_callback(**function_arguments)
         hot_response2 = await client_callback(**function_arguments)
 
@@ -201,6 +206,6 @@ async def test_async_caching(method: str, client: str, function: str, function_a
             assert all(hot_response.elapsed < cold_response.elapsed for cold_response in cold_responses)
 
     except Exception as gen_exc:
-        client_instance.clear_cache()
+        await client_instance.clear_cache()
         logger.exception(gen_exc)
         raise gen_exc

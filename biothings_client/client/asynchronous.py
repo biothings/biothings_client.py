@@ -11,6 +11,7 @@ import logging
 import platform
 import warnings
 
+import hishel
 import httpx
 
 from biothings_client.utils.iteration import iter_n, list_itemcnt, safe_str, concatenate_list
@@ -34,7 +35,7 @@ from biothings_client.__version__ import __version__
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
-from biothings_client.cache.storage import BiothingsClientSqlite3Cache
+from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
 
 try:
     from pandas import DataFrame, json_normalize
@@ -87,36 +88,42 @@ class AsyncBiothingClient:
                 "httpx_version": httpx.__version__,
             }
         )
-        self.client_storage = build_client_cache()
-        self.http_client, self.cache_storage = self._build_http_client()
+        self.http_client = None
+        self.cache_storage = None
+        self.client_setup_completed = False
         self.caching_enabled = False
 
-    def _build_http_client(self, cache_db: Union[str, Path] = None) -> tuple[httpx.Client, BiothingsClientSqlite3Cache]:
+    async def _build_http_client(
+        self, cache_db: Union[str, Path] = None
+    ) -> tuple[httpx.Client, AsyncBiothingsClientSqlite3Cache]:
         """
         Builds the client instance for usage through the lifetime
         of the biothings_client
         """
-        if cache_db is None:
-            cache_db = self._default_cache_file
-        cache_db = Path(cache_db).resolve().absolute()
+        if not self.client_setup_completed:
+            if cache_db is None:
+                cache_db = self._default_cache_file
+            cache_db = Path(cache_db).resolve().absolute()
 
-        client_connection, cache_db = BiothingsClientSqlite3Cache.database_connection(cache_db)
-        cache_storage = BiothingsClientSqlite3Cache(connection=client_connection)
-        cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=cache_storage)
-        cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
-        http_client = hishel.AsyncCacheClient(
-            controller=cache_controller, transport=cache_transport, storage=cache_storage
-        )
-        return (http_client, cache_storage)
+            self.cache_storage = AsyncBiothingsClientSqlite3Cache()
+            await self.cache_storage.setup_database_connection(cache_db)
+            cache_transport = hishel.AsyncCacheTransport(
+                transport=httpx.AsyncHTTPTransport(), storage=self.cache_storage
+            )
+            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            self.http_client = hishel.AsyncCacheClient(
+                controller=cache_controller, transport=cache_transport, storage=self.cache_storage
+            )
+            self.client_setup_completed = True
 
-    def __del__(self):
+    async def __del__(self):
         """
         Destructor for the client to ensure that we close any potential
         connections to the cache database
         """
         try:
             if self.http_client is not None:
-                self.http_client.close()
+                await self.http_client.aclose()
         except Exception as gen_exc:
             logger.exception(gen_exc)
             logger.error("Unable to close the httpx client instance %s", self.http_client)
@@ -167,6 +174,7 @@ class AsyncBiothingClient:
         """
         Wrapper around the httpx.get method
         """
+        await self._build_http_client()
         if params is None:
             params = {}
 
@@ -177,7 +185,7 @@ class AsyncBiothingClient:
             url=url, params=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
         )
 
-        response_extensions = response.get("extensions", {})
+        response_extensions = response.extensions
         from_cache = response_extensions.get("from_cache", False)
 
         if response.is_success:
@@ -196,6 +204,8 @@ class AsyncBiothingClient:
         """
         Wrapper around the httpx.post method
         """
+        await self._build_http_client()
+
         if params is None:
             params = {}
         return_raw = params.pop("return_raw", False)
@@ -204,7 +214,8 @@ class AsyncBiothingClient:
             url=url, data=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
         )
 
-        from_cache = getattr(response, "from_cache", False)
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
         if response.is_success:
             if return_raw:
                 post_response = (from_cache, response)
@@ -260,6 +271,59 @@ class AsyncBiothingClient:
         if verbose and from_cache:
             logger.info(self._from_cache_notification)
         return ret
+
+    def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
+        """
+        Enable the client caching and creates a local cache database
+        for all future requests
+
+        Inputs:
+        :param cache_db: pathlike object to the local sqlite3 cache database file
+
+        Outputs:
+        :return: None
+        """
+        self.caching_enabled = True
+        logger.debug(
+            (
+                "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                self,
+                self.cache_storage.cache_filepath,
+            )
+        )
+
+    async def _stop_caching(self):
+        """
+        Disable client caching. The local cache database will be maintained,
+        but we will disable cache access when sending requests
+
+        If caching is already disabled then we no-opt
+        """
+        if self.caching_enabled:
+            try:
+                await self.cache_storage.clear_cache()
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Error attempting to clear the local cache database")
+                raise gen_exc
+            self.caching_enabled = False
+        else:
+            logger.warning("Caching already disabled. Skipping for now ...")
+
+    async def _clear_cache(self) -> None:
+        """
+        Clear the globally installed cache. Caching will stil be enabled,
+        but the data stored in the cache stored will be dropped
+        """
+        if self.caching_enabled:
+            try:
+                await self.cache_storage.clear_cache()
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Error attempting to clear the local cache database")
+                raise gen_exc
+        else:
+            logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
 
     async def _get_fields(self, search_term=None, verbose=True):
         """
