@@ -92,16 +92,35 @@ class BiothingClient:
         )
 
         self.http_client = None
+        self.http_client_setup = False
         self.cache_storage = None
-        self.client_setup_completed = False
         self.caching_enabled = False
 
     def _build_http_client(self, cache_db: Union[str, Path] = None) -> None:
         """
         Builds the client instance for usage through the lifetime
         of the biothings_client
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property
         """
-        if not self.client_setup_completed:
+        if not self.http_client_setup:
+            http_transport = httpx.HTTPTransport()
+            self.http_client = httpx.Client(transport=http_transport)
+            self.http_client_setup = True
+            self.http_cache_client_setup = False
+
+    def _build_cache_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """
+        Builds the client instance used for caching biothings requests.
+        We rebuild the client whenever we enable to caching to ensure
+        that we don't create a database files unless the user explicitly
+        wants to leverage request caching
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property and the cache_storage property
+        """
+        if not self.http_client_setup:
             if cache_db is None:
                 cache_db = self._default_cache_file
             cache_db = Path(cache_db).resolve().absolute()
@@ -113,7 +132,7 @@ class BiothingClient:
             self.http_client = hishel.CacheClient(
                 controller=cache_controller, transport=cache_transport, storage=self.cache_storage
             )
-            self.client_setup_completed = True
+            self.http_client_setup = True
 
     def __del__(self):
         """
@@ -186,6 +205,8 @@ class BiothingClient:
 
         response_extensions = response.extensions
         from_cache = response_extensions.get("from_cache", False)
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
 
         if response.is_success:
             if debug or return_raw:
@@ -214,6 +235,9 @@ class BiothingClient:
 
         response_extensions = response.extensions
         from_cache = response_extensions.get("from_cache", False)
+
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
 
         if response.is_success:
             if return_raw:
@@ -250,19 +274,9 @@ class BiothingClient:
             from_cache, query_result = query_fn(batch, **fn_kwargs)
             yield query_result
 
-            if verbose:
-                cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
-                logger.info("done.{0}".format(cache_str))
             if not from_cache and self.delay:
                 # no need to delay if requests are from cache.
                 time.sleep(self.delay)
-
-    @property
-    def _from_cache_notification(self):
-        """
-        Notification to alert user that a cached result is being returned.
-        """
-        return "[ from cache ]"
 
     def _metadata(self, verbose=True, **kwargs):
         """
@@ -270,8 +284,6 @@ class BiothingClient:
         """
         _url = self.url + self._metadata_endpoint
         from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         return ret
 
     def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
@@ -279,27 +291,46 @@ class BiothingClient:
         Enable the client caching and creates a local cache database
         for all future requests
 
+        If caching is already enabled then we no-opt
+
         Inputs:
         :param cache_db: pathlike object to the local sqlite3 cache database file
 
         Outputs:
         :return: None
         """
-        self.caching_enabled = True
-        logger.debug(
-            (
-                "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
-                self,
-                self.cache_storage.cache_filepath,
-            )
-        )
+        if not self.caching_enabled:
+            try:
+                self.caching_enabled = True
+                self.http_client_setup = False
+                self._build_cache_http_client()
+                logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
+                logger.info(
+                    (
+                        "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                        self,
+                        self.cache_storage.cache_filepath,
+                    )
+                )
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unable to enable caching")
+                raise gen_exc
+        else:
+            logger.warning("Caching already enabled. Skipping for now ...")
 
-    def _stop_caching(self):
+    def _stop_caching(self) -> None:
         """
         Disable client caching. The local cache database will be maintained,
         but we will disable cache access when sending requests
 
         If caching is already disabled then we no-opt
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
         """
         if self.caching_enabled:
             try:
@@ -308,7 +339,12 @@ class BiothingClient:
                 logger.exception(gen_exc)
                 logger.error("Error attempting to clear the local cache database")
                 raise gen_exc
+
             self.caching_enabled = False
+            self.http_client_setup = False
+            self._build_http_client()
+            logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
+            logger.info("Disabled client caching: %s", self)
         else:
             logger.warning("Caching already disabled. Skipping for now ...")
 
@@ -316,6 +352,12 @@ class BiothingClient:
         """
         Clear the globally installed cache. Caching will stil be enabled,
         but the data stored in the cache stored will be dropped
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
         """
         if self.caching_enabled:
             try:
@@ -348,8 +390,6 @@ class BiothingClient:
             # Get rid of the notes column information
             if "notes" in v:
                 del v["notes"]
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         return ret
 
     def _getannotation(self, _id, fields=None, **kwargs):
@@ -370,8 +410,6 @@ class BiothingClient:
         kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
         from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         return ret
 
     def _getannotations_inner(self, ids, verbose=True, **kwargs):
@@ -502,8 +540,6 @@ class BiothingClient:
         elif dataframe != 2:
             dataframe = None
         from_cache, out = self._get(_url, kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=False)
         return out

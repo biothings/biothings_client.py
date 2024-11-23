@@ -96,8 +96,8 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
         hot_responses = [hot_response, hot_response2]
         for cold_response in cold_responses:
             assert cold_response.status_code == 200
-            assert not cold_response.extensions["from_cache"]
-            assert not cold_response.extensions["revalidated"]
+            assert not cold_response.extensions.get("from_cache", False)
+            assert not cold_response.extensions.get("revalidated", False)
 
         for hot_response in hot_responses:
             assert hot_response.status_code == 200
@@ -173,7 +173,7 @@ async def test_async_caching(method: str, client: str, function: str, function_a
     try:
         client_instance = get_async_client(client)
         await client_instance._build_http_client()
-        client_instance.set_caching()
+        await client_instance.set_caching()
         assert client_instance.caching_enabled
         await client_instance.clear_cache()
 
@@ -184,7 +184,7 @@ async def test_async_caching(method: str, client: str, function: str, function_a
 
         await client_instance.stop_caching()
         forced_cold_response = await client_callback(**function_arguments)
-        client_instance.set_caching()
+        await client_instance.set_caching()
         cold_response2 = await client_callback(**function_arguments)
         await client_instance.clear_cache()
         forced_cold_response2 = await client_callback(**function_arguments)
@@ -194,8 +194,8 @@ async def test_async_caching(method: str, client: str, function: str, function_a
         hot_responses = [hot_response, hot_response2]
         for cold_response in cold_responses:
             assert cold_response.status_code == 200
-            assert not cold_response.extensions["from_cache"]
-            assert not cold_response.extensions["revalidated"]
+            assert not cold_response.extensions.get("from_cache", False)
+            assert not cold_response.extensions.get("revalidated", False)
 
         for hot_response in hot_responses:
             assert hot_response.status_code == 200
