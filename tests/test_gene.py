@@ -1,15 +1,19 @@
-import importlib.util
-import os
-import sys
+"""
+Tests for exercising the sychronous biothings_client for mygene
+"""
+
+import logging
 import types
-import unittest
 
-sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
+import pytest
 
+import biothings_client
 from biothings_client.client.definitions import MyGeneInfo
 from biothings_client.utils.score import descore
 
-pandas_available = importlib.util.find_spec("pandas") is not None
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def test_metadata(gene_client: MyGeneInfo):
@@ -235,7 +239,7 @@ def test_querymany_notfound(gene_client: MyGeneInfo):
     assert qres[2] == {"query": "NA_TEST", "notfound": True}
 
 
-@unittest.skipIf(not pandas_available, "pandas not available")
+@pytest.mark.skipIf(not biothings_client.__PANDAS, reason="pandas library not installed")
 def test_querymany_dataframe(gene_client: MyGeneInfo):
     from pandas import DataFrame
 
