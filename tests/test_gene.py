@@ -182,8 +182,6 @@ def test_query_symbol(gene_client: MyGeneInfo):
 
 
 def test_query_fetch_all(gene_client: MyGeneInfo):
-    # fetch_all won't work when caching is used.
-    gene_client.stop_caching()
     qres = gene_client.query("_exists_:pdb")
     total = qres["total"]
 
