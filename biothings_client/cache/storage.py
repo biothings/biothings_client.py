@@ -7,8 +7,11 @@ from typing import Optional, Union
 import logging
 import sqlite3
 
-import anysqlite
-import hishel
+from biothings_client._dependencies import _CACHING
+
+if _CACHING:
+    import anysqlite
+    import hishel
 
 
 logger = logging.getLogger("biothings.client")

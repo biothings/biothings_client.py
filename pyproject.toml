@@ -75,7 +75,7 @@ version = "0.4.0"
 [project.optional-dependencies]
 caching = [
     "anysqlite; python_version>='3.8'", 
-    "hishel[sqlite]>=0.1.0; python_version >='3.8'", 
+    "hishel[sqlite]; python_version >='3.8'", 
 ]
 dataframe = ["pandas>=1.3.0"]
 jsonld = ["PyLD>=0.7.2"]
