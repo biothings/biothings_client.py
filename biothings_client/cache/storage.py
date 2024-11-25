@@ -37,7 +37,9 @@ class BiothingsClientSqlite3Cache(hishel.SQLiteStorage):
         connection: Optional[anysqlite.Connection] = None,
         ttl: Optional[Union[int, float]] = None,
     ) -> None:
-        self._cache_filepath = None
+        self._cache_filepath: Path = None
+        self._connection: Optional[sqlite3.Connection] = connection or None
+        self._setup_completed: bool = False
         super().__init__(serializer, connection, ttl)
 
     def setup_database_connection(self, cache_filepath: Union[str, Path] = None) -> None:
