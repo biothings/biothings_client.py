@@ -6,15 +6,14 @@ from collections.abc import Iterable
 from copy import copy
 from pathlib import Path
 from typing import Union, Tuple
-import asyncio
 import logging
 import platform
 import warnings
 
-import hishel
+
 import httpx
 
-from biothings_client.utils.iteration import iter_n, list_itemcnt, safe_str, concatenate_list
+from biothings_client import __CACHING, __PANDAS
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -32,18 +31,17 @@ from biothings_client.client.settings import (
     MYVARIANT_KWARGS,
 )
 from biothings_client.__version__ import __version__
+from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
-from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
+from biothings_client.utils.iteration import iter_n, list_itemcnt, concatenate_list
 
-try:
-    from pandas import DataFrame, json_normalize
+if __PANDAS:
+    import pandas
 
-    df_avail = True
-except ImportError:
-    df_avail = False
-
+if __CACHING:
+    import hishel
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
@@ -176,26 +174,33 @@ class AsyncBiothingClient:
         """
         Converts object to DataFrame (pandas)
         """
-        if not df_avail:
-            raise RuntimeError("pandas module must be installed (or upgraded) for as_dataframe option.")
+        if __PANDAS:
+            # if dataframe not in ["by_source", "normal"]:
+            if dataframe not in [1, 2]:
+                raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
 
-        # if dataframe not in ["by_source", "normal"]:
-        if dataframe not in [1, 2]:
-            raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
-
-        if "hits" in obj:
-            if dataframe == 1:
-                df = json_normalize(obj["hits"])
+            if "hits" in obj:
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj["hits"])
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
             else:
-                df = DataFrame.from_dict(obj)
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj)
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
+            if df_index:
+                df = df.set_index("query")
+            return df
         else:
-            if dataframe == 1:
-                df = json_normalize(obj)
-            else:
-                df = DataFrame.from_dict(obj)
-        if df_index:
-            df = df.set_index("query")
-        return df
+            dataframe_library_error = RuntimeError(
+                (
+                    "The `dataframe` option requires the `pandas` library [https://pandas.pydata.org/]. "
+                    "It can be installed via `pip install biothings_client[dataframe]` or  "
+                    "manually installed via `pip install pandas`"
+                )
+            )
+            raise dataframe_library_error
 
     async def _get(
         self, url: str, params: dict = None, none_on_404: bool = False, verbose: bool = True
@@ -308,25 +313,34 @@ class AsyncBiothingClient:
         Outputs:
         :return: None
         """
-        if not self.caching_enabled:
-            try:
-                self.caching_enabled = True
-                self.http_client_setup = False
-                await self._build_cache_http_client()
-                logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
-                logger.info(
-                    (
-                        "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
-                        self,
-                        self.cache_storage.cache_filepath,
+        if __CACHING:
+            if not self.caching_enabled:
+                try:
+                    self.caching_enabled = True
+                    self.http_client_setup = False
+                    await self._build_cache_http_client()
+                    logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
+                    logger.info(
+                        (
+                            "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                            self,
+                            self.cache_storage.cache_filepath,
+                        )
                     )
-                )
-            except Exception as gen_exc:
-                logger.exception(gen_exc)
-                logger.error("Unable to enable caching")
-                raise gen_exc
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Unable to enable caching")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already enabled. Skipping for now ...")
         else:
-            logger.warning("Caching already enabled. Skipping for now ...")
+            caching_library_error = RuntimeError(
+                (
+                    "To enable biothings-client caching, additional packages are required. "
+                    "To install these packages please use `pip install biothings_client[caching]`"
+                )
+            )
+            raise caching_library_error
 
     async def _stop_caching(self) -> None:
         """
@@ -341,36 +355,54 @@ class AsyncBiothingClient:
         Outputs:
         :return: None
         """
-        if self.caching_enabled:
-            try:
-                await self.cache_storage.clear_cache()
-            except Exception as gen_exc:
-                logger.exception(gen_exc)
-                logger.error("Error attempting to clear the local cache database")
-                raise gen_exc
+        if __CACHING:
+            if self.caching_enabled:
+                try:
+                    await self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
 
-            self.caching_enabled = False
-            self.http_client_setup = False
-            self._build_http_client()
-            logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
-            logger.info("Disabled client caching: %s", self)
+                self.caching_enabled = False
+                self.http_client_setup = False
+                self._build_http_client()
+                logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
+                logger.info("Disabled client caching: %s", self)
+            else:
+                logger.warning("Caching already disabled. Skipping for now ...")
         else:
-            logger.warning("Caching already disabled. Skipping for now ...")
+            caching_library_error = RuntimeError(
+                (
+                    "To disable biothings-client caching, additional packages are required. "
+                    "To install these packages please use `pip install biothings_client[caching]`"
+                )
+            )
+            raise caching_library_error
 
     async def _clear_cache(self) -> None:
         """
         Clear the globally installed cache. Caching will stil be enabled,
         but the data stored in the cache stored will be dropped
         """
-        if self.caching_enabled:
-            try:
-                await self.cache_storage.clear_cache()
-            except Exception as gen_exc:
-                logger.exception(gen_exc)
-                logger.error("Error attempting to clear the local cache database")
-                raise gen_exc
+        if __CACHING:
+            if self.caching_enabled:
+                try:
+                    await self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
         else:
-            logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
+            caching_library_error = RuntimeError(
+                (
+                    "To clear the biothings-client cache, additional packages are required. "
+                    "To install these packages please use `pip install biothings_client[caching]`"
+                )
+            )
+            raise caching_library_error
 
     async def _get_fields(self, search_term=None, verbose=True):
         """
@@ -660,8 +692,8 @@ class AsyncBiothingClient:
 
         if dataframe:
             out = await self._dataframe(out, dataframe, df_index=df_index)
-            li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
-            li_missing_df = DataFrame(li_missing, columns=["query"])
+            li_dup_df = pandas.DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
+            li_missing_df = pandas.DataFrame(li_missing, columns=["query"])
 
         if verbose:
             if li_dup:
