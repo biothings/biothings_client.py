@@ -202,7 +202,7 @@ def test_querymany_notfound(variant_client: MyVariantInfo):
     assert qres[2] == {"query": "NA_TEST", "notfound": True}
 
 
-@pytest.mark.skipif(not biothings_client.__PANDAS, reason="pandas library not installed")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="pandas library not installed")
 def test_querymany_dataframe(variant_client: MyVariantInfo):
     from pandas import DataFrame
 

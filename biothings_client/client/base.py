@@ -13,7 +13,6 @@ import warnings
 
 import httpx
 
-from biothings_client import __CACHING, __PANDAS
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -31,16 +30,17 @@ from biothings_client.client.settings import (
     MYVARIANT_KWARGS,
 )
 from biothings_client.__version__ import __version__
+from biothings_client._dependencies import _CACHING, _PANDAS
 from biothings_client.cache.storage import BiothingsClientSqlite3Cache
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
 from biothings_client.utils.iteration import iter_n, list_itemcnt, concatenate_list
 
-if __PANDAS:
+if _PANDAS:
     import pandas
 
-if __CACHING:
+if _CACHING:
     import hishel
 
 
@@ -164,7 +164,7 @@ class BiothingClient:
         """
         Converts object to DataFrame (pandas)
         """
-        if __PANDAS:
+        if _PANDAS:
             # if dataframe not in ["by_source", "normal"]:
             if dataframe not in [1, 2]:
                 raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
@@ -305,7 +305,7 @@ class BiothingClient:
         Outputs:
         :return: None
         """
-        if __CACHING:
+        if _CACHING:
             if not self.caching_enabled:
                 try:
                     self.caching_enabled = True
@@ -347,7 +347,7 @@ class BiothingClient:
         Outputs:
         :return: None
         """
-        if __CACHING:
+        if _CACHING:
             if self.caching_enabled:
                 try:
                     self.cache_storage.clear_cache()
@@ -383,7 +383,7 @@ class BiothingClient:
         Outputs:
         :return: None
         """
-        if __CACHING:
+        if _CACHING:
             if self.caching_enabled:
                 try:
                     self.cache_storage.clear_cache()

@@ -1,4 +1,10 @@
-import importlib.util
+"""
+Mirror of the geneset tests but two main differences:
+> asynchronous
+> implemented in pytest for asyncio marker
+"""
+
+import logging
 import types
 
 import pytest
@@ -6,6 +12,10 @@ import pytest
 
 from biothings_client.client.definitions import AsyncMyGenesetInfo
 from biothings_client.utils.score import descore
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 @pytest.mark.asyncio

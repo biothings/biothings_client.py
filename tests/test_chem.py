@@ -9,7 +9,7 @@ import types
 import pytest
 
 
-from biothings_client._dependencies import __PANDAS
+import biothings_client
 from biothings_client.client.definitions import MyChemInfo
 from biothings_client.utils.score import descore
 
@@ -372,7 +372,7 @@ def test_querymany_notfound(chem_client: MyChemInfo):
     assert qres[2] == {"query": "NA_TEST", "notfound": True}
 
 
-@pytest.mark.skipif(not __PANDAS, reason="pandas library not installed")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="pandas library not installed")
 def test_querymany_dataframe(chem_client: MyChemInfo):
     from pandas import DataFrame
 
