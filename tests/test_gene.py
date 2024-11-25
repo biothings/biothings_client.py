@@ -239,7 +239,7 @@ def test_querymany_notfound(gene_client: MyGeneInfo):
     assert qres[2] == {"query": "NA_TEST", "notfound": True}
 
 
-@pytest.mark.skipIf(not biothings_client.__PANDAS, reason="pandas library not installed")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="pandas library not installed")
 def test_querymany_dataframe(gene_client: MyGeneInfo):
     from pandas import DataFrame
 

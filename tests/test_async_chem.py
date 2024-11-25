@@ -4,7 +4,6 @@ Mirror of the chem tests but two main differences:
 > implemented in pytest for asyncio marker
 """
 
-import importlib.util
 import json
 import logging
 import types
@@ -12,11 +11,10 @@ import types
 import pytest
 
 
+import biothings_client
 from biothings_client.client.definitions import AsyncMyChemInfo
 from biothings_client.utils.score import descore
 
-
-pandas_available = importlib.util.find_spec("pandas") is not None
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -409,7 +407,7 @@ async def test_querymany_notfound(async_chem_client: AsyncMyChemInfo):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not pandas_available, reason="requires the pandas library")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="requires the pandas library")
 async def test_querymany_dataframe(async_chem_client: AsyncMyChemInfo):
     from pandas import DataFrame
 

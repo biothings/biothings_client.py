@@ -8,6 +8,7 @@ from typing import Callable
 
 import pytest
 
+import biothings_client
 from biothings_client.client.asynchronous import get_async_client
 from biothings_client.client.base import get_client
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-@pytest.mark.unit
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
 @pytest.mark.parametrize(
     "method,client,function,function_arguments",
     [
@@ -113,8 +114,8 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
         raise gen_exc
 
 
-@pytest.mark.unit
 @pytest.mark.asyncio
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
 @pytest.mark.parametrize(
     "method,client,function,function_arguments",
     [
