@@ -31,6 +31,7 @@ from biothings_client.client.settings import (
 )
 from biothings_client.__version__ import __version__
 from biothings_client._dependencies import _CACHING, _PANDAS
+from biothings_client.client.exception import OptionalDependencyImportError
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
@@ -183,12 +184,8 @@ class BiothingClient:
                 df = df.set_index("query")
             return df
         else:
-            dataframe_library_error = RuntimeError(
-                (
-                    "The `dataframe` option requires the `pandas` library [https://pandas.pydata.org/]. "
-                    "It can be installed via `pip install biothings_client[dataframe]` or  "
-                    "manually installed via `pip install pandas`"
-                )
+            dataframe_library_error = OptionalDependencyImportError(
+                optional_function_access="enable dataframe conversion", optional_group="dataframe", libraries=["pandas"]
             )
             raise dataframe_library_error
 
@@ -326,11 +323,10 @@ class BiothingClient:
             else:
                 logger.warning("Caching already enabled. Skipping for now ...")
         else:
-            caching_library_error = RuntimeError(
-                (
-                    "To enable biothings-client caching, additional packages are required. "
-                    "To install these packages please use `pip install biothings_client[caching]`"
-                )
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="enable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
             )
             raise caching_library_error
 
@@ -364,11 +360,10 @@ class BiothingClient:
             else:
                 logger.warning("Caching already disabled. Skipping for now ...")
         else:
-            caching_library_error = RuntimeError(
-                (
-                    "To disable biothings-client caching, additional packages are required. "
-                    "To install these packages please use `pip install biothings_client[caching]`"
-                )
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="disable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
             )
             raise caching_library_error
 
@@ -394,11 +389,10 @@ class BiothingClient:
             else:
                 logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
         else:
-            caching_library_error = RuntimeError(
-                (
-                    "To clear the biothings-client cache, additional packages are required. "
-                    "To install these packages please use `pip install biothings_client[caching]`"
-                )
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="clear biothings-client cache",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
             )
             raise caching_library_error
 
@@ -585,7 +579,16 @@ class BiothingClient:
         pulling from local cache
         """
         logger.warning("fetch_all implicitly disables HTTP request caching")
-        self.stop_caching()
+
+        try:
+            self.stop_caching()
+        except OptionalDependencyImportError as optional_import_error:
+            logger.exception(optional_import_error)
+            logger.debug("No cache to disable for fetch all. Continuing ...")
+        except Exception as gen_exc:
+            logger.exception(gen_exc)
+            logger.error("Unknown error occured while attempting to disable caching")
+            raise gen_exc
 
         from_cache, response = self._get(url, params=kwargs, verbose=verbose)
         if verbose:
