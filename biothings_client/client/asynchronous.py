@@ -31,7 +31,6 @@ from biothings_client.client.settings import (
 )
 from biothings_client.__version__ import __version__
 from biothings_client._dependencies import _CACHING, _PANDAS
-from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
@@ -42,6 +41,7 @@ if _PANDAS:
 
 if _CACHING:
     import hishel
+    from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
