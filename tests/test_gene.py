@@ -185,7 +185,6 @@ def test_query_fetch_all(gene_client: MyGeneInfo):
     qres = gene_client.query("_exists_:pdb")
     total = qres["total"]
 
-    breakpoint()
     qres = gene_client.query("_exists_:pdb", fields="pdb", fetch_all=True)
     assert isinstance(qres, types.GeneratorType)
     assert total == len(list(qres))
