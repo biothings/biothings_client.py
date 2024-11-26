@@ -234,7 +234,7 @@ class AsyncBiothingClient:
                 response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
         return get_response
 
-    async def _post(self, url: str, params: dict, verbose: bool = True):
+    async def _post(self, url: str, params: dict, verbose: bool = True) -> Tuple[bool, httpx.Response]:
         """
         Wrapper around the httpx.post method
         """
@@ -286,7 +286,7 @@ class AsyncBiothingClient:
             if verbose:
                 logger.info("querying {0}-{1}...".format(i + 1, cnt))
             i = cnt
-            from_cache, query_result = await query_fn(batch, **fn_kwargs)
+            _, query_result = await query_fn(batch, **fn_kwargs)
             yield query_result
 
     async def _metadata(self, verbose=True, **kwargs):
@@ -294,7 +294,7 @@ class AsyncBiothingClient:
         Return a dictionary of Biothing metadata.
         """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = await self._get(_url, params=kwargs, verbose=verbose)
+        _, ret = await self._get(_url, params=kwargs, verbose=verbose)
         return ret
 
     async def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
@@ -413,7 +413,7 @@ class AsyncBiothingClient:
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = await self._get(_url, params=params, verbose=verbose)
+        _, ret = await self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
@@ -438,7 +438,7 @@ class AsyncBiothingClient:
             kwargs["fields"] = fields
         kwargs = await self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
+        _, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         return ret
 
     async def _getannotations_inner(self, ids, verbose=True, **kwargs):
@@ -569,7 +569,7 @@ class AsyncBiothingClient:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = await self._get(_url, kwargs, verbose=verbose)
+        _, out = await self._get(_url, kwargs, verbose=verbose)
         if dataframe:
             out = await self._dataframe(out, dataframe, df_index=False)
         return out
@@ -581,17 +581,20 @@ class AsyncBiothingClient:
         pulling from local cache
         """
         logger.warning("fetch_all implicitly disables HTTP request caching")
-        try:
-            await self.stop_caching()
-        except OptionalDependencyImportError as optional_import_error:
-            logger.exception(optional_import_error)
-            logger.debug("No cache to disable for fetch all. Continuing ...")
-        except Exception as gen_exc:
-            logger.exception(gen_exc)
-            logger.error("Unknown error occured while attempting to disable caching")
-            raise gen_exc
+        restore_caching = False
+        if self.caching_enabled:
+            restore_caching = True
+            try:
+                await self.stop_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
-        from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
+        _, batch = await self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
@@ -605,7 +608,19 @@ class AsyncBiothingClient:
             for hit in batch["hits"]:
                 yield hit
             kwargs.update({"scroll_id": batch["_scroll_id"]})
-            from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
+            _, batch = await self._get(url, params=kwargs, verbose=verbose)
+
+        if restore_caching:
+            logger.debug("re-enabling the client HTTP caching")
+            try:
+                await self.set_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
     async def _querymany_inner(self, qterms, verbose=True, **kwargs):
         query_term_collection = concatenate_list(qterms)

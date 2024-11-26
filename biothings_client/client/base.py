@@ -223,7 +223,7 @@ class BiothingClient:
                 response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
         return get_response
 
-    def _post(self, url: str, params: dict = None, verbose: bool = True) -> tuple:
+    def _post(self, url: str, params: dict = None, verbose: bool = True) -> Tuple[bool, httpx.Response]:
         """
         Wrapper around the httpx.post method
         """
@@ -286,7 +286,7 @@ class BiothingClient:
         Return a dictionary of Biothing metadata.
         """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
+        _, ret = self._get(_url, params=kwargs, verbose=verbose)
         return ret
 
     def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
@@ -411,7 +411,7 @@ class BiothingClient:
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = self._get(_url, params=params, verbose=verbose)
+        _, ret = self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
@@ -436,7 +436,7 @@ class BiothingClient:
             kwargs["fields"] = fields
         kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
+        _, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         return ret
 
     def _getannotations_inner(self, ids, verbose=True, **kwargs):
@@ -566,7 +566,7 @@ class BiothingClient:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = self._get(_url, kwargs, verbose=verbose)
+        _, out = self._get(_url, kwargs, verbose=verbose)
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=False)
         return out
@@ -579,18 +579,20 @@ class BiothingClient:
         pulling from local cache
         """
         logger.warning("fetch_all implicitly disables HTTP request caching")
+        restore_caching = False
+        if self.caching_enabled:
+            restore_caching = True
+            try:
+                self.stop_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
-        try:
-            self.stop_caching()
-        except OptionalDependencyImportError as optional_import_error:
-            logger.exception(optional_import_error)
-            logger.debug("No cache to disable for fetch all. Continuing ...")
-        except Exception as gen_exc:
-            logger.exception(gen_exc)
-            logger.error("Unknown error occured while attempting to disable caching")
-            raise gen_exc
-
-        from_cache, response = self._get(url, params=kwargs, verbose=verbose)
+        _, response = self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
@@ -603,8 +605,19 @@ class BiothingClient:
                 logger.warning(response["_warning"])
             yield from response["hits"]
             kwargs.update({"scroll_id": response["_scroll_id"]})
-            from_cache, response = self._get(url, params=kwargs, verbose=verbose)
-        self.set_caching()
+            _, response = self._get(url, params=kwargs, verbose=verbose)
+
+        if restore_caching:
+            logger.debug("re-enabling the client HTTP caching")
+            try:
+                self.set_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
     def _querymany_inner(self, qterms, verbose=True, **kwargs):
         query_term_collection = concatenate_list(qterms)
