@@ -1,51 +1,81 @@
-import os
-import sys
-import unittest
+"""
+Test suite for the sync client
+"""
+
+from typing import List
+
+import pytest
 
 import biothings_client
 
-sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
 
-
-sys.stdout.write(
-    '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
+@pytest.mark.parametrize(
+    "client_name,client_url,class_name",
+    [
+        (["gene"], "https://mygene.info/v3", "MyGeneInfo"),
+        (["variant"], "https://myvariant.info/v1", "MyVariantInfo"),
+        (["chem", "drug"], "https://mychem.info/v1", "MyChemInfo"),
+        (["disease"], "https://mydisease.info/v1", "MyDiseaseInfo"),
+        (["taxon"], "https://t.biothings.io/v1", "MyTaxonInfo"),
+        (["geneset"], "https://mygeneset.info/v1", "MyGenesetInfo"),
+    ],
 )
+def test_get_client(client_name: List[str], client_url: str, class_name: str):
+    """
+    Tests our ability to generate sync clients
+    """
+    client_name_instances = [biothings_client.get_client(name) for name in client_name]
+    client_url_instance = biothings_client.get_client(url=client_url)
+    clients = [client_url_instance, *client_name_instances]
+    for client in clients:
+        assert type(client).__name__ == class_name
 
 
-class TestBiothingsClient(unittest.TestCase):
-    def setUp(self):
-        pass
+@pytest.mark.parametrize(
+    "client_name,client_url,class_name",
+    [
+        ("gene", "https://mygene.info/v3", "MyGeneInfo"),
+        ("variant", "https://mychem.info/v1", "MyVariantInfo"),
+        ("chem", "https://mychem.info/v1", "MyChemInfo"),
+        ("disease", "https://mydisease.info/v1", "MyDiseaseInfo"),
+        ("taxon", "https://t.biothings.io/v1", "MyTaxonInfo"),
+        ("geneset", "https://mygeneset.info/v1", "MyGenesetInfo"),
+    ],
+)
+def test_generate_settings(client_name: str, client_url: str, class_name: str):
+    client_settings = biothings_client.client.base.generate_settings(client_name, url=client_url)
+    assert client_settings["class_kwargs"]["_default_url"] == client_url
+    assert client_settings["class_name"] == class_name
 
-    def tearDown(self):
-        pass
 
-    def test_get_client(self):
-        gene_client = biothings_client.get_client("gene")
-        self.assertEqual(type(gene_client).__name__, "MyGeneInfo")
+@pytest.mark.parametrize(
+    "client_name",
+    (
+        "gene",
+        "variant",
+        "chem",
+        "disease",
+        "taxon",
+        "geneset",
+    ),
+)
+def test_url_protocol(client_name: str):
+    """
+    Tests that our HTTP protocol modification methods work
+    as expected when transforming to either HTTP or HTTPS
+    """
+    client_instance = biothings_client.get_client(client_name)
 
-        variant_client = biothings_client.get_client("variant")
-        self.assertEqual(type(variant_client).__name__, "MyVariantInfo")
+    http_protocol = "http://"
+    https_protocol = "https://"
 
-        chem_client = biothings_client.get_client("chem")
-        self.assertEqual(type(chem_client).__name__, "MyChemInfo")
+    # DEFAULT: HTTPS
+    assert client_instance.url.startswith(https_protocol)
 
-        # drug_client as an alias of chem_client
-        drug_client = biothings_client.get_client("drug")
-        self.assertEqual(type(drug_client).__name__, "MyChemInfo")
+    # Transform to HTTP
+    client_instance.use_http()
+    assert client_instance.url.startswith(http_protocol)
 
-        disease_client = biothings_client.get_client("disease")
-        self.assertEqual(type(disease_client).__name__, "MyDiseaseInfo")
-
-        taxon_client = biothings_client.get_client("taxon")
-        self.assertEqual(type(taxon_client).__name__, "MyTaxonInfo")
-
-        geneset_client = biothings_client.get_client("geneset")
-        self.assertEqual(type(geneset_client).__name__, "MyGenesetInfo")
-
-        geneset_client = biothings_client.get_client(url="https://mygeneset.info/v1")
-        self.assertEqual(type(geneset_client).__name__, "MyGenesetInfo")
-
-    def test_generate_settings_from_url(self):
-        client_settings = biothings_client.client.base.generate_settings("geneset", url="https://mygeneset.info/v1")
-        self.assertEqual(client_settings["class_kwargs"]["_default_url"], "https://mygeneset.info/v1")
-        self.assertEqual(client_settings["class_name"], "MyGenesetInfo")
+    # Transform back to HTTPS
+    client_instance.use_https()
+    client_instance.url.startswith(https_protocol)

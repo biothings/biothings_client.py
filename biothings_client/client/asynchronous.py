@@ -4,30 +4,15 @@ Async Python Client for generic Biothings API services
 
 from collections.abc import Iterable
 from copy import copy
-from typing import Tuple
-import asyncio
+from pathlib import Path
+from typing import Union, Tuple
 import logging
 import platform
 import warnings
 
+
 import httpx
 
-
-try:
-    from pandas import DataFrame, json_normalize
-
-    df_avail = True
-except ImportError:
-    df_avail = False
-
-from biothings_client.utils.iteration import (
-    iter_n,
-    list_itemcnt,
-    safe_str,
-)
-from biothings_client.utils.copy import copy_func
-
-from biothings_client.__version__ import __version__
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -44,9 +29,20 @@ from biothings_client.client.settings import (
     MYVARIANT_ALIASES,
     MYVARIANT_KWARGS,
 )
+from biothings_client.__version__ import __version__
+from biothings_client._dependencies import _CACHING, _PANDAS
+from biothings_client.client.exceptions import OptionalDependencyImportError
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
+from biothings_client.utils.copy import copy_func
+from biothings_client.utils.iteration import iter_n, list_itemcnt, concatenate_list
 
+if _PANDAS:
+    import pandas
+
+if _CACHING:
+    import hishel
+    from biothings_client.cache.storage import AsyncBiothingsClientSqlite3Cache
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
@@ -58,31 +54,29 @@ logger.setLevel(logging.INFO)
 # the business logic can be more concise and more readable.
 class AsyncBiothingClient:
     """
-    This is the asynchronous client for a biothing web service.
+    async http client class for accessing the biothings web services
     """
 
-    def __init__(self, url: str = None, enable_cache: bool = None):
+    def __init__(self, url: str = None):
         if url is None:
             url = self._default_url
         self.url = url
         if self.url[-1] == "/":
             self.url = self.url[:-1]
 
-        if enable_cache is None:
-            enable_cache = False
-        self.enable_cache = enable_cache
-
         self.max_query = self._max_query
 
         # delay and step attributes are for batch queries.
         self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
+
         self.scroll_size = self._scroll_size
 
         # raise httpx.HTTPError for status_code > 400
         # > but not for 404 on getvariant
         # > set to False to suppress the exceptions.
         self.raise_for_status = True
+
         self.default_user_agent = (
             "{package_header}/{client_version} (" "python:{python_version} " "httpx:{httpx_version}" ")"
         ).format(
@@ -93,15 +87,83 @@ class AsyncBiothingClient:
                 "httpx_version": httpx.__version__,
             }
         )
+        self.http_client = None
+        self.cache_storage = None
+        self.http_client_setup = False
+        self.caching_enabled = False
 
-    async def use_http(self):
+    async def _build_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """
+        Builds the async client instance for usage through the lifetime
+        of the biothings_client
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property
+
+        Inputs:
+        :param cache_db: pathlike object to the local sqlite3 cache database file
+
+        Outputs:
+        :return: None
+        """
+        if not self.http_client_setup:
+            http_transport = httpx.AsyncHTTPTransport()
+            self.http_client = httpx.AsyncClient(transport=http_transport)
+            self.http_client_setup = True
+            self.http_cache_client_setup = False
+
+    async def _build_cache_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """
+        Builds the client instance used for caching biothings requests.
+        We rebuild the client whenever we enable to caching to ensure
+        that we don't create a database files unless the user explicitly
+        wants to leverage request caching
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property and the cache_storage property
+
+        Inputs:
+        :param cache_db: pathlike object to the local sqlite3 cache database file
+
+        Outputs:
+        :return: None
+        """
+        if not self.http_client_setup:
+            if cache_db is None:
+                cache_db = self._default_cache_file
+            cache_db = Path(cache_db).resolve().absolute()
+
+            self.cache_storage = AsyncBiothingsClientSqlite3Cache()
+            await self.cache_storage.setup_database_connection(cache_db)
+            cache_transport = hishel.AsyncCacheTransport(
+                transport=httpx.AsyncHTTPTransport(), storage=self.cache_storage
+            )
+            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            self.http_client = hishel.AsyncCacheClient(
+                controller=cache_controller, transport=cache_transport, storage=self.cache_storage
+            )
+            self.http_client_setup = True
+
+    async def __del__(self):
+        """
+        Destructor for the client to ensure that we close any potential
+        connections to the cache database
+        """
+        try:
+            if self.http_client is not None:
+                await self.http_client.aclose()
+        except Exception as gen_exc:
+            logger.exception(gen_exc)
+            logger.error("Unable to close the httpx client instance %s", self.http_client)
+
+    def use_http(self):
         """
         Use http instead of https for API calls.
         """
         if self.url:
             self.url = self.url.replace("https://", "http://")
 
-    async def use_https(self):
+    def use_https(self):
         """
         Use https instead of http for API calls. This is the default.
         """
@@ -113,24 +175,29 @@ class AsyncBiothingClient:
         """
         Converts object to DataFrame (pandas)
         """
-        if not df_avail:
-            raise RuntimeError("pandas module must be installed (or upgraded) for as_dataframe option.")
-        # if dataframe not in ["by_source", "normal"]:
-        if dataframe not in [1, 2]:
-            raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
-        if "hits" in obj:
-            if dataframe == 1:
-                df = json_normalize(obj["hits"])
+        if _PANDAS:
+            # if dataframe not in ["by_source", "normal"]:
+            if dataframe not in [1, 2]:
+                raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
+
+            if "hits" in obj:
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj["hits"])
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
             else:
-                df = DataFrame.from_dict(obj)
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj)
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
+            if df_index:
+                df = df.set_index("query")
+            return df
         else:
-            if dataframe == 1:
-                df = json_normalize(obj)
-            else:
-                df = DataFrame.from_dict(obj)
-        if df_index:
-            df = df.set_index("query")
-        return df
+            dataframe_library_error = OptionalDependencyImportError(
+                optional_function_access="enable dataframe conversion", optional_group="dataframe", libraries=["pandas"]
+            )
+            raise dataframe_library_error
 
     async def _get(
         self, url: str, params: dict = None, none_on_404: bool = False, verbose: bool = True
@@ -138,59 +205,73 @@ class AsyncBiothingClient:
         """
         Wrapper around the httpx.get method
         """
+        await self._build_http_client()
         if params is None:
             params = {}
+
         debug = params.pop("debug", False)
         return_raw = params.pop("return_raw", False)
-
         headers = {"user-agent": self.default_user_agent}
-        async with httpx.AsyncClient() as client:
-            res = await client.get(url, params=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
+        response = await self.http_client.get(
+            url=url, params=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-        if debug:
-            return from_cache, res
-        if none_on_404 and res.status_code == 404:
-            return from_cache, None
-        if self.raise_for_status:
-            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
-        if return_raw:
-            return from_cache, res.text
-        ret = res.json()
-        return from_cache, ret
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
 
-    async def _post(self, url: str, params: dict, verbose: bool = True):
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
+
+        if response.is_success:
+            if debug or return_raw:
+                get_response = (from_cache, response)
+            else:
+                get_response = (from_cache, response.json())
+        else:
+            if none_on_404 and response.status_code == 404:
+                get_response = (from_cache, None)
+            elif self.raise_for_status:
+                response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
+        return get_response
+
+    async def _post(self, url: str, params: dict, verbose: bool = True) -> Tuple[bool, httpx.Response]:
         """
         Wrapper around the httpx.post method
         """
+        await self._build_http_client()
+
+        if params is None:
+            params = {}
         return_raw = params.pop("return_raw", False)
         headers = {"user-agent": self.default_user_agent}
-        async with httpx.AsyncClient() as client:
-            res = await client.post(url, data=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
-        if self.raise_for_status:
-            res.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
-        if return_raw:
-            return from_cache, res
-        ret = res.json()
-        return from_cache, ret
+        response = await self.http_client.post(
+            url=url, data=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-    @staticmethod
-    async def _format_list(a_list, sep=",", quoted=True):
-        if isinstance(a_list, (list, tuple)):
-            if quoted:
-                _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
+
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
+
+        if response.is_success:
+            if return_raw:
+                post_response = (from_cache, response)
             else:
-                _out = sep.join(["{}".format(safe_str(x)) for x in a_list])
+                response.read()
+                post_response = (from_cache, response.json())
         else:
-            _out = a_list  # a_list is already a comma separated string
-        return _out
+            if self.raise_for_status:
+                response.raise_for_status()
+            else:
+                post_response = (from_cache, response)
+        return post_response
 
     async def _handle_common_kwargs(self, kwargs):
         # handle these common parameters accept field names as the value
         for kw in ["fields", "always_list", "allow_null"]:
             if kw in kwargs:
-                kwargs[kw] = await self._format_list(kwargs[kw], quoted=False)
+                kwargs[kw] = concatenate_list(kwargs[kw], quoted=False)
         return kwargs
 
     async def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
@@ -205,31 +286,117 @@ class AsyncBiothingClient:
             if verbose:
                 logger.info("querying {0}-{1}...".format(i + 1, cnt))
             i = cnt
-            from_cache, query_result = await query_fn(batch, **fn_kwargs)
+            _, query_result = await query_fn(batch, **fn_kwargs)
             yield query_result
-            if verbose:
-                cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
-                logger.info("done.{0}".format(cache_str))
-            if not from_cache and self.delay:
-                # no need to delay if requests are from cache.
-                await asyncio.sleep(self.delay)
-
-    @property
-    async def _from_cache_notification(self):
-        """
-        Notification to alert user that a cached result is being returned.
-        """
-        return "[ from cache ]"
 
     async def _metadata(self, verbose=True, **kwargs):
         """
         Return a dictionary of Biothing metadata.
         """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = await self._get(_url, params=kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, ret = await self._get(_url, params=kwargs, verbose=verbose)
         return ret
+
+    async def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
+        """
+        Enable the client caching and creates a local cache database
+        for all future requests
+
+        If caching is already enabled then we no-opt
+
+        Inputs:
+        :param cache_db: pathlike object to the local sqlite3 cache database file
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING:
+            if not self.caching_enabled:
+                try:
+                    self.caching_enabled = True
+                    self.http_client_setup = False
+                    await self._build_cache_http_client()
+                    logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
+                    logger.info(
+                        (
+                            "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                            self,
+                            self.cache_storage.cache_filepath,
+                        )
+                    )
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Unable to enable caching")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already enabled. Skipping for now ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="enable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
+
+    async def _stop_caching(self) -> None:
+        """
+        Disable client caching. The local cache database will be maintained,
+        but we will disable cache access when sending requests
+
+        If caching is already disabled then we no-opt
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING:
+            if self.caching_enabled:
+                try:
+                    await self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
+
+                self.caching_enabled = False
+                self.http_client_setup = False
+                self._build_http_client()
+                logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
+                logger.info("Disabled client caching: %s", self)
+            else:
+                logger.warning("Caching already disabled. Skipping for now ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="disable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
+
+    async def _clear_cache(self) -> None:
+        """
+        Clear the globally installed cache. Caching will stil be enabled,
+        but the data stored in the cache stored will be dropped
+        """
+        if _CACHING:
+            if self.caching_enabled:
+                try:
+                    await self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="clear biothings-client cache",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
 
     async def _get_fields(self, search_term=None, verbose=True):
         """
@@ -246,18 +413,17 @@ class AsyncBiothingClient:
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = await self._get(_url, params=params, verbose=verbose)
+        _, ret = await self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
             if "notes" in v:
                 del v["notes"]
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         return ret
 
     async def _getannotation(self, _id, fields=None, **kwargs):
-        """Return the object given id.
+        """
+        Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
 
         :param _id: an entity id.
@@ -272,13 +438,11 @@ class AsyncBiothingClient:
             kwargs["fields"] = fields
         kwargs = await self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, ret = await self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         return ret
 
     async def _getannotations_inner(self, ids, verbose=True, **kwargs):
-        id_collection = await self._format_list(ids)
+        id_collection = concatenate_list(ids)
         _kwargs = {"ids": id_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._annotation_endpoint
@@ -293,7 +457,8 @@ class AsyncBiothingClient:
                 yield hit
 
     async def _getannotations(self, ids, fields=None, **kwargs):
-        """Return the list of annotation objects for the given list of ids.
+        """
+        Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
 
         :param ids: a list/tuple/iterable or a string of ids.
@@ -404,9 +569,7 @@ class AsyncBiothingClient:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = await self._get(_url, kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, out = await self._get(_url, kwargs, verbose=verbose)
         if dataframe:
             out = await self._dataframe(out, dataframe, df_index=False)
         return out
@@ -414,8 +577,24 @@ class AsyncBiothingClient:
     async def _fetch_all(self, url: str, verbose: bool = True, **kwargs):
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
+        Implicitly disables caching to ensure we actually hit the endpoint rather than
+        pulling from local cache
         """
-        from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
+        logger.warning("fetch_all implicitly disables HTTP request caching")
+        restore_caching = False
+        if self.caching_enabled:
+            restore_caching = True
+            try:
+                await self.stop_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
+
+        _, batch = await self._get(url, params=kwargs, verbose=verbose)
         if verbose:
             logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
@@ -429,10 +608,22 @@ class AsyncBiothingClient:
             for hit in batch["hits"]:
                 yield hit
             kwargs.update({"scroll_id": batch["_scroll_id"]})
-            from_cache, batch = await self._get(url, params=kwargs, verbose=verbose)
+            _, batch = await self._get(url, params=kwargs, verbose=verbose)
+
+        if restore_caching:
+            logger.debug("re-enabling the client HTTP caching")
+            try:
+                await self.set_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
     async def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        query_term_collection = await self._format_list(qterms)
+        query_term_collection = concatenate_list(qterms)
         _kwargs = {"q": query_term_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
@@ -471,7 +662,7 @@ class AsyncBiothingClient:
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs["scopes"] = await self._format_list(scopes, quoted=False)
+            kwargs["scopes"] = concatenate_list(scopes, quoted=False)
         kwargs = await self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop("returnall", False)
         verbose = kwargs.pop("verbose", True)
@@ -518,8 +709,8 @@ class AsyncBiothingClient:
 
         if dataframe:
             out = await self._dataframe(out, dataframe, df_index=df_index)
-            li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
-            li_missing_df = DataFrame(li_missing, columns=["query"])
+            li_dup_df = pandas.DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
+            li_missing_df = pandas.DataFrame(li_missing, columns=["query"])
 
         if verbose:
             if li_dup:
@@ -572,10 +763,8 @@ def get_async_client(biothing_type: str = None, instance: bool = True, *args, **
     else:
         biothing_type = biothing_type.lower()
     if biothing_type not in ASYNC_CLIENT_SETTINGS and not kwargs.get("url", False):
-        raise Exception(
-            "No client named '{0}', currently available clients are: {1}".format(
-                biothing_type, list(ASYNC_CLIENT_SETTINGS.keys())
-            )
+        raise TypeError(
+            f"No client named '{biothing_type}', currently available clients are: {list(ASYNC_CLIENT_SETTINGS.keys())}"
         )
     _settings = (
         ASYNC_CLIENT_SETTINGS[biothing_type]
@@ -588,7 +777,6 @@ def get_async_client(biothing_type: str = None, instance: bool = True, *args, **
     for src_attr, target_attr in _settings["attr_aliases"].items():
         if getattr(_class, src_attr, False):
             setattr(_class, target_attr, copy_func(getattr(_class, src_attr), name=target_attr))
-
     for _name, _docstring in _settings["class_kwargs"]["_docstring_obj"].items():
         _func = getattr(_class, _name, None)
         if _func:

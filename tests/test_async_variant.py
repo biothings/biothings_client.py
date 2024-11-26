@@ -1,14 +1,22 @@
-import importlib.util
+"""
+Mirror of the variant tests but two main differences:
+> asynchronous
+> implemented in pytest for asyncio marker
+"""
+
+import logging
 import types
 
 
 import pytest
 
+import biothings_client
 from biothings_client.client.definitions import AsyncMyVariantInfo
 from biothings_client.utils.score import descore
 
-pandas_available = importlib.util.find_spec("pandas") is not None
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 @pytest.mark.asyncio
@@ -216,7 +224,7 @@ async def test_querymany_notfound(async_variant_client: AsyncMyVariantInfo):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not pandas_available, reason="requires the pandas library")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="requires the pandas library")
 async def test_querymany_dataframe(async_variant_client: AsyncMyVariantInfo):
     from pandas import DataFrame
 

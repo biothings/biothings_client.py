@@ -4,18 +4,19 @@ Mirror of the gene tests but two main differences:
 > implemented in pytest for asyncio marker
 """
 
-import importlib.util
+import logging
 import types
 
 import pytest
 
 
+import biothings_client
 from biothings_client.client.definitions import AsyncMyGeneInfo
 from biothings_client.utils.score import descore
 
 
-pandas_available = importlib.util.find_spec("pandas") is not None
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 @pytest.mark.asyncio
@@ -260,7 +261,7 @@ async def test_querymany_notfound(async_gene_client: AsyncMyGeneInfo):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(not pandas_available, reason="requires the pandas library")
+@pytest.mark.skipif(not biothings_client._PANDAS, reason="requires the pandas library")
 async def test_querymany_dataframe(async_gene_client: AsyncMyGeneInfo):
     from pandas import DataFrame
 

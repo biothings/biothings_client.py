@@ -76,9 +76,9 @@ async def test_url_protocol(client_name: str):
     assert client_instance.url.startswith(https_protocol)
 
     # Transform to HTTP
-    await client_instance.use_http()
+    client_instance.use_http()
     assert client_instance.url.startswith(http_protocol)
 
     # Transform back to HTTPS
-    await client_instance.use_https()
+    client_instance.use_https()
     client_instance.url.startswith(https_protocol)
