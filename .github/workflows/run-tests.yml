@@ -68,28 +68,3 @@ jobs:
 
       - name: Run Tests
         run: python -m pytest tests
-
-  build_package_and_run_tests_py36:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.6"]
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Upgrade pip
-        run: pip install --upgrade pip
-      - name: Install Package Dependencies manually
-        # Install dependencies manually as pyproject.toml is not supported in Python 3.6
-        # caching dependencies requires Python 3.8+, skipping it for Python 3.6
-        run: pip install httpx importlib-metadata pandas pytest pytest-asyncio
-
-      - name: Run Tests
-        # since we cannot install packages from source in Python<3.7, we will use biothings_client
-        # directly from the current working directory
-        run: pytest tests
