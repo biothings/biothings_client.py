@@ -92,4 +92,4 @@ jobs:
       - name: Run Tests
         # since we cannot install packages from source in Python<3.7, we will use biothings_client
         # directly from the current working directory
-        run: PYTHONPATH=. python -m pytest tests
+        run: pytest tests
