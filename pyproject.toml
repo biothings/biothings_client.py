@@ -7,6 +7,7 @@ where = ["."] # list of folders that the contains the packages. We need it to be
 include = ["biothings_client*"]  # package names should match these glob patterns
 exclude = ["tests*"]  # exclude packages matching these glob patterns
 namespaces = false  # to disable scanning PEP 420 namespaces (true by default)
+
 [project]
 name="biothings_client"
 authors = [
@@ -67,18 +68,17 @@ classifiers = [
 dependencies = [
     "httpx>0.24.1; python_version>='3.8'",
     "httpx<=0.24.1; python_version=='3.7'",
-    "requests>=2.32.0; python_version>='3.8'",
-    "requests<=2.31.0; python_version=='3.7'",
     "importlib-metadata; python_version<'3.8'",
 ]
 version = "0.4.0"
 
 [project.optional-dependencies]
+caching = [
+    "anysqlite; python_version>='3.8'", 
+    "hishel[sqlite]; python_version >='3.8'", 
+]
 dataframe = ["pandas>=1.3.0"]
 jsonld = ["PyLD>=0.7.2"]
-caching = [
-    "requests_cache>=0.4.13"
-]
 tests = [
     "pytest>=8.3.3; python_version>='3.8'",
     "pytest>=7.4.4; python_version=='3.7'",
@@ -108,6 +108,7 @@ src_paths = ["."]
 # pytest configuration
 [tool.pytest.ini_options]
 minversion = "6.2.5"
+asyncio_mode = "auto"
 pythonpath = ["."]
 
 

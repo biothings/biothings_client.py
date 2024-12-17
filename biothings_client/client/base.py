@@ -4,19 +4,15 @@ Python Client for generic Biothings API services
 
 from collections.abc import Iterable
 from copy import copy
+from pathlib import Path
+from typing import Union, Tuple
 import logging
-import os
 import platform
 import time
 import warnings
 
-import requests
+import httpx
 
-from biothings_client.utils.iteration import (
-    iter_n,
-    list_itemcnt,
-    safe_str,
-)
 from biothings_client.client.settings import (
     COMMON_ALIASES,
     COMMON_KWARGS,
@@ -33,28 +29,25 @@ from biothings_client.client.settings import (
     MYVARIANT_ALIASES,
     MYVARIANT_KWARGS,
 )
+from biothings_client.__version__ import __version__
+from biothings_client._dependencies import _CACHING, _PANDAS
+from biothings_client.client.exceptions import OptionalDependencyImportError
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
-from biothings_client.__version__ import __version__
+from biothings_client.utils.iteration import iter_n, list_itemcnt, concatenate_list
 
-try:
-    from pandas import DataFrame, json_normalize
+if _PANDAS:
+    import pandas
 
-    df_avail = True
-except ImportError:
-    df_avail = False
-
-try:
-    import requests_cache
-
-    caching_avail = True
-except ImportError:
-    caching_avail = False
+if _CACHING:
+    import hishel
+    from biothings_client.cache.storage import BiothingsClientSqlite3Cache
 
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
+
 
 # Future work:
 # Consider use "verbose" settings to control default logging output level
@@ -64,139 +57,214 @@ logger.setLevel(logging.INFO)
 
 class BiothingClient:
     """
-    This is the client for a biothing web service.
+    sync http client class for accessing the biothings web services
     """
 
-    def __init__(self, url=None):
+    def __init__(self, url: str = None):
         if url is None:
             url = self._default_url
         self.url = url
         if self.url[-1] == "/":
             self.url = self.url[:-1]
+
         self.max_query = self._max_query
+
         # delay and step attributes are for batch queries.
         self.delay = self._delay  # delay is ignored when requests made from cache.
         self.step = self._step
+
         self.scroll_size = self._scroll_size
-        # raise requests.exceptions.HTTPError for status_code > 400
+
+        # raise httpx.HTTPError for status_code > 400
         #   but not for 404 on getvariant
         #   set to False to suppress the exceptions.
         self.raise_for_status = True
+
         self.default_user_agent = (
-            "{package_header}/{client_version} (" "python:{python_version} " "requests:{requests_version}" ")"
+            "{package_header}/{client_version} (" "python:{python_version} " "httpx:{httpx_version}" ")"
         ).format(
             **{
                 "package_header": self._pkg_user_agent_header,
                 "client_version": __version__,
                 "python_version": platform.python_version(),
-                "requests_version": requests.__version__,
+                "httpx_version": httpx.__version__,
             }
         )
-        self._cached = False
+
+        self.http_client = None
+        self.http_client_setup = False
+        self.cache_storage = None
+        self.caching_enabled = False
+
+    def _build_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """
+        Builds the client instance for usage through the lifetime
+        of the biothings_client
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property
+        """
+        if not self.http_client_setup:
+            http_transport = httpx.HTTPTransport()
+            self.http_client = httpx.Client(transport=http_transport)
+            self.http_client_setup = True
+            self.http_cache_client_setup = False
+
+    def _build_cache_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """
+        Builds the client instance used for caching biothings requests.
+        We rebuild the client whenever we enable to caching to ensure
+        that we don't create a database files unless the user explicitly
+        wants to leverage request caching
+
+        This modifies the state of the BiothingsClient instance
+        to set the values for the http_client property and the cache_storage property
+        """
+        if not self.http_client_setup:
+            if cache_db is None:
+                cache_db = self._default_cache_file
+            cache_db = Path(cache_db).resolve().absolute()
+
+            self.cache_storage = BiothingsClientSqlite3Cache()
+            self.cache_storage.setup_database_connection(cache_db)
+            cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=self.cache_storage)
+            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            self.http_client = hishel.CacheClient(
+                controller=cache_controller, transport=cache_transport, storage=self.cache_storage
+            )
+            self.http_client_setup = True
+
+    def __del__(self):
+        """
+        Destructor for the client to ensure that we close any potential
+        connections to the cache database
+        """
+        try:
+            if self.http_client is not None:
+                self.http_client.close()
+        except Exception as gen_exc:
+            logger.exception(gen_exc)
+            logger.error("Unable to close the httpx client instance %s", self.http_client)
 
     def use_http(self):
-        """Use http instead of https for API calls."""
+        """
+        Use http instead of https for API calls.
+        """
         if self.url:
             self.url = self.url.replace("https://", "http://")
 
     def use_https(self):
-        """Use https instead of http for API calls. This is the default."""
+        """
+        Use https instead of http for API calls. This is the default.
+        """
         if self.url:
             self.url = self.url.replace("http://", "https://")
 
     @staticmethod
     def _dataframe(obj, dataframe, df_index=True):
-        """Converts object to DataFrame (pandas)"""
-        if not df_avail:
-            raise RuntimeError("Error: pandas module must be installed " "(or upgraded) for as_dataframe option.")
-        # if dataframe not in ["by_source", "normal"]:
-        if dataframe not in [1, 2]:
-            raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
-        if "hits" in obj:
-            if dataframe == 1:
-                df = json_normalize(obj["hits"])
-            else:
-                df = DataFrame.from_dict(obj)
-        else:
-            if dataframe == 1:
-                df = json_normalize(obj)
-            else:
-                df = DataFrame.from_dict(obj)
-        if df_index:
-            df = df.set_index("query")
-        return df
+        """
+        Converts object to DataFrame (pandas)
+        """
+        if _PANDAS:
+            # if dataframe not in ["by_source", "normal"]:
+            if dataframe not in [1, 2]:
+                raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
 
-    def _get(self, url, params=None, none_on_404=False, verbose=True):
-        params = params or {}
+            if "hits" in obj:
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj["hits"])
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
+            else:
+                if dataframe == 1:
+                    df = pandas.json_normalize(obj)
+                else:
+                    df = pandas.DataFrame.from_dict(obj)
+            if df_index:
+                df = df.set_index("query")
+            return df
+        else:
+            dataframe_library_error = OptionalDependencyImportError(
+                optional_function_access="enable dataframe conversion", optional_group="dataframe", libraries=["pandas"]
+            )
+            raise dataframe_library_error
+
+    def _get(
+        self, url: str, params: dict = None, none_on_404: bool = False, verbose: bool = True
+    ) -> Tuple[bool, httpx.Response]:
+        """
+        Wrapper around the httpx.get method
+        """
+        self._build_http_client()
+        if params is None:
+            params = {}
+
         debug = params.pop("debug", False)
         return_raw = params.pop("return_raw", False)
         headers = {"user-agent": self.default_user_agent}
-        res = requests.get(url, params=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
-        if debug:
-            return from_cache, res
-        if none_on_404 and res.status_code == 404:
-            return from_cache, None
-        if self.raise_for_status:
-            # raise requests.exceptions.HTTPError if not 200
-            res.raise_for_status()
-        if return_raw:
-            return from_cache, res.text
-        ret = res.json()
-        return from_cache, ret
+        response = self.http_client.get(
+            url=url, params=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-    def _post(self, url, params, verbose=True):
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
+
+        if response.is_success:
+            if debug or return_raw:
+                get_response = (from_cache, response)
+            else:
+                get_response = (from_cache, response.json())
+        else:
+            if none_on_404 and response.status_code == 404:
+                get_response = (from_cache, None)
+            elif self.raise_for_status:
+                response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
+        return get_response
+
+    def _post(self, url: str, params: dict = None, verbose: bool = True) -> Tuple[bool, httpx.Response]:
+        """
+        Wrapper around the httpx.post method
+        """
+        self._build_http_client()
+        if params is None:
+            params = {}
         return_raw = params.pop("return_raw", False)
         headers = {"user-agent": self.default_user_agent}
-        res = requests.post(url, data=params, headers=headers)
-        from_cache = getattr(res, "from_cache", False)
-        if self.raise_for_status:
-            # raise requests.exceptions.HTTPError if not 200
-            res.raise_for_status()
-        if return_raw:
-            return from_cache, res
-        ret = res.json()
-        return from_cache, ret
+        response = self.http_client.post(
+            url=url, data=params, headers=headers, extensions={"cache_disabled": not self.caching_enabled}
+        )
 
-    @staticmethod
-    def _format_list(a_list, sep=",", quoted=True):
-        if isinstance(a_list, (list, tuple)):
-            if quoted:
-                _out = sep.join(['"{}"'.format(safe_str(x)) for x in a_list])
+        response_extensions = response.extensions
+        from_cache = response_extensions.get("from_cache", False)
+
+        if from_cache:
+            logger.debug("Cached response %s from %s", response, url)
+
+        if response.is_success:
+            if return_raw:
+                post_response = (from_cache, response)
             else:
-                _out = sep.join(["{}".format(safe_str(x)) for x in a_list])
+                response.read()
+                post_response = (from_cache, response.json())
         else:
-            _out = a_list  # a_list is already a comma separated string
-        return _out
+            if self.raise_for_status:
+                response.raise_for_status()
+            else:
+                post_response = (from_cache, response)
+        return post_response
 
     def _handle_common_kwargs(self, kwargs):
         # handle these common parameters accept field names as the value
         for kw in ["fields", "always_list", "allow_null"]:
             if kw in kwargs:
-                kwargs[kw] = self._format_list(kwargs[kw], quoted=False)
+                kwargs[kw] = concatenate_list(kwargs[kw], quoted=False)
         return kwargs
 
-    def _repeated_query_old(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        """This is deprecated, query_li can only be a list"""
-        step = min(self.step, self.max_query)
-        if len(query_li) <= step:
-            # No need to do series of batch queries, turn off verbose output
-            verbose = False
-        for i in range(0, len(query_li), step):
-            is_last_loop = i + step >= len(query_li)
-            if verbose:
-                logger.info("querying {0}-{1}...".format(i + 1, min(i + step, len(query_li))))
-            query_result = query_fn(query_li[i : i + step], **fn_kwargs)
-
-            yield query_result
-
-            if verbose:
-                logger.info("done.")
-            if not is_last_loop and self.delay:
-                time.sleep(self.delay)
-
     def _repeated_query(self, query_fn, query_li, verbose=True, **fn_kwargs):
-        """Run query_fn for input query_li in a batch (self.step).
+        """
+        Run query_fn for input query_li in a batch (self.step).
         return a generator of query_result in each batch.
         input query_li can be a list/tuple/iterable
         """
@@ -204,67 +272,136 @@ class BiothingClient:
         i = 0
         for batch, cnt in iter_n(query_li, step, with_cnt=True):
             if verbose:
-                logger.info("querying {0}-{1}...".format(i + 1, cnt))
+                logger.info("querying %s-%s ...", i + 1, cnt)
             i = cnt
             from_cache, query_result = query_fn(batch, **fn_kwargs)
             yield query_result
-            if verbose:
-                cache_str = " {0}".format(self._from_cache_notification) if from_cache else ""
-                logger.info("done.{0}".format(cache_str))
+
             if not from_cache and self.delay:
                 # no need to delay if requests are from cache.
                 time.sleep(self.delay)
 
-    @property
-    def _from_cache_notification(self):
-        """Notification to alert user that a cached result is being returned."""
-        return "[ from cache ]"
-
     def _metadata(self, verbose=True, **kwargs):
-        """Return a dictionary of Biothing metadata."""
+        """
+        Return a dictionary of Biothing metadata.
+        """
         _url = self.url + self._metadata_endpoint
-        from_cache, ret = self._get(_url, params=kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, ret = self._get(_url, params=kwargs, verbose=verbose)
         return ret
 
-    def _set_caching(self, cache_db=None, verbose=True, **kwargs):
-        """Installs a local cache for all requests.
+    def _set_caching(self, cache_db: Union[str, Path] = None, **kwargs) -> None:
+        """
+        Enable the client caching and creates a local cache database
+        for all future requests
 
-        **cache_db** is the path to the local sqlite cache database."""
-        if caching_avail:
-            if cache_db is None:
-                cache_db = self._default_cache_file
-            requests_cache.install_cache(cache_name=cache_db, allowable_methods=("GET", "POST"), **kwargs)
-            self._cached = True
-            if verbose:
-                logger.info('[ Future queries will be cached in "{0}" ]'.format(os.path.abspath(cache_db + ".sqlite")))
+        If caching is already enabled then we no-opt
+
+        Inputs:
+        :param cache_db: pathlike object to the local sqlite3 cache database file
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING:
+            if not self.caching_enabled:
+                try:
+                    self.caching_enabled = True
+                    self.http_client_setup = False
+                    self._build_cache_http_client()
+                    logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
+                    logger.info(
+                        (
+                            "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                            self,
+                            self.cache_storage.cache_filepath,
+                        )
+                    )
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Unable to enable caching")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already enabled. Skipping for now ...")
         else:
-            raise RuntimeError(
-                "The requests_cache python module is required to use request caching. See "
-                "https://requests-cache.readthedocs.io/en/latest/user_guide.html#installation"
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="enable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
             )
+            raise caching_library_error
 
-    def _stop_caching(self):
-        """Stop caching."""
-        if self._cached and caching_avail:
-            requests_cache.uninstall_cache()
-            self._cached = False
-        return
+    def _stop_caching(self) -> None:
+        """
+        Disable client caching. The local cache database will be maintained,
+        but we will disable cache access when sending requests
 
-    def _clear_cache(self):
-        """Clear the globally installed cache."""
-        try:
-            requests_cache.clear()
-        except AttributeError:
-            # requests_cache is not enabled
-            logger.warning("requests_cache is not enabled. Nothing to clear.")
+        If caching is already disabled then we no-opt
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING:
+            if self.caching_enabled:
+                try:
+                    self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
+
+                self.caching_enabled = False
+                self.http_client_setup = False
+                self._build_http_client()
+                logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
+                logger.info("Disabled client caching: %s", self)
+            else:
+                logger.warning("Caching already disabled. Skipping for now ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="disable biothings-client caching",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
+
+    def _clear_cache(self) -> None:
+        """
+        Clear the globally installed cache. Caching will stil be enabled,
+        but the data stored in the cache stored will be dropped
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING:
+            if self.caching_enabled:
+                try:
+                    self.cache_storage.clear_cache()
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Error attempting to clear the local cache database")
+                    raise gen_exc
+            else:
+                logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="clear biothings-client cache",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
 
     def _get_fields(self, search_term=None, verbose=True):
-        """Wrapper for /metadata/fields
+        """
+        Wrapper for /metadata/fields
 
-            **search_term** is a case insensitive string to search for in available field names.
-            If not provided, all available fields will be returned.
+        **search_term** is a case insensitive string to search for in available field names.
+        If not provided, all available fields will be returned.
 
         .. Hint:: This is useful to find out the field names you need to pass to **fields** parameter of other methods.
 
@@ -274,18 +411,17 @@ class BiothingClient:
             params = {"search": search_term}
         else:
             params = {}
-        from_cache, ret = self._get(_url, params=params, verbose=verbose)
+        _, ret = self._get(_url, params=params, verbose=verbose)
         for k, v in ret.items():
             del k
             # Get rid of the notes column information
             if "notes" in v:
                 del v["notes"]
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
         return ret
 
     def _getannotation(self, _id, fields=None, **kwargs):
-        """Return the object given id.
+        """
+        Return the object given id.
         This is a wrapper for GET query of the biothings annotation service.
 
         :param _id: an entity id.
@@ -300,25 +436,26 @@ class BiothingClient:
             kwargs["fields"] = fields
         kwargs = self._handle_common_kwargs(kwargs)
         _url = self.url + self._annotation_endpoint + str(_id)
-        from_cache, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, ret = self._get(_url, kwargs, none_on_404=True, verbose=verbose)
         return ret
 
     def _getannotations_inner(self, ids, verbose=True, **kwargs):
-        _kwargs = {"ids": self._format_list(ids)}
+        id_collection = concatenate_list(ids)
+        _kwargs = {"ids": id_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._annotation_endpoint
         return self._post(_url, _kwargs, verbose=verbose)
 
     def _annotations_generator(self, query_fn, ids, verbose=True, **kwargs):
-        """Function to yield a batch of hits one at a time."""
+        """
+        Function to yield a batch of hits one at a time
+        """
         for hits in self._repeated_query(query_fn, ids, verbose=verbose):
-            for hit in hits:
-                yield hit
+            yield from hits
 
     def _getannotations(self, ids, fields=None, **kwargs):
-        """Return the list of annotation objects for the given list of ids.
+        """
+        Return the list of annotation objects for the given list of ids.
         This is a wrapper for POST query of the biothings annotation service.
 
         :param ids: a list/tuple/iterable or a string of ids.
@@ -381,7 +518,8 @@ class BiothingClient:
         return out
 
     def _query(self, q, **kwargs):
-        """Return the query result.
+        """
+        Return the query result.
         This is a wrapper for GET query of biothings query service.
 
         :param q: a query string.
@@ -428,52 +566,69 @@ class BiothingClient:
             dataframe = 1
         elif dataframe != 2:
             dataframe = None
-        from_cache, out = self._get(_url, kwargs, verbose=verbose)
-        if verbose and from_cache:
-            logger.info(self._from_cache_notification)
+        _, out = self._get(_url, kwargs, verbose=verbose)
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=False)
         return out
 
     def _fetch_all(self, url, verbose=True, **kwargs):
-        """Function that returns a generator to results. Assumes that 'q' is in kwargs."""
+        """
+        Function that returns a generator to results. Assumes that 'q' is in kwargs.
 
-        # function to get the next batch of results, automatically disables cache if we are caching
-        def _batch():
-            if caching_avail and self._cached:
-                self._cached = False
-                with requests_cache.disabled():
-                    from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-                    del from_cache
-                self._cached = True
-            else:
-                from_cache, ret = self._get(url, params=kwargs, verbose=verbose)
-            return ret
+        Implicitly disables caching to ensure we actually hit the endpoint rather than
+        pulling from local cache
+        """
+        logger.warning("fetch_all implicitly disables HTTP request caching")
+        restore_caching = False
+        if self.caching_enabled:
+            restore_caching = True
+            try:
+                self.stop_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
-        batch = _batch()
+        _, response = self._get(url, params=kwargs, verbose=verbose)
         if verbose:
-            logger.info("Fetching {0} {1} . . .".format(batch["total"], self._optionally_plural_object_type))
+            logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
         for key in ["q", "fetch_all"]:
             kwargs.pop(key)
-        while not batch.get("error", "").startswith("No results to return"):
-            if "error" in batch:
-                logger.error(batch["error"])
+        while not response.get("error", "").startswith("No results to return"):
+            if "error" in response:
+                logger.error(response["error"])
                 break
-            if "_warning" in batch and verbose:
-                logger.warning(batch["_warning"])
-            for hit in batch["hits"]:
-                yield hit
-            kwargs.update({"scroll_id": batch["_scroll_id"]})
-            batch = _batch()
+            if "_warning" in response and verbose:
+                logger.warning(response["_warning"])
+            yield from response["hits"]
+            kwargs.update({"scroll_id": response["_scroll_id"]})
+            _, response = self._get(url, params=kwargs, verbose=verbose)
+
+        if restore_caching:
+            logger.debug("re-enabling the client HTTP caching")
+            try:
+                self.set_caching()
+            except OptionalDependencyImportError as optional_import_error:
+                logger.exception(optional_import_error)
+                logger.debug("No cache to disable for fetch all. Continuing ...")
+            except Exception as gen_exc:
+                logger.exception(gen_exc)
+                logger.error("Unknown error occured while attempting to disable caching")
+                raise gen_exc
 
     def _querymany_inner(self, qterms, verbose=True, **kwargs):
-        _kwargs = {"q": self._format_list(qterms)}
+        query_term_collection = concatenate_list(qterms)
+        _kwargs = {"q": query_term_collection}
         _kwargs.update(kwargs)
         _url = self.url + self._query_endpoint
         return self._post(_url, params=_kwargs, verbose=verbose)
 
     def _querymany(self, qterms, scopes=None, **kwargs):
-        """Return the batch query result.
+        """
+        Return the batch query result.
         This is a wrapper for POST query of "/query" service.
 
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
@@ -504,7 +659,7 @@ class BiothingClient:
             raise ValueError('input "qterms" must be a list, tuple or iterable.')
 
         if scopes:
-            kwargs["scopes"] = self._format_list(scopes, quoted=False)
+            kwargs["scopes"] = concatenate_list(scopes, quoted=False)
         kwargs = self._handle_common_kwargs(kwargs)
         returnall = kwargs.pop("returnall", False)
         verbose = kwargs.pop("verbose", True)
@@ -551,8 +706,8 @@ class BiothingClient:
 
         if dataframe:
             out = self._dataframe(out, dataframe, df_index=df_index)
-            li_dup_df = DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
-            li_missing_df = DataFrame(li_missing, columns=["query"])
+            li_dup_df = pandas.DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
+            li_missing_df = pandas.DataFrame(li_missing, columns=["query"])
 
         if verbose:
             if li_dup:
@@ -589,7 +744,7 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
             raise RuntimeError("No biothings_type or url specified.")
         try:
             url += "metadata" if url.endswith("/") else "/metadata"
-            res = requests.get(url)
+            res = httpx.get(url)
             dic = res.json()
             biothing_type = dic.get("biothing_type")
             if isinstance(biothing_type, list):
@@ -600,15 +755,13 @@ def get_client(biothing_type=None, instance=True, *args, **kwargs):
                     raise RuntimeError("Biothing_type in metadata url is not unique.")
             if not isinstance(biothing_type, str):
                 raise RuntimeError("Biothing_type in metadata url is not a valid string.")
-        except requests.RequestException as request_error:
+        except httpx.RequestError as request_error:
             raise RuntimeError("Cannot access metadata url to determine biothing_type.") from request_error
     else:
         biothing_type = biothing_type.lower()
     if biothing_type not in CLIENT_SETTINGS and not kwargs.get("url", False):
-        raise Exception(
-            "No client named '{0}', currently available clients are: {1}".format(
-                biothing_type, list(CLIENT_SETTINGS.keys())
-            )
+        raise TypeError(
+            f"No client named '{biothing_type}', currently available clients are: {list(CLIENT_SETTINGS.keys())}"
         )
     _settings = (
         CLIENT_SETTINGS[biothing_type]
@@ -722,9 +875,9 @@ def generate_settings(biothing_type: str, url: str):
     _kwargs.update(
         {
             "_default_url": url,
-            "_annotation_endpoint": "/" + biothing_type.lower() + "/",
+            "_annotation_endpoint": f"/{biothing_type.lower()}/",
             "_optionally_plural_object_type": _pluralize(biothing_type.lower()),
-            "_default_cache_file": "my" + biothing_type.lower() + "_cache",
+            "_default_cache_file": f"my{biothing_type.lower()}_cache",
         }
     )
     _aliases.update(

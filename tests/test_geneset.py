@@ -1,251 +1,162 @@
-import importlib.util
-import os
-import sys
+"""
+Tests for exercising the sychronous biothings_client for mygeneset
+"""
+
+import logging
 import types
-import unittest
 
-sys.path.insert(0, os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])
+import pytest
 
-from biothings_client.utils.cache import cache_request
-from biothings_client.utils.score import descore
 import biothings_client
+from biothings_client.utils.score import descore
+from biothings_client.client.definitions import MyGenesetInfo
 
 
-sys.stdout.write(
-    '"biothings_client {0}" loaded from "{1}"\n'.format(biothings_client.__version__, biothings_client.__file__)
-)
-
-requests_cache_available = importlib.util.find_spec("requests_cache") is not None
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-class TestGenesetClient(unittest.TestCase):
-    def setUp(self):
-        self.mgs = biothings_client.get_client("geneset")
-
-    def test_metadata(self):
-        meta = self.mgs.metadata()
-        self.assertTrue("src" in meta)
-        self.assertTrue("stats" in meta)
-        self.assertTrue("total" in meta["stats"])
-
-    def test_getgeneset(self):
-        gs = self.mgs.getgeneset("WP100")
-        self.assertEqual(gs["_id"], "WP100")
-        self.assertEqual(gs["name"], "Glutathione metabolism")
-        self.assertEqual(gs["source"], "wikipathways")
-        self.assertEqual(gs["taxid"], "9606")
-        self.assertGreaterEqual(len(gs["genes"]), 19)
-        self.assertEqual(gs["count"], len(gs["genes"]))
-
-        self.assertTrue("wikipathways" in gs)
-        self.assertEqual(gs["wikipathways"]["id"], "WP100")
-        self.assertEqual(gs["wikipathways"]["pathway_name"], "Glutathione metabolism")
-        self.assertEqual(gs["wikipathways"]["url"], "https://www.wikipathways.org/instance/WP100")
-        self.assertEqual(gs["wikipathways"]["_license"], "https://www.wikipathways.org/terms.html")
-
-        self.assertTrue(any((gene.get("mygene_id") == "2937" and gene.get("symbol") == "GSS") for gene in gs["genes"]))
-
-    def test_query_fetch_all(self):
-        # pdb-->reactome
-        # q=source:reactome
-        # _exists_:pdb ---> source:reactome
-
-        # fetch_all won't work when caching is used.
-        self.mgs.stop_caching()
-        qres = self.mgs.query("source:reactome")
-        total = qres["total"]
-
-        qres = self.mgs.query("source:reactome", fields="source,count,name", fetch_all=True)
-        self.assertTrue(isinstance(qres, types.GeneratorType))
-        self.assertEqual(total, len(list(qres)))
-
-    def test_query_with_fields_as_list(self):
-        qres1 = self.mgs.query("genes.ncbigene:1017", fields="name,source,taxid")
-        qres2 = self.mgs.query("genes.ncbigene:1017", fields=["name", "source", "taxid"])
-        self.assertTrue("hits" in qres1)
-        self.assertEqual(len(qres1["hits"]), 10)
-        self.assertEqual(descore(qres1["hits"]), descore(qres2["hits"]))
-
-    def test_getgeneset_with_fields(self):
-        gs = self.mgs.getgeneset("WP100", fields="name,source,taxid,genes.mygene_id,genes.symbol")
-
-        self.assertTrue("_id" in gs)
-        self.assertTrue("name" in gs)
-        self.assertTrue("source" in gs)
-        self.assertTrue("taxid" in gs)
-
-        self.assertTrue(any((gene.get("mygene_id") == "2937" and gene.get("symbol") == "GSS") for gene in gs["genes"]))
-        self.assertFalse(any(gene.get("name") for gene in gs["genes"]))
-
-    def test_getgenesets(self):
-        gs_li = self.mgs.getgenesets(["WP100", "WP101", "WP103"])
-
-        self.assertEqual(len(gs_li), 3)
-        self.assertEqual(gs_li[0]["_id"], "WP100")
-        self.assertEqual(gs_li[1]["_id"], "WP101")
-        self.assertEqual(gs_li[2]["_id"], "WP103")
-
-    def test_query(self):
-        qres = self.mgs.query("genes.mygene_id:2937", size=5)
-        self.assertTrue("hits" in qres)
-        self.assertEqual(len(qres["hits"]), 5)
-
-    def test_query_default_fields(self):
-        self.mgs.query(q="glucose")
-
-    def test_query_field(self):
-        self.mgs.query(q="genes.ncbigene:1017")
-
-    def test_species_filter_plus_query(self):
-        dog = self.mgs.query(q="glucose", species="9615")
-        self.assertEqual(dog["hits"][0]["taxid"], "9615")
-
-    def test_query_by_id(self):
-        query = self.mgs.query(q="_id:WP100")
-        self.assertEqual(query["hits"][0]["_id"], "WP100")
-
-    def test_query_by_name(self):
-        kinase = self.mgs.query(q="name:kinase")
-        self.assertIn("kinase", kinase["hits"][0]["name"].lower())
-
-    def test_query_by_description(self):
-        desc = self.mgs.query(q="description:cytosine deamination")
-        self.assertIn("cytosine", desc["hits"][0]["description"].lower())
-        self.assertIn("deamination", desc["hits"][0]["description"].lower())
-
-    def test_query_by_source_go(self):
-        go = self.mgs.query(q="source:go", fields="all")
-        self.assertIn("go", go["hits"][0].keys())
-        self.assertEqual(go["hits"][0]["source"], "go")
-
-    def test_query_by_source_ctd(self):
-        ctd = self.mgs.query(q="source:ctd", fields="all")
-        self.assertIn("ctd", ctd["hits"][0].keys())
-        self.assertEqual(ctd["hits"][0]["source"], "ctd")
-
-    def test_query_by_source_msigdb(self):
-        msigdb = self.mgs.query(q="source:msigdb", fields="all")
-        self.assertIn("msigdb", msigdb["hits"][0].keys())
-        self.assertEqual(msigdb["hits"][0]["source"], "msigdb")
-
-    @unittest.skip("We removed kegg data source for now")
-    def test_query_by_source_kegg(self):
-        kegg = self.mgs.query(q="source:kegg", fields="all")
-        self.assertIn("kegg", kegg["hits"][0].keys())
-        self.assertEqual(kegg["hits"][0]["source"], "kegg")
-
-    def test_query_by_source_do(self):
-        do = self.mgs.query(q="source:do", fields="all")
-        self.assertIn("do", do["hits"][0].keys())
-        self.assertEqual(do["hits"][0]["source"], "do")
-
-    def test_query_by_source_reactome(self):
-        reactome = self.mgs.query(q="source:reactome", fields="all")
-        self.assertIn("reactome", reactome["hits"][0].keys())
-        self.assertEqual(reactome["hits"][0]["source"], "reactome")
-
-    def test_query_by_source_smpdb(self):
-        smpdb = self.mgs.query(q="source:smpdb", fields="all")
-        self.assertIn("smpdb", smpdb["hits"][0].keys())
-        self.assertEqual(smpdb["hits"][0]["source"], "smpdb")
-
-    @unittest.skipIf(not requests_cache_available, "requests_cache not available")
-    def test_caching(self):
-        def _getgeneset():
-            return self.mgs.getgeneset("WP100")
-
-        def _getgenesets():
-            return self.mgs.getgenesets(["WP100", "WP101"])
-
-        def _query():
-            return self.mgs.query("wnt", fields="name,count,source,taxid")
-
-        def _querymany():
-            return self.mgs.querymany(["wnt", "jak-stat"], fields="name,count,source,taxid")
-
-        try:
-            from_cache, pre_cache_r = cache_request(_getgeneset)
-            self.assertFalse(from_cache)
-
-            cache_name = "mgsc"
-            cache_file = cache_name + ".sqlite"
-
-            if os.path.exists(cache_file):
-                os.remove(cache_file)
-            self.mgs.set_caching(cache_name)
-            # populate cache
-            from_cache, cache_fill_r = cache_request(_getgeneset)
-            self.assertTrue(os.path.exists(cache_file))
-            self.assertFalse(from_cache)
-            # is it from the cache?
-            from_cache, cached_r = cache_request(_getgeneset)
-            self.assertTrue(from_cache)
-
-            self.mgs.stop_caching()
-            # same query should be live - not cached
-            from_cache, post_cache_r = cache_request(_getgeneset)
-            self.assertFalse(from_cache)
-
-            self.mgs.set_caching(cache_name)
-
-            # same query should still be sourced from cache
-            from_cache, recached_r = cache_request(_getgeneset)
-            self.assertTrue(from_cache)
-
-            self.mgs.clear_cache()
-            # cache was cleared, same query should be live
-            from_cache, clear_cached_r = cache_request(_getgeneset)
-            self.assertFalse(from_cache)
-
-            # all requests should be identical except the _score, which can vary slightly
-            for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]:
-                x.pop("_score", None)
-
-            self.assertTrue(
-                all(
-                    [
-                        x == pre_cache_r
-                        for x in [pre_cache_r, cache_fill_r, cached_r, post_cache_r, recached_r, clear_cached_r]
-                    ]
-                )
-            )
-
-            # test getvariants POST caching
-            from_cache, first_getgenes_r = cache_request(_getgenesets)
-            del first_getgenes_r
-            self.assertFalse(from_cache)
-            # should be from cache this time
-            from_cache, second_getgenes_r = cache_request(_getgenesets)
-            del second_getgenes_r
-            self.assertTrue(from_cache)
-
-            # test query GET caching
-            from_cache, first_query_r = cache_request(_query)
-            del first_query_r
-            self.assertFalse(from_cache)
-            # should be from cache this time
-            from_cache, second_query_r = cache_request(_query)
-            del second_query_r
-            self.assertTrue(from_cache)
-
-            # test querymany POST caching
-            from_cache, first_querymany_r = cache_request(_querymany)
-            del first_querymany_r
-            self.assertFalse(from_cache)
-            # should be from cache this time
-            from_cache, second_querymany_r = cache_request(_querymany)
-            del second_querymany_r
-            self.assertTrue(from_cache)
-
-        finally:
-            self.mgs.stop_caching()
-            if os.path.exists(cache_file):
-                os.remove(cache_file)
+def test_metadata(geneset_client: MyGenesetInfo):
+    meta = geneset_client.metadata()
+    assert "src" in meta
+    assert "stats" in meta
+    assert "total" in meta["stats"]
 
 
-def suite():
-    return unittest.defaultTestLoader.loadTestsFromTestCase(TestGenesetClient)
+def test_getgeneset(geneset_client: MyGenesetInfo):
+    gs = geneset_client.getgeneset("WP100")
+    assert gs["_id"] == "WP100"
+    assert gs["name"] == "Glutathione metabolism"
+    assert gs["source"] == "wikipathways"
+    assert gs["taxid"] == "9606"
+    assert len(gs["genes"]) >= 19
+    assert gs["count"] == len(gs["genes"])
+
+    assert "wikipathways" in gs
+    assert gs["wikipathways"]["id"] == "WP100"
+    assert gs["wikipathways"]["pathway_name"] == "Glutathione metabolism"
+    assert gs["wikipathways"]["url"] == "https://www.wikipathways.org/instance/WP100"
+    assert gs["wikipathways"]["_license"] == "https://www.wikipathways.org/terms.html"
+
+    assert any((gene.get("mygene_id") == "2937" and gene.get("symbol") == "GSS") for gene in gs["genes"])
 
 
-if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+def test_query_fetch_all(geneset_client: MyGenesetInfo):
+    """
+    pdb --> reactome
+    q = source:reactome
+    _exists_:pdb ---> source:reactome
+    """
+    qres = geneset_client.query("source:reactome")
+    total = qres["total"]
+
+    qres = geneset_client.query("source:reactome", fields="source,count,name", fetch_all=True)
+    assert isinstance(qres, types.GeneratorType)
+    assert total == len(list(qres))
+
+
+def test_query_with_fields_as_list(geneset_client: MyGenesetInfo):
+    qres1 = geneset_client.query("genes.ncbigene:1017", fields="name,source,taxid")
+    qres2 = geneset_client.query("genes.ncbigene:1017", fields=["name", "source", "taxid"])
+    assert "hits" in qres1
+    assert len(qres1["hits"]) == 10
+    assert descore(qres1["hits"]) == descore(qres2["hits"])
+
+
+def test_getgeneset_with_fields(geneset_client: MyGenesetInfo):
+    gs = geneset_client.getgeneset("WP100", fields="name,source,taxid,genes.mygene_id,genes.symbol")
+
+    assert "_id" in gs
+    assert "name" in gs
+    assert "source" in gs
+    assert "taxid" in gs
+
+    assert any((gene.get("mygene_id") == "2937" and gene.get("symbol") == "GSS") for gene in gs["genes"])
+    assert not any(gene.get("name") for gene in gs["genes"])
+
+
+def test_getgenesets(geneset_client: MyGenesetInfo):
+    gs_li = geneset_client.getgenesets(["WP100", "WP101", "WP103"])
+
+    assert len(gs_li) == 3
+    assert gs_li[0]["_id"] == "WP100"
+    assert gs_li[1]["_id"] == "WP101"
+    assert gs_li[2]["_id"] == "WP103"
+
+
+def test_query(geneset_client: MyGenesetInfo):
+    qres = geneset_client.query("genes.mygene_id:2937", size=5)
+    assert "hits" in qres
+    assert len(qres["hits"]) == 5
+
+
+def test_query_default_fields(geneset_client: MyGenesetInfo):
+    geneset_client.query(q="glucose")
+
+
+def test_query_field(geneset_client: MyGenesetInfo):
+    geneset_client.query(q="genes.ncbigene:1017")
+
+
+def test_species_filter_plus_query(geneset_client: MyGenesetInfo):
+    dog = geneset_client.query(q="glucose", species="9615")
+    assert dog["hits"][0]["taxid"] == "9615"
+
+
+def test_query_by_id(geneset_client: MyGenesetInfo):
+    query = geneset_client.query(q="_id:WP100")
+    assert query["hits"][0]["_id"] == "WP100"
+
+
+def test_query_by_name(geneset_client: MyGenesetInfo):
+    kinase = geneset_client.query(q="name:kinase")
+    assert "kinase" in kinase["hits"][0]["name"].lower()
+
+
+def test_query_by_description(geneset_client: MyGenesetInfo):
+    desc = geneset_client.query(q="description:cytosine deamination")
+    assert "cytosine" in desc["hits"][0]["description"].lower()
+    assert "deamination" in desc["hits"][0]["description"].lower()
+
+
+def test_query_by_source_go(geneset_client: MyGenesetInfo):
+    go = geneset_client.query(q="source:go", fields="all")
+    assert "go" in go["hits"][0].keys()
+    assert go["hits"][0]["source"] == "go"
+
+
+def test_query_by_source_ctd(geneset_client: MyGenesetInfo):
+    ctd = geneset_client.query(q="source:ctd", fields="all")
+    assert "ctd" in ctd["hits"][0].keys()
+    assert ctd["hits"][0]["source"] == "ctd"
+
+
+def test_query_by_source_msigdb(geneset_client: MyGenesetInfo):
+    msigdb = geneset_client.query(q="source:msigdb", fields="all")
+    assert "msigdb" in msigdb["hits"][0].keys()
+    assert msigdb["hits"][0]["source"] == "msigdb"
+
+
+@pytest.mark.xfail(reason="We removed kegg data source for now")
+def test_query_by_source_kegg(geneset_client: MyGenesetInfo):
+    kegg = geneset_client.query(q="source:kegg", fields="all")
+    assert "kegg" in kegg["hits"][0].keys()
+    assert kegg["hits"][0]["source"] == "kegg"
+
+
+def test_query_by_source_do(geneset_client: MyGenesetInfo):
+    do = geneset_client.query(q="source:do", fields="all")
+    assert "do" in do["hits"][0].keys()
+    assert do["hits"][0]["source"] == "do"
+
+
+def test_query_by_source_reactome(geneset_client: MyGenesetInfo):
+    reactome = geneset_client.query(q="source:reactome", fields="all")
+    assert "reactome" in reactome["hits"][0].keys()
+    assert reactome["hits"][0]["source"] == "reactome"
+
+
+def test_query_by_source_smpdb(geneset_client: MyGenesetInfo):
+    smpdb = geneset_client.query(q="source:smpdb", fields="all")
+    assert "smpdb" in smpdb["hits"][0].keys()
+    assert smpdb["hits"][0]["source"] == "smpdb"

@@ -18,13 +18,13 @@ from biothings_client.utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 # ***********************************************
 # Function aliases common to all clients
 COMMON_ALIASES = {
-    "_metadata": "metadata",
-    "_set_caching": "set_caching",
-    "_stop_caching": "stop_caching",
     "_clear_cache": "clear_cache",
     "_get_fields": "get_fields",
+    "_metadata": "metadata",
     "_query": "query",
     "_querymany": "querymany",
+    "_set_caching": "set_caching",
+    "_stop_caching": "stop_caching",
 }
 
 # Set project specific aliases
@@ -51,79 +51,79 @@ MYGENESET_ALIASES.update({"_getannotation": "getgeneset", "_getannotations": "ge
 # ***********************************************
 # Object creation kwargs common to all clients
 COMMON_KWARGS = {
-    "_pkg_user_agent_header": "biothings_client.py",
-    "_query_endpoint": "/query/",
+    "_delay": 1,
+    "_docstring_obj": {},
+    "_max_query": 1000,
     "_metadata_endpoint": "/metadata",
     "_metadata_fields_endpoint": "/metadata/fields",
-    "_top_level_jsonld_uris": [],
-    "_docstring_obj": {},
-    "_delay": 1,
-    "_step": 1000,
+    "_pkg_user_agent_header": "biothings_client.py",
+    "_query_endpoint": "/query/",
     "_scroll_size": 1000,
-    "_max_query": 1000,
+    "_step": 1000,
+    "_top_level_jsonld_uris": [],
 }
 # project specific kwargs
 MYGENE_KWARGS = copy(COMMON_KWARGS)
 MYGENE_KWARGS.update(
     {
-        "_default_url": "https://mygene.info/v3",
         "_annotation_endpoint": "/gene/",
-        "_optionally_plural_object_type": "gene(s)",
         "_default_cache_file": "mygene_cache",
-        "_entity": "gene",
+        "_default_url": "https://mygene.info/v3",
         "_docstring_obj": GENE_DOCSTRING,
+        "_entity": "gene",
+        "_optionally_plural_object_type": "gene(s)",
     }
 )
 MYVARIANT_KWARGS = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update(
     {
-        "_default_url": "https://myvariant.info/v1",
         "_annotation_endpoint": "/variant/",
-        "_optionally_plural_object_type": "variant(s)",
         "_default_cache_file": "myvariant_cache",
-        "_entity": "variant",
-        "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS,
+        "_default_url": "https://myvariant.info/v1",
         "_docstring_obj": VARIANT_DOCSTRING,
+        "_entity": "variant",
+        "_optionally_plural_object_type": "variant(s)",
+        "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS,
     }
 )
 MYCHEM_KWARGS = copy(COMMON_KWARGS)
 MYCHEM_KWARGS.update(
     {
-        "_default_url": "https://mychem.info/v1",
         "_annotation_endpoint": "/chem/",
-        "_optionally_plural_object_type": "chem(s)",
-        "_entity": "chem",
         "_default_cache_file": "mychem_cache",
+        "_default_url": "https://mychem.info/v1",
         "_docstring_obj": CHEM_DOCSTRING,
+        "_entity": "chem",
+        "_optionally_plural_object_type": "chem(s)",
     }
 )
 MYDISEASE_KWARGS = copy(COMMON_KWARGS)
 MYDISEASE_KWARGS.update(
     {
-        "_default_url": "https://mydisease.info/v1",
         "_annotation_endpoint": "/disease/",
-        "_optionally_plural_object_type": "disease(s)",
-        "_entity": "disease",
         "_default_cache_file": "mydisease_cache",
+        "_default_url": "https://mydisease.info/v1",
+        "_entity": "disease",
+        "_optionally_plural_object_type": "disease(s)",
     }
 )
 MYTAXON_KWARGS = copy(COMMON_KWARGS)
 MYTAXON_KWARGS.update(
     {
-        "_default_url": "https://t.biothings.io/v1",
         "_annotation_endpoint": "/taxon/",
-        "_optionally_plural_object_type": "taxon/taxa",
-        "_entity": "taxon",
         "_default_cache_file": "mytaxon_cache",
+        "_default_url": "https://t.biothings.io/v1",
+        "_entity": "taxon",
+        "_optionally_plural_object_type": "taxon/taxa",
     }
 )
 MYGENESET_KWARGS = copy(COMMON_KWARGS)
 MYGENESET_KWARGS.update(
     {
-        "_default_url": "https://mygeneset.info/v1",
         "_annotation_endpoint": "/geneset/",
-        "_optionally_plural_object_type": "geneset(s)",
-        "_entity": "geneset",
         "_default_cache_file": "mygeneset_cache",
+        "_default_url": "https://mygeneset.info/v1",
+        "_entity": "geneset",
+        "_optionally_plural_object_type": "geneset(s)",
     }
 )
