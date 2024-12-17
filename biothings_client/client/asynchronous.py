@@ -311,7 +311,7 @@ class AsyncBiothingClient:
         :return: None
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if not self.caching_enabled:
@@ -355,7 +355,7 @@ class AsyncBiothingClient:
         :return: None
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if self.caching_enabled:
@@ -387,7 +387,7 @@ class AsyncBiothingClient:
         but the data stored in the cache stored will be dropped
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if self.caching_enabled:

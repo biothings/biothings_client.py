@@ -303,7 +303,7 @@ class BiothingClient:
         :return: None
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if not self.caching_enabled:
@@ -347,7 +347,7 @@ class BiothingClient:
         :return: None
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if self.caching_enabled:
@@ -385,7 +385,7 @@ class BiothingClient:
         :return: None
         """
         if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError()
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
 
         if _CACHING:
             if self.caching_enabled:

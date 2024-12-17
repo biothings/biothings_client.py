@@ -16,6 +16,4 @@ class OptionalDependencyImportError(ImportError):
 
 
 class CachingNotSupportedError(Exception):
-    def __init__(self, message: str):
-        message = f"Caching is only supported for Python 3.8+\n{message}"
-        super().__init__(message)
+    pass
