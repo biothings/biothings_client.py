@@ -1,4 +1,4 @@
-name: Tests on Py2.7
+name: Tests on Py3.6
 
 # Python 3.6 is not officially supported, but this tests allow us
 # to trigger a test on 3.6 manually, just to see if it still works
@@ -26,7 +26,8 @@ jobs:
         # Install dependencies manually as pyproject.toml is not supported in Python 3.6
         # caching dependencies requires Python 3.8+, skipping it for Python 3.6
         run: pip install httpx importlib-metadata pandas pytest pytest-asyncio
+      - run: pwd
       - name: Run Tests
         # since we cannot install packages directly from source in Py<3.7, we will use biothings_client
         # directly from the current working directory
-        run: PYTHONPATH=. echo $PWD;python -m pytest tests
+        run: pytest tests
