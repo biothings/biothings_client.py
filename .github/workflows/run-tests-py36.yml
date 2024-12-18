@@ -26,7 +26,9 @@ jobs:
         # Install dependencies manually as pyproject.toml is not supported in Python 3.6
         # caching dependencies requires Python 3.8+, skipping it for Python 3.6
         run: pip install httpx importlib-metadata pandas pytest pytest-asyncio
-      - run: pwd; ls -l
+        # the following command is needed to get aorund the Python 3.6 specific PackageNotFoundError
+        # from importlib_metadata.version("biothings_client") in biothings_client/__init__.py
+      - run: mkdir biothings_client.egg-info
       - name: Run Tests
         # since we cannot install packages directly from source in Py<3.7, we will use biothings_client
         # directly from the current working directory
