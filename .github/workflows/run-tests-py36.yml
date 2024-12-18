@@ -26,8 +26,14 @@ jobs:
         # Install dependencies manually as pyproject.toml is not supported in Python 3.6
         # caching dependencies requires Python 3.8+, skipping it for Python 3.6
         run: pip install httpx importlib-metadata pandas pytest pytest-asyncio
-      - run: pwd
+      - run: pwd; ls -l
       - name: Run Tests
         # since we cannot install packages directly from source in Py<3.7, we will use biothings_client
         # directly from the current working directory
         run: pytest tests
+      # Enable tmate debugging of the previous steps fail
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() }}
+        with:
+          limit-access-to-actor: true
