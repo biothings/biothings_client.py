@@ -5,7 +5,7 @@ Async Python Client for generic Biothings API services
 from collections.abc import Iterable
 from copy import copy
 from pathlib import Path
-from typing import Union, Tuple
+from typing import Dict, Union, Tuple
 import logging
 import platform
 import warnings
@@ -860,13 +860,16 @@ ASYNC_CLIENT_SETTINGS = {
 }
 
 
-def generate_async_settings(biothing_type: str, url: str):
+def generate_async_settings(biothing_type: str, url: str) -> Dict:
     """
     Tries to generate a settings dictionary for a client that isn't explicitly listed in
-    {
-        CLIENT_SETTINGS,
-        ASYNC_CLIENT_SETTINGS
-    }
+    {CLIENT_SETTTINGS, ASYNC_CLIENT_SETTINGS}
+
+    :param biothing_type: The biothing type to target when generating settings
+    :param url: The web url specified in the settings via `default_url`
+
+    :return: Returns a dictionary mapping of the client settings
+    :rtype: dict
     """
 
     def _pluralize(s, optional=True):

@@ -1,5 +1,7 @@
 class MyVariantClientMixin:
-    """Adding some utility methods specific to MyVariant.info API."""
+    """
+    Adding some utility methods specific to MyVariant.info API.
+    """
 
     def get_hgvs_from_vcf(self, input_vcf):
         """

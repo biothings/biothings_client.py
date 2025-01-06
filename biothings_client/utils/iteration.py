@@ -45,15 +45,14 @@ def iter_n(iterable, n, with_cnt=False):
 
 def concatenate_list(sequence: Iterable, sep: str = ",", quoted: bool = True) -> str:
     """
-    Combine all the elements of a list into a string
+    Ingests an iterable sequence and combines all elements into a string
 
-    Inputs:
-    sequence: iterable data structure
-    sep: delimiter for joining the entries in `sequence`
-    quoted: boolean indicating to quote the elements from sequence
-            while concatenating all the elements
-    Output:
-    string value representing the concatenated values
+    :param sequence: Iterable sequence for element concatenation
+    :param sep: Delimiter to apply to the elements when concatenating, defaults to ","
+    :param quoted: Flag to enable quoting of the elements within the string, defaults to True
+
+    :return: Returns a concatenated string of the elements from the input sequence
+    :rtype: string
     """
     if isinstance(sequence, (list, tuple)):
         if quoted:

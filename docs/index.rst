@@ -2,8 +2,8 @@
    sphinx-quickstart on Tue Nov 20 16:32:47 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
+   (Manually updated in January 2025 after moderization efforts)
 
-.. _requests: http://docs.python-requests.org/en/latest/
 .. _MyGene.Info: http://mygene.info
 .. _MyVariant.Info: http://myvariant.info
 .. _MyChem.Info: http://mychem.info
@@ -18,37 +18,41 @@ of both the MyGene.py_ and MyVariant.py_ python clients.
 
 Requirements
 ============
-    Python >=2.7 (including python3)
-
-    (Python 2.6 might still work, but is not supported any more since v0.2.0)
-
-    requests_ (install using ``pip install requests``)
-
-Optional dependencies
-======================
-    * `pandas <http://pandas.pydata.org>`_ (install using ``pip install pandas``) is required for returning a list of objects as
-      `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
-    * `requests-cache <https://pypi.org/project/requests-cache/>`_ (install using ``pip install requests-cache``) is required to
-      use the local data caching function.
-
+    python >=3.7
 
 Installation
 =============
 
-    Option 1
-          Install directly from pip::
 
-            pip install biothings_client
+    * Option 1. Install from pypi repository using pip:
 
-    Option 2
-          download/extract the source code and run::
+        .. code-block:: bash
 
-           python setup.py install
+          pip install biothings_client
 
-    Option 3
-          install the latest code directly from the repository::
 
-            pip install -e git+https://github.com/biothings/biothings_client.py#egg=biothings_client
+    * Option 2. Install the latest commit from the github repository using pip:
+    
+        .. code-block:: bash
+
+          pip install -e git+https://github.com/biothings/biothings_client.py#egg=biothings_client
+
+Optional features / dependencies
+================================
+    * dataframe support (install using ``pip install biothings_client[dataframe]``)
+      
+      allows for formatting output from the client queries as a list of pandas `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_ objects.
+      Requires the following optional dependenies 
+
+        `pandas <http://pandas.pydata.org>`_
+
+    * caching support (install using ``pip install biothings_client[caching]``)
+      
+      allows for local caching of client queries to a sqlite database.
+      Requires the following optional dependenies 
+
+        `hishel <https://hishel.com/>`_
+        `anysqlite <https://pypi.org/project/anysqlite/>`_
 
 Version history
 ===============
@@ -65,16 +69,15 @@ Documentation
     :maxdepth: 3
     :caption: Tutorials
 
-    doc/Quick-Start
-    doc/Custom-API
-    doc/Subclassing
+    doc/quickstart
+    doc/custom_api
+    doc/subclassing
 
 .. toctree::
     :maxdepth: 3
     :caption: Documentation
 
-    doc/API
-
+    doc/api
 
 Indices and tables
 ==================
