@@ -23,7 +23,6 @@ Requirements
 Installation
 =============
 
-
     * Option 1. Install from pypi repository using pip:
 
         .. code-block:: bash
@@ -39,20 +38,21 @@ Installation
 
 Optional features / dependencies
 ================================
+
     * dataframe support (install using ``pip install biothings_client[dataframe]``)
       
       allows for formatting output from the client queries as a list of pandas `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_ objects.
       Requires the following optional dependenies 
 
-        `pandas <http://pandas.pydata.org>`_
+        * `pandas <http://pandas.pydata.org>`_
 
     * caching support (install using ``pip install biothings_client[caching]``)
       
       allows for local caching of client queries to a sqlite database.
       Requires the following optional dependenies 
 
-        `hishel <https://hishel.com/>`_
-        `anysqlite <https://pypi.org/project/anysqlite/>`_
+        * `hishel <https://hishel.com/>`_
+        * `anysqlite <https://pypi.org/project/anysqlite/>`_
 
 Version history
 ===============
