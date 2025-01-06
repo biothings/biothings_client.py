@@ -75,7 +75,6 @@ class MyVariantClientMixin:
         get a valid hgvs name from VCF-style "chrom, pos, ref, alt" data.
 
         .. code-block:: python
-           :name: hgvs-format-examples
 
            utils.variant.format_hgvs("1", 35366, "C", "T")
            utils.variant.format_hgvs("2", 17142, "G", "GA")
