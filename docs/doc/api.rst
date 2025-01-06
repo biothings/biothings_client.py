@@ -19,12 +19,12 @@ get_async_client
 .. autofunction:: get_async_client
 
 
-Client Defintions
-=================
+Client Definitions
+==================
 .. py:module:: biothings_client.client.definitions
 
 MyGeneInfo
-++++++++++
++++++++++++++
 .. autoclass:: MyGeneInfo
     :members:
     :inherited-members:
@@ -54,8 +54,8 @@ MyTaxonInfo
     :inherited-members:
 
 
-Asynchronous Client Defintions
-==============================
+Asynchronous Client Definitions
+===============================
 
 AsyncMyGeneInfo
 +++++++++++++++
