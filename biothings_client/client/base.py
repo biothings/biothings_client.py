@@ -30,12 +30,12 @@ from biothings_client.client.settings import (
     MYVARIANT_KWARGS,
 )
 from biothings_client.__version__ import __version__
-from biothings_client._dependencies import _CACHING, _PANDAS
-from biothings_client.client.exceptions import OptionalDependencyImportError
+from biothings_client._dependencies import _CACHING, _CACHING_NOT_SUPPORTED, _PANDAS
+from biothings_client.client.exceptions import CachingNotSupportedError, OptionalDependencyImportError
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
-from biothings_client.utils.iteration import iter_n, list_itemcnt, concatenate_list
+from biothings_client.utils.iteration import concatenate_list, iter_n, list_itemcnt
 
 if _PANDAS:
     import pandas
@@ -296,6 +296,9 @@ class BiothingClient:
         Outputs:
         :return: None
         """
+        if _CACHING_NOT_SUPPORTED:
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
+
         if _CACHING:
             if not self.caching_enabled:
                 try:
@@ -337,6 +340,9 @@ class BiothingClient:
         Outputs:
         :return: None
         """
+        if _CACHING_NOT_SUPPORTED:
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
+
         if _CACHING:
             if self.caching_enabled:
                 try:
@@ -372,6 +378,9 @@ class BiothingClient:
         Outputs:
         :return: None
         """
+        if _CACHING_NOT_SUPPORTED:
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
+
         if _CACHING:
             if self.caching_enabled:
                 try:
