@@ -1,0 +1,41 @@
+name: Tests on Py3.6
+
+# Python 3.6 is not officially supported, but this tests allow us
+# to trigger a test on 3.6 manually, just to see if it still works
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  run_tests_on_py36:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.6"]
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: pip install --upgrade pip
+      - name: Install Dependencies mannually for Py3.6
+        # Install dependencies manually as pyproject.toml is not supported in Python 3.6
+        # caching dependencies requires Python 3.8+, skipping it for Python 3.6
+        run: pip install httpx importlib-metadata pandas pytest pytest-asyncio
+        # the following command is needed to get aorund the Python 3.6 specific PackageNotFoundError
+        # from importlib_metadata.version("biothings_client") in biothings_client/__init__.py
+      - run: mkdir biothings_client.egg-info
+      - name: Run Tests
+        # since we cannot install packages directly from source in Py<3.7, we will use biothings_client
+        # directly from the current working directory
+        run: pytest tests
+      # Enable tmate debugging of the previous steps fail
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ failure() }}
+        with:
+          limit-access-to-actor: true
