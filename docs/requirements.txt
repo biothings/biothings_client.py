@@ -3,4 +3,4 @@ anysqlite
 hishel[sqlite]
 httpx>=0.22.0
 pandas>=1.1.5
-
+-e .
