@@ -7,18 +7,23 @@
 .. _MyGene.Info: http://mygene.info
 .. _MyVariant.Info: http://myvariant.info
 .. _MyChem.Info: http://mychem.info
+.. _MyDisease.Info: http://mydisease.info
 .. _MyGene.py: https://pypi.org/project/mygene/
 .. _MyVariant.py: https://pypi.org/project/myvariant/
 
 Biothings_client.py
 ===================
 `Biothings_client.py <https://pypi.org/project/biothings-client/>`_ is a unified python client providing an easy-to-use wrapper
-for accessing *any* `BioThings API <http://biothings.io>`_ (e.g. MyGene.Info_, MyVariant.Info_, MyChem.Info_).  It is the descendent and eventual replacement
+for accessing *any* `BioThings API <http://biothings.io>`_ (e.g. MyGene.Info_, MyVariant.Info_, MyChem.Info_, MyDisease.Info_).  It is the descendent and eventual replacement
 of both the MyGene.py_ and MyVariant.py_ python clients.
 
 Requirements
 ============
-    python >=3.7
+    Python >=3.7
+
+.. note:: Python 3.6 is still supported with some limitations (e.g. caching feature is not supported in Python 3.6).
+
+.. note:: Python<=3.5 (including Python 2.7) is no longer supported as of version 0.4.0. The last version supporting Python<=3.5 is 0.3.1.
 
 Installation
 =============
@@ -31,25 +36,32 @@ Installation
 
 
     * Option 2. Install the latest commit from the github repository using pip:
-    
+
         .. code-block:: bash
 
           pip install -e git+https://github.com/biothings/biothings_client.py#egg=biothings_client
+
+        or
+
+        .. code-block:: bash
+
+          pip install biothings_client@git+https://github.com/biothings/biothings_client.py
+
 
 Optional features / dependencies
 ================================
 
     * dataframe support (install using ``pip install biothings_client[dataframe]``)
-      
+
       allows for formatting output from the client queries as a list of pandas `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_ objects.
-      Requires the following optional dependenies 
+      Requires the following optional dependenies
 
         * `pandas <http://pandas.pydata.org>`_
 
     * caching support (install using ``pip install biothings_client[caching]``)
-      
+
       allows for local caching of client queries to a sqlite database.
-      Requires the following optional dependenies 
+      Requires the following optional dependenies
 
         * `hishel <https://hishel.com/>`_
         * `anysqlite <https://pypi.org/project/anysqlite/>`_

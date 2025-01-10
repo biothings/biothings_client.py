@@ -1,9 +1,10 @@
-v0.4.0 (2025/?/?)
-    Add an async version of the client
-    Replace requests HTTP library with the httpx library
-    Replace requests_cache caching library the hishel library
-    Update sphinx documentation and remove html build warning
-    Add CURIE id query support / testing
+v0.4.0 (2025/01/10)
+    Dropped support for Python < 3.6 and added suport for Python up to 3.13
+    Added an async version of the client
+    Replaced requests HTTP library with the httpx library
+    Replaced requests_cache caching library the hishel library
+    Updated sphinx documentation and removed html build warning
+    Added testing for CURIE id query supported by APIs
 
 v0.3.1 (2023/11/13)
     Use https URL for all BioThings APIs by default (thanks @@skumar951)
