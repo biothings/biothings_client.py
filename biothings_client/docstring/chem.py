@@ -6,7 +6,7 @@ DOCSTRING = {
                     `More about chemical/drug id <http://docs.mychem.info/en/latest/doc/data.html#id-field>`_.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
 
         :return: a chemical/drug object as a dictionary, or None if _id is not found.
@@ -31,7 +31,7 @@ DOCSTRING = {
                     `More about chem/drug id <http://docs.mychem.info/en/latest/doc/data.html#id-field>`_.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param as_generator:  if True, will yield the results in a generator.
         :param as_dataframe: if True or 1 or 2, return object as DataFrame (requires Pandas).
@@ -68,10 +68,10 @@ DOCSTRING = {
     "query": """Return  the query result.
         This is a wrapper for GET query of "/query?q=<query>" service.
 
-        :param q: a query string, detailed query syntax `here <http://docs.mychem.info/en/latest/doc/chem_query_service.html#query-syntax>`_.
+        :param q: a query string, detailed query syntax `here <http://docs.mychem.info/en/latest/doc/chem_query_service.html#query-syntax>`__.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.mychem.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param size:   the maximum number of results to return (with a cap
                        of 1000 at the moment). Default: 10.
@@ -111,11 +111,11 @@ DOCSTRING = {
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
         :param scopes: specify the type (or types) of identifiers passed to **qterms**, either a list or a comma-separated fields to specify type of
                        input qterms, e.g. "dbsnp.rsid", "clinvar.rcv_accession", ["dbsnp.rsid", "cosmic.cosmic_id"].
-                       See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_ for full list
+                       See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__ for full list
                        of supported fields.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param returnall:   if True, return a dict of all related data, including dup. and missing qterms
         :param verbose:     if True (default), print out information about dup and missing qterms

@@ -1,18 +1,21 @@
 class MyVariantClientMixin:
-    """Adding some utility methods specific to MyVariant.info API."""
+    """
+    Adding some utility methods specific to MyVariant.info API.
+    """
 
     def get_hgvs_from_vcf(self, input_vcf):
         """
         From the input VCF file (filename or file handle), return a generator
         of genomic based HGVS ids.
+
         :param input_vcf: input VCF file, can be a filename or a file handle
         :returns: a generator of genomic based HGVS ids. To get back a list instead,
                   using ``list(get_hgvs_from_vcf("your_vcf_file"))``
+
         .. NOTE:: This is a lightweight VCF parser to return valid genomic-based
                   HGVS ids from the *input_vcf* file. For more sophisticated VCF
                   parser, consider using `PyVCF <https://pypi.python.org/pypi/PyVCF>`_
                   module.
-
         """
         if isinstance(input_vcf, str):
             # if input_vcf is a string, open it as a file
@@ -33,12 +36,11 @@ class MyVariantClientMixin:
 
     @staticmethod
     def _normalized_vcf(chrom, pos, ref, alt):
-        """If both ref/alt are > 1 base, and there are overlapping from the left,
+        """
+        If both ref/alt are > 1 base, and there are overlapping from the left,
         we need to trim off the overlapping bases.
-        In the case that ref/alt is like this:
-            CTTTT/CT    # with >1 overlapping bases from the left
-        ref/alt should be normalized as TTTT/T, more examples:
-             TC/TG --> C/G
+        In the case that ref/alt is like this:  [CTTTT/CT] (with >1 overlapping bases from the left)
+        ref/alt should be normalized as TTTT/T: [TC/TG --> C/G]
         and pos should be fixed as well.
         """
         for i in range(max(len(ref), len(alt))):
@@ -69,12 +71,15 @@ class MyVariantClientMixin:
         return (chrom, _pos, _ref, _alt)
 
     def format_hgvs(self, chrom, pos, ref, alt):
-        """get a valid hgvs name from VCF-style "chrom, pos, ref, alt" data.
-        Example:
-            >>> utils.variant.format_hgvs("1", 35366, "C", "T")
-            >>> utils.variant.format_hgvs("2", 17142, "G", "GA")
-            >>> utils.variant.format_hgvs("MT", 8270, "CACCCCCTCT", "C")
-            >>> utils.variant.format_hgvs("X", 107930849, "GGA", "C")
+        """
+        get a valid hgvs name from VCF-style "chrom, pos, ref, alt" data.
+
+        .. code-block:: python
+
+           utils.variant.format_hgvs("1", 35366, "C", "T")
+           utils.variant.format_hgvs("2", 17142, "G", "GA")
+           utils.variant.format_hgvs("MT", 8270, "CACCCCCTCT", "C")
+           utils.variant.format_hgvs("X", 107930849, "GGA", "C")
         """
         chrom = str(chrom)
         if chrom.lower().startswith("chr"):

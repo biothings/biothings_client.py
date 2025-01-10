@@ -5,7 +5,7 @@ DOCSTRING = {
         :param vid: an HGVS-based variant id. `More about HGVS id <http://docs.myvariant.info/en/latest/doc/data.html#id-field>`_.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param assembly: specify the human genome assembly used in HGVS-based variant id, "hg19" (default) or "hg38".
 
@@ -31,7 +31,7 @@ DOCSTRING = {
                     `More about hgvs id <http://docs.myvariant.info/en/latest/doc/data.html#id-field>`_.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param assembly: specify the human genome assembly used in HGVS-based variant id, "hg19" (default) or "hg38".
         :param as_generator:  if True, will yield the results in a generator.
@@ -74,10 +74,10 @@ DOCSTRING = {
     "query": """Return  the query result.
         This is a wrapper for GET query of "/query?q=<query>" service.
 
-        :param q: a query string, detailed query syntax `here <http://docs.myvariant.info/en/latest/doc/variant_query_service.html#query-syntax>`_.
+        :param q: a query string, detailed query syntax `here <http://docs.myvariant.info/en/latest/doc/variant_query_service.html#query-syntax>`__.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param assembly: specify the human genome assembly used for the query, "hg19" (default) or "hg38".
         :param size:   the maximum number of results to return (with a cap
@@ -119,11 +119,11 @@ DOCSTRING = {
         :param qterms: a list/tuple/iterable of query terms, or a string of comma-separated query terms.
         :param scopes: specify the type (or types) of identifiers passed to **qterms**, either a list or a comma-separated fields to specify type of
                        input qterms, e.g. "dbsnp.rsid", "clinvar.rcv_accession", ["dbsnp.rsid", "cosmic.cosmic_id"].
-                       See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_ for full list
+                       See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__ for full list
                        of supported fields.
         :param fields: fields to return, a list or a comma-separated string.
                        If not provided or **fields="all"**, all available fields
-                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`_
+                       are returned. See `here <http://docs.myvariant.info/en/latest/doc/data.html#available-fields>`__
                        for all available fields.
         :param assembly: specify the human genome assembly used for the query, "hg19" (default) or "hg38".
         :param returnall:   if True, return a dict of all related data, including dup. and missing qterms
