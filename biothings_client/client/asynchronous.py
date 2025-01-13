@@ -107,8 +107,7 @@ class AsyncBiothingClient:
         :return: None
         """
         if not self.http_client_setup:
-            http_transport = httpx.AsyncHTTPTransport()
-            self.http_client = httpx.AsyncClient(transport=http_transport)
+            self.http_client = httpx.AsyncClient()
             self.http_client_setup = True
             self.http_cache_client_setup = False
 

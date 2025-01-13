@@ -105,8 +105,7 @@ class BiothingClient:
         to set the values for the http_client property
         """
         if not self.http_client_setup:
-            http_transport = httpx.HTTPTransport()
-            self.http_client = httpx.Client(transport=http_transport)
+            self.http_client = httpx.Client()
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
