@@ -2,6 +2,8 @@
 Fixtures for the biothings_client testing
 """
 
+import os
+
 import pytest
 
 from biothings_client import get_client, get_async_client
@@ -111,3 +113,12 @@ def async_geneset_client() -> AsyncMyGenesetInfo:
     client = "geneset"
     geneset_client = get_async_client(client)
     return geneset_client
+
+
+@pytest.fixture(scope="function")
+def mock_client_proxy_configuration() -> None:
+    os.environ["HTTP_PROXY"] = "http://fakehttpproxyhost:6374"
+    os.environ["HTTPS_PROXY"] = "http://fakehttpsproxyhost:6375"
+    yield
+    os.environ.pop("HTTP_PROXY", None)
+    os.environ.pop("HTTPS_PROXY", None)
