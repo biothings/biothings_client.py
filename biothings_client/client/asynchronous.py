@@ -103,6 +103,12 @@ class AsyncBiothingClient:
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property
 
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
+
         Inputs:
         :param cache_db: pathlike object to the local sqlite3 cache database file
 
@@ -110,7 +116,7 @@ class AsyncBiothingClient:
         :return: None
         """
         if not self.http_client_setup:
-            self.http_client = httpx.AsyncClient()
+            self.http_client = httpx.AsyncClient(timeout=None)
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
@@ -123,6 +129,12 @@ class AsyncBiothingClient:
 
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property and the cache_storage property
+
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
 
         Inputs:
         :param cache_db: pathlike object to the local sqlite3 cache database file
@@ -146,7 +158,11 @@ class AsyncBiothingClient:
             # proxies if we provide our own HTTPTransport to the Client constructor
             proxy_mounts = self._build_caching_proxy_mounts()
             self.http_client = hishel.AsyncCacheClient(
-                controller=cache_controller, transport=cache_transport, storage=self.cache_storage, mounts=proxy_mounts
+                controller=cache_controller,
+                transport=cache_transport,
+                storage=self.cache_storage,
+                mounts=proxy_mounts,
+                timeout=None,
             )
             self.http_client_setup = True
 

@@ -106,9 +106,15 @@ class BiothingClient:
 
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property
+
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
         """
         if not self.http_client_setup:
-            self.http_client = httpx.Client()
+            self.http_client = httpx.Client(timeout=None)
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
@@ -121,6 +127,12 @@ class BiothingClient:
 
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property and the cache_storage property
+
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
         """
         if not self.http_client_setup:
             if cache_db is None:
@@ -138,7 +150,11 @@ class BiothingClient:
             # proxies if we provide our own HTTPTransport to the Client constructor
             proxy_mounts = self._build_caching_proxy_mounts()
             self.http_client = hishel.CacheClient(
-                controller=cache_controller, transport=cache_transport, storage=self.cache_storage, mounts=proxy_mounts
+                controller=cache_controller,
+                transport=cache_transport,
+                storage=self.cache_storage,
+                mounts=proxy_mounts,
+                timeout=None,
             )
             self.http_client_setup = True
 
