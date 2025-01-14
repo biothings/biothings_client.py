@@ -118,6 +118,7 @@ def test_client_proxy_discovery(mock_client_proxy_configuration):
             assert proxy_url.target == b"/"
 
 
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
 def test_cache_client_proxy_discovery(mock_client_proxy_configuration):
     """
     Tests for verifying that we properly auto-discover the

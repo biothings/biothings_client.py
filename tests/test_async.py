@@ -118,6 +118,7 @@ async def test_async_client_proxy_discovery(mock_client_proxy_configuration):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
 async def test_async_cache_client_proxy_discovery(mock_client_proxy_configuration):
     """
     Tests for verifying that we properly auto-discover the
