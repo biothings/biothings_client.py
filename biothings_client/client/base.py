@@ -49,7 +49,7 @@ logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
 
 
-PROXY_MOUNT = dict[httpx._utils.URLPattern, httpx.BaseTransport | None]
+PROXY_MOUNT = Dict[str, Union[httpx.BaseTransport, None]]
 
 
 # Future work:
