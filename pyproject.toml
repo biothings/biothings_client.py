@@ -72,7 +72,7 @@ dependencies = [
     "httpx>=0.22.0",    # the last version supports python 3.6
     "importlib-metadata; python_version<'3.8'",
 ]
-version = "0.4.0"
+version = "0.4.1"
 
 [project.optional-dependencies]
 caching = [
