@@ -1,3 +1,8 @@
+v0.4.1 (2025/01/14)
+    Fix a bug in downstream libraries expecting the alwayslist function
+    Fix auto-discovery of network proxy settings for the HTTP client (thanks @mccauleyp)
+    Disable the HTTP client timeout to mimic prior HTTP library
+
 v0.4.0 (2025/01/10)
     Dropped support for Python < 3.6 and added suport for Python up to 3.13
     Added an async version of the client
@@ -7,7 +12,7 @@ v0.4.0 (2025/01/10)
     Added testing for CURIE id query supported by APIs
 
 v0.3.1 (2023/11/13)
-    Use https URL for all BioThings APIs by default (thanks @@skumar951)
+    Use https URL for all BioThings APIs by default (thanks @skumar951)
     Added use_http and use_https methods for easy switch
     Remove deprecated filter param
     Set log level for biothings_client only (thanks @simonvh)
