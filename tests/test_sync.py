@@ -94,6 +94,47 @@ def test_client_proxy_discovery(mock_client_proxy_configuration):
     client_name = "gene"
     gene_client = biothings_client.get_client(client_name)
     gene_client._build_http_client()
+
+    http_mounts = gene_client.http_client._mounts
+    assert isinstance(http_mounts, dict)
+    assert len(http_mounts) == 2
+
+    for url_pattern, http_transport in http_mounts.items():
+        assert isinstance(url_pattern, httpx._utils.URLPattern)
+        assert isinstance(http_transport, httpx.HTTPTransport)
+
+        if url_pattern.pattern == "https://":
+            proxy_url = http_transport._pool._proxy_url
+            assert proxy_url.scheme == b"http"
+            assert proxy_url.host == b"fakehttpsproxyhost"
+            assert proxy_url.port == 6375
+            assert proxy_url.target == b"/"
+
+        elif url_pattern.pattern == "http://":
+            proxy_url = http_transport._pool._proxy_url
+            assert proxy_url.scheme == b"http"
+            assert proxy_url.host == b"fakehttpproxyhost"
+            assert proxy_url.port == 6374
+            assert proxy_url.target == b"/"
+
+
+def test_cache_client_proxy_discovery(mock_client_proxy_configuration):
+    """
+    Tests for verifying that we properly auto-discover the
+    proxy configuration from the environment using the built-in
+    methods provided by HTTPX
+
+    Brought to light by user issues on VPN
+    https://github.com/biothings/mygene.py/issues/26#issuecomment-2588065562
+    """
+    client_name = "gene"
+    gene_client = biothings_client.get_client(client_name)
+    gene_client._build_cache_http_client()
+
+    http_mounts = gene_client.http_client._mounts
+    assert isinstance(http_mounts, dict)
+    assert len(http_mounts) == 2
+
     for url_pattern, http_transport in gene_client.http_client._mounts.items():
         assert isinstance(url_pattern, httpx._utils.URLPattern)
         assert isinstance(http_transport, httpx.HTTPTransport)
