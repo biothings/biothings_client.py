@@ -49,6 +49,9 @@ logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
 
 
+PROXY_MOUNT = Dict[str, Union[httpx.BaseTransport, None]]
+
+
 # Future work:
 # Consider use "verbose" settings to control default logging output level
 # by doing this instead of using branching throughout the application,
@@ -103,9 +106,15 @@ class BiothingClient:
 
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property
+
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
         """
         if not self.http_client_setup:
-            self.http_client = httpx.Client()
+            self.http_client = httpx.Client(timeout=None)
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
@@ -118,6 +127,12 @@ class BiothingClient:
 
         This modifies the state of the BiothingsClient instance
         to set the values for the http_client property and the cache_storage property
+
+        For the moment, we have disabled timeouts. This matches our prior
+        behavior we had with the requests library, which by default did not
+        specify a timeout when making a request. In the future this should
+        be modified to prevent indefinite hanging with potentially bad network
+        connections
         """
         if not self.http_client_setup:
             if cache_db is None:
@@ -126,12 +141,46 @@ class BiothingClient:
 
             self.cache_storage = BiothingsClientSqlite3Cache()
             self.cache_storage.setup_database_connection(cache_db)
-            cache_transport = hishel.CacheTransport(transport=httpx.HTTPTransport(), storage=self.cache_storage)
+
+            http_transport = httpx.HTTPTransport()
+            cache_transport = hishel.CacheTransport(transport=http_transport, storage=self.cache_storage)
             cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+
+            # Have to manually build the proxy mounts as httpx will not auto-discover
+            # proxies if we provide our own HTTPTransport to the Client constructor
+            proxy_mounts = self._build_caching_proxy_mounts()
             self.http_client = hishel.CacheClient(
-                controller=cache_controller, transport=cache_transport, storage=self.cache_storage
+                controller=cache_controller,
+                transport=cache_transport,
+                storage=self.cache_storage,
+                mounts=proxy_mounts,
+                timeout=None,
             )
             self.http_client_setup = True
+
+    def _build_caching_proxy_mounts(self) -> PROXY_MOUNT:
+        """
+        Builds the proxy mounts for case where we have a CacheTransport.
+        Autodiscovery of proxies only works when don't provide a transport
+        to the client so this method acts as a replacement for that
+        """
+        proxy_map = httpx._utils.get_environment_proxies()
+        proxy_mounts: PROXY_MOUNT = {}
+        for key, proxy in proxy_map.items():
+            proxy_transport = None
+            if proxy is not None:
+                proxy_transport = httpx.HTTPTransport(
+                    verify=True,
+                    cert=None,
+                    trust_env=True,
+                    http1=True,
+                    http2=False,
+                    limits=httpx._config.DEFAULT_LIMITS,
+                    proxy=proxy,
+                )
+            proxy_mounts[key] = proxy_transport
+        proxy_mounts = dict(sorted(proxy_mounts.items()))
+        return proxy_mounts
 
     def __del__(self):
         """
