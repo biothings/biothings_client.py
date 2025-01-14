@@ -137,7 +137,7 @@ async def test_async_cache_client_proxy_discovery(mock_client_proxy_configuratio
 
     for url_pattern, http_transport in gene_client.http_client._mounts.items():
         assert isinstance(url_pattern, httpx._utils.URLPattern)
-        assert isinstance(http_transport, httpx.HTTPTransport)
+        assert isinstance(http_transport, httpx.AsyncHTTPTransport)
 
         if url_pattern.pattern == "https://":
             proxy_url = http_transport._pool._proxy_url
