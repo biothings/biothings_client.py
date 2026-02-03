@@ -42,7 +42,6 @@ if _PANDAS:
 
 if _CACHING:
     import hishel
-    from biothings_client.cache.storage import BiothingsClientSqlite3Cache
 
 
 logger = logging.getLogger("biothings.client")
@@ -96,6 +95,7 @@ class BiothingClient:
 
         self.http_client = None
         self.http_client_setup = False
+        self.http_cache_client_setup = False
         self.cache_storage = None
         self.caching_enabled = False
 
@@ -115,6 +115,7 @@ class BiothingClient:
         """
         if not self.http_client_setup:
             self.http_client = httpx.Client(timeout=None)
+
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
@@ -134,29 +135,27 @@ class BiothingClient:
         be modified to prevent indefinite hanging with potentially bad network
         connections
         """
-        if not self.http_client_setup:
+        if not self.http_cache_client_setup:
             if cache_db is None:
                 cache_db = self._default_cache_file
-            cache_db = Path(cache_db).resolve().absolute()
 
-            self.cache_storage = BiothingsClientSqlite3Cache()
-            self.cache_storage.setup_database_connection(cache_db)
+            cache_db = Path(cache_db).resolve().absolute()
+            self.cache_storage = hishel.SyncSqliteStorage(database_path=cache_db)
 
             http_transport = httpx.HTTPTransport()
-            cache_transport = hishel.CacheTransport(transport=http_transport, storage=self.cache_storage)
-            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            cache_transport = hishel.httpx.SyncCacheTransport(next_transport=http_transport, storage=self.cache_storage)
 
             # Have to manually build the proxy mounts as httpx will not auto-discover
             # proxies if we provide our own HTTPTransport to the Client constructor
             proxy_mounts = self._build_caching_proxy_mounts()
-            self.http_client = hishel.CacheClient(
-                controller=cache_controller,
+            self.http_client = hishel.httpx.SyncCacheClient(
                 transport=cache_transport,
                 storage=self.cache_storage,
                 mounts=proxy_mounts,
                 timeout=None,
             )
-            self.http_client_setup = True
+            self.http_client_setup = False
+            self.http_cache_client_setup = True
 
     def _build_caching_proxy_mounts(self) -> PROXY_MOUNT:
         """
@@ -208,7 +207,6 @@ class BiothingClient:
         Converts object to DataFrame (pandas)
         """
         if _PANDAS:
-            # if dataframe not in ["by_source", "normal"]:
             if dataframe not in [1, 2]:
                 raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
 
@@ -393,13 +391,6 @@ class BiothingClient:
 
         if _CACHING:
             if self.caching_enabled:
-                try:
-                    self.cache_storage.clear_cache()
-                except Exception as gen_exc:
-                    logger.exception(gen_exc)
-                    logger.error("Error attempting to clear the local cache database")
-                    raise gen_exc
-
                 self.caching_enabled = False
                 self.http_client_setup = False
                 self._build_http_client()
@@ -410,38 +401,6 @@ class BiothingClient:
         else:
             caching_library_error = OptionalDependencyImportError(
                 optional_function_access="disable biothings-client caching",
-                optional_group="caching",
-                libraries=["anysqlite", "hishel"],
-            )
-            raise caching_library_error
-
-    def _clear_cache(self) -> None:
-        """
-        Clear the globally installed cache. Caching will stil be enabled,
-        but the data stored in the cache stored will be dropped
-
-        Inputs:
-        :param None
-
-        Outputs:
-        :return: None
-        """
-        if _CACHING_NOT_SUPPORTED:
-            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
-
-        if _CACHING:
-            if self.caching_enabled:
-                try:
-                    self.cache_storage.clear_cache()
-                except Exception as gen_exc:
-                    logger.exception(gen_exc)
-                    logger.error("Error attempting to clear the local cache database")
-                    raise gen_exc
-            else:
-                logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
-        else:
-            caching_library_error = OptionalDependencyImportError(
-                optional_function_access="clear biothings-client cache",
                 optional_group="caching",
                 libraries=["anysqlite", "hishel"],
             )
