@@ -2,7 +2,6 @@
 Tests the client caching functionality
 """
 
-import datetime
 import logging
 from typing import Callable
 
@@ -75,9 +74,9 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
     """
     try:
         client_instance = get_client(client)
-        client_instance._build_http_client()
         client_instance.set_caching()
         assert client_instance.caching_enabled
+        client_instance._set_http_client()
         client_instance.clear_cache()
 
         client_callback = getattr(client_instance, function)
@@ -88,30 +87,33 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
         client_instance.stop_caching()
         forced_cold_response = client_callback(**function_arguments)
         client_instance.set_caching()
-        cold_response2 = client_callback(**function_arguments)
+        hot_response2 = client_callback(**function_arguments)
         client_instance.clear_cache()
         forced_cold_response2 = client_callback(**function_arguments)
-        hot_response2 = client_callback(**function_arguments)
+        hot_response3 = client_callback(**function_arguments)
 
-        cold_responses = [cold_response, cold_response2, forced_cold_response, forced_cold_response2]
-        hot_responses = [hot_response, hot_response2]
+        cold_responses = [cold_response, forced_cold_response, forced_cold_response2]
+        hot_responses = [hot_response, hot_response2, hot_response3]
         for cold_response in cold_responses:
             assert cold_response.status_code == 200
-            assert not cold_response.extensions.get("from_cache", False)
-            assert not cold_response.extensions.get("revalidated", False)
+            assert not cold_response.extensions.get("hishel_from_cache", False)
+            assert not cold_response.extensions.get("hishel_revalidated", False)
 
         for hot_response in hot_responses:
             assert hot_response.status_code == 200
-            assert hot_response.extensions["from_cache"]
-            assert not hot_response.extensions["revalidated"]
-            assert isinstance(hot_response.extensions["cache_metadata"]["created_at"], datetime.datetime)
-            assert hot_response.extensions["cache_metadata"]["number_of_uses"] >= 1
+            assert hot_response.extensions.get("hishel_from_cache", False)
+            assert not hot_response.extensions.get("hishel_revalidated", True)
+            assert isinstance(hot_response.extensions["hishel_created_at"], float)
             assert all(hot_response.elapsed < cold_response.elapsed for cold_response in cold_responses)
 
     except Exception as gen_exc:
         client_instance.clear_cache()
+        client_instance.stop_caching()
         logger.exception(gen_exc)
         raise gen_exc
+    finally:
+        client_instance.clear_cache()
+        client_instance.stop_caching()
 
 
 @pytest.mark.asyncio
@@ -173,9 +175,9 @@ async def test_async_caching(method: str, client: str, function: str, function_a
     """
     try:
         client_instance = get_async_client(client)
-        await client_instance._build_http_client()
         await client_instance.set_caching()
         assert client_instance.caching_enabled
+        await client_instance._set_http_client()
         await client_instance.clear_cache()
 
         client_callback = getattr(client_instance, function)
@@ -186,27 +188,30 @@ async def test_async_caching(method: str, client: str, function: str, function_a
         await client_instance.stop_caching()
         forced_cold_response = await client_callback(**function_arguments)
         await client_instance.set_caching()
-        cold_response2 = await client_callback(**function_arguments)
+        hot_response2 = await client_callback(**function_arguments)
         await client_instance.clear_cache()
         forced_cold_response2 = await client_callback(**function_arguments)
-        hot_response2 = await client_callback(**function_arguments)
+        hot_response3 = await client_callback(**function_arguments)
 
-        cold_responses = [cold_response, cold_response2, forced_cold_response, forced_cold_response2]
-        hot_responses = [hot_response, hot_response2]
+        cold_responses = [cold_response, forced_cold_response, forced_cold_response2]
+        hot_responses = [hot_response, hot_response2, hot_response3]
         for cold_response in cold_responses:
             assert cold_response.status_code == 200
-            assert not cold_response.extensions.get("from_cache", False)
-            assert not cold_response.extensions.get("revalidated", False)
+            assert not cold_response.extensions.get("hishel_from_cache", False)
+            assert not cold_response.extensions.get("hishel_revalidated", False)
 
         for hot_response in hot_responses:
             assert hot_response.status_code == 200
-            assert hot_response.extensions["from_cache"]
-            assert not hot_response.extensions["revalidated"]
-            assert isinstance(hot_response.extensions["cache_metadata"]["created_at"], datetime.datetime)
-            assert hot_response.extensions["cache_metadata"]["number_of_uses"] >= 1
+            assert hot_response.extensions.get("hishel_from_cache", False)
+            assert not hot_response.extensions.get("hishel_revalidated", True)
+            assert isinstance(hot_response.extensions["hishel_created_at"], float)
             assert all(hot_response.elapsed < cold_response.elapsed for cold_response in cold_responses)
 
     except Exception as gen_exc:
         await client_instance.clear_cache()
+        await client_instance.stop_caching()
         logger.exception(gen_exc)
         raise gen_exc
+    finally:
+        await client_instance.clear_cache()
+        await client_instance.stop_caching()
