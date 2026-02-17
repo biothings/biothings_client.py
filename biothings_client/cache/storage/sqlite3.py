@@ -5,6 +5,8 @@ Primarily so we can support hard-deleting our cache without having
 to wait for the TTL expiration
 """
 
+import sqlite3
+
 from biothings_client._dependencies import _CACHING
 
 if _CACHING:
@@ -18,6 +20,7 @@ if _CACHING:
     logger.setLevel(logging.INFO)
 
     class BiothingsClientSyncSqliteStorage(hishel.SyncSqliteStorage):
+        """Overriden SyncSqliteStorage instance for biothings-client."""
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -30,23 +33,34 @@ if _CACHING:
             our cache
             """
             try:
-                entry_identifiers = []
-                with self._lock:
-                    cache_entries_table = "entries"
-                    connection = self._ensure_connection()
-                    cursor = connection.cursor()
-                    entry_identifiers = cursor.execute(f"SELECT id FROM {cache_entries_table}")
-
+                entry_identifiers = self.get_entries_table()
                 if entry_identifiers is not None:
-                    breakpoint()
                     while (entry_id := entry_identifiers.fetchone()) is not None:
                         entry_uuid = uuid.UUID(bytes=entry_id[0])
                         self.hard_remove_entry(entry_uuid)
                     logger.info("Successfully cleared cache entries")
+                self.rebuild_cache_database()
             except Exception as gen_exc:
                 raise gen_exc
 
-        def hard_remove_entry(self, id: uuid.UUID) -> None:
+        def get_entries_table(self) -> sqlite3.Cursor:
+            """Get all rows in the `entries` cache table."""
+            entry_identifiers = None
+            with self._lock:
+                cache_entries_table = "entries"
+                connection = self._ensure_connection()
+                cursor = connection.cursor()
+                entry_identifiers = cursor.execute(f"SELECT id FROM {cache_entries_table}")
+            return entry_identifiers
+
+        def rebuild_cache_database(self) -> None:
+            """Runs the VACUUM directive to rebuild our database after wipe."""
+            with self._lock:
+                connection = self._ensure_connection()
+                cursor = connection.cursor()
+                cursor.execute("VACUUM")
+
+        def hard_remove_entry(self, id: uuid.UUID) -> None:  # pylint: disable=W0622
             """Hard delete entry in the entry database rather than soft delete.
 
             Identical implementation to remove_entry, except we call _hard_delete_pair
@@ -58,14 +72,13 @@ if _CACHING:
                 cursor.execute("SELECT data FROM entries WHERE id = ?", (id.bytes,))
                 result = cursor.fetchone()
 
-                if result is None:
-                    return None
-
-                pair = unpack(result[0], kind="pair")
-                self._hard_delete_pair(pair, cursor)
-                connection.commit()
+                if result is not None:
+                    pair = unpack(result[0], kind="pair")
+                    self._hard_delete_pair(pair, cursor)
+                    connection.commit()
 
     class BiothingsClientAsyncSqliteStorage(hishel.AsyncSqliteStorage):
+        """Overriden AsyncSqliteStorage instance for biothings-client."""
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -78,22 +91,34 @@ if _CACHING:
             our cache
             """
             try:
-                entry_identifiers = None
-                async with self._lock:
-                    cache_entries_table = "entries"
-                    connection = await self._ensure_connection()
-                    cursor = await connection.cursor()
-                    entry_identifiers = await cursor.execute(f"SELECT id FROM {cache_entries_table}")
-
+                entry_identifiers = await self.get_entries_table()
                 if entry_identifiers is not None:
                     while (entry_id := await entry_identifiers.fetchone()) is not None:
                         entry_uuid = uuid.UUID(bytes=entry_id[0])
                         await self.hard_remove_entry(entry_uuid)
                     logger.info("Successfully cleared cache entries")
+                await self.rebuild_cache_database()
             except Exception as gen_exc:
                 raise gen_exc
 
-        async def hard_remove_entry(self, id: uuid.UUID) -> None:
+        async def get_entries_table(self) -> sqlite3.Cursor:
+            """Get all rows in the `entries` cache table."""
+            entry_identifiers = None
+            async with self._lock:
+                cache_entries_table = "entries"
+                connection = await self._ensure_connection()
+                cursor = await connection.cursor()
+                entry_identifiers = await cursor.execute(f"SELECT id FROM {cache_entries_table}")
+            return entry_identifiers
+
+        async def rebuild_cache_database(self) -> None:
+            """Runs the VACUUM directive to rebuild our database after wipe."""
+            async with self._lock:
+                connection = await self._ensure_connection()
+                cursor = await connection.cursor()
+                await cursor.execute("VACUUM")
+
+        async def hard_remove_entry(self, id: uuid.UUID) -> None:  # pylint: disable=W0622
             """Hard delete entry in the entry database rather than soft delete.
 
             Identical implementation to remove_entry, except we call _hard_delete_pair
@@ -105,9 +130,7 @@ if _CACHING:
                 await cursor.execute("SELECT data FROM entries WHERE id = ?", (id.bytes,))
                 result = await cursor.fetchone()
 
-                if result is None:
-                    return None
-
-                pair = unpack(result[0], kind="pair")
-                await self._hard_delete_pair(pair, cursor)
-                await connection.commit()
+                if result is not None:
+                    pair = unpack(result[0], kind="pair")
+                    await self._hard_delete_pair(pair, cursor)
+                    await connection.commit()

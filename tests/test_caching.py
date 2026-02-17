@@ -215,3 +215,109 @@ async def test_async_caching(method: str, client: str, function: str, function_a
     finally:
         await client_instance.clear_cache()
         await client_instance.stop_caching()
+
+
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
+@pytest.mark.parametrize(
+    "method,client,function,function_arguments",
+    [
+        ("GET", "gene", "getgene", {"_id": "1017", "return_raw": True}),
+        ("POST", "gene", "getgenes", {"ids": ["1017", "1018"], "return_raw": True}),
+        ("GET", "gene", "query", {"q": "cdk2", "return_raw": True}),
+        ("POST", "gene", "querymany", {"qterms": ["1017", "695"], "return_raw": True}),
+        ("GET", "geneset", "query", {"q": "wnt", "fields": "name,count,source,taxid", "return_raw": True}),
+        (
+            "POST",
+            "geneset",
+            "querymany",
+            {"qterms": ["wnt", "jak-stat"], "fields": "name,count,source,taxid", "return_raw": True},
+        ),
+    ],
+)
+def test_cache_clearing(method: str, client: str, function: str, function_arguments: dict):
+    """Verify that our global cache clear actually deletes all entries in the table."""
+    try:
+        client_instance = get_client(client)
+        client_instance.set_caching()
+        assert client_instance.caching_enabled
+        client_instance._set_http_client()
+
+        client_instance.clear_cache()
+        entries = client_instance.cache_storage.get_entries_table().fetchall()
+        assert len(entries) == 0
+
+        client_callback = getattr(client_instance, function)
+        assert isinstance(client_callback, Callable)
+        for _ in range(1, 4):
+            client_callback(**function_arguments)
+
+        entries = client_instance.cache_storage.get_entries_table().fetchall()
+        assert len(entries) == 1
+
+        client_instance.clear_cache()
+        entries = client_instance.cache_storage.get_entries_table().fetchall()
+        assert len(entries) == 0
+
+    except Exception as gen_exc:
+        client_instance.clear_cache()
+        client_instance.stop_caching()
+        logger.exception(gen_exc)
+        raise gen_exc
+    finally:
+        client_instance.clear_cache()
+        client_instance.stop_caching()
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
+@pytest.mark.parametrize(
+    "method,client,function,function_arguments",
+    [
+        ("GET", "gene", "getgene", {"_id": "1017", "return_raw": True}),
+        ("POST", "gene", "getgenes", {"ids": ["1017", "1018"], "return_raw": True}),
+        ("GET", "gene", "query", {"q": "cdk2", "return_raw": True}),
+        ("POST", "gene", "querymany", {"qterms": ["1017", "695"], "return_raw": True}),
+        ("GET", "geneset", "query", {"q": "wnt", "fields": "name,count,source,taxid", "return_raw": True}),
+        (
+            "POST",
+            "geneset",
+            "querymany",
+            {"qterms": ["wnt", "jak-stat"], "fields": "name,count,source,taxid", "return_raw": True},
+        ),
+    ],
+)
+async def test_async_cache_clearing(method: str, client: str, function: str, function_arguments: dict):
+    """Verify that our global cache clear actually deletes all entries in the table."""
+    try:
+        client_instance = get_async_client(client)
+        await client_instance.set_caching()
+        assert client_instance.caching_enabled
+        await client_instance._set_http_client()
+        await client_instance.clear_cache()
+
+        entries = await client_instance.cache_storage.get_entries_table()
+        entries = await entries.fetchall()
+        assert len(entries) == 0
+
+        client_callback = getattr(client_instance, function)
+        assert isinstance(client_callback, Callable)
+        for _ in range(1, 4):
+            await client_callback(**function_arguments)
+
+        entries = await client_instance.cache_storage.get_entries_table()
+        entries = await entries.fetchall()
+        assert len(entries) == 1
+
+        await client_instance.clear_cache()
+        entries = await client_instance.cache_storage.get_entries_table()
+        entries = await entries.fetchall()
+        assert len(entries) == 0
+
+    except Exception as gen_exc:
+        await client_instance.clear_cache()
+        await client_instance.stop_caching()
+        logger.exception(gen_exc)
+        raise gen_exc
+    finally:
+        await client_instance.clear_cache()
+        await client_instance.stop_caching()
