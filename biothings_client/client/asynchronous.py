@@ -355,8 +355,7 @@ class AsyncBiothingClient:
             yield query_result
 
             if not from_cache and self.delay:
-                # no need to delay if requests are from cache.
-                asyncio.sleep(self.delay)
+                await asyncio.sleep(self.delay)
 
     async def _metadata(self, verbose=True, **kwargs):
         """
