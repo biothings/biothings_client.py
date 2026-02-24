@@ -78,8 +78,8 @@ version = "0.4.1"
 caching = [
     # caching is only available for Python 3.8 and above
     "anysqlite; python_version>='3.8'",
-    "hishel[httpx] == 1.1.8; python_version <='3.9'",
-    "hishel[httpx] >= 1.1.9; python_version >='3.9'",
+    "hishel[httpx]==1.1.8; python_version=='3.9'",
+    "hishel[httpx]>=1.1.9; python_version>'3.9'",
 ]
 dataframe = ["pandas>=1.1.5"]   # the last version supports python 3.6
 jsonld = ["PyLD>=0.7.2"]
