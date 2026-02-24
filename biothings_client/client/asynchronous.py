@@ -215,18 +215,6 @@ class AsyncBiothingClient:
         proxy_mounts = dict(sorted(proxy_mounts.items()))
         return proxy_mounts
 
-    async def __del__(self):
-        """
-        Destructor for the client to ensure that we close any potential
-        connections to the cache database
-        """
-        try:
-            if self.http_client is not None:
-                await self.http_client.aclose()
-        except Exception as gen_exc:
-            logger.exception(gen_exc)
-            logger.error("Unable to close the httpx client instance %s", self.http_client)
-
     def use_http(self):
         if self.url:
             self.url = self.url.replace("https://", "http://")
