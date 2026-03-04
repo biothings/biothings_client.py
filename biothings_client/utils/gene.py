@@ -1,4 +1,4 @@
-""" Gene specific utils. """
+"""Gene specific utils."""
 
 from collections import OrderedDict
 

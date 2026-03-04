@@ -60,7 +60,7 @@ def concatenate_list(sequence: Iterable, sep: str = ",", quoted: bool = True) ->
         else:
             string_transform = sep.join(["{}".format(safe_str(x)) for x in sequence])
     elif isinstance(sequence, str):
-        logger.warning("Input sequence provided is already in string format. No operation performed")
+        logger.debug("Input sequence provided is already in string format. No operation performed")
         string_transform = sequence
     else:
         logger.warning("Input sequence non-iterable %s. Unable to perform concatenation operation", sequence)

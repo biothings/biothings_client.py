@@ -1,5 +1,5 @@
 """
-Python Client for generic Biothings API services
+Synchronous Python Client for generic Biothings API services
 """
 
 from collections.abc import Iterable
@@ -36,13 +36,26 @@ from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
 from biothings_client.utils.iteration import concatenate_list, iter_n, list_itemcnt
+from biothings_client.cache.httpx.transport import ForcedCacheTransport
 
 if _PANDAS:
     import pandas
 
 if _CACHING:
     import hishel
-    from biothings_client.cache.storage import BiothingsClientSqlite3Cache
+    import hishel.httpx
+    from biothings_client.cache.storage.sqlite3 import BiothingsClientSyncSqliteStorage
+
+    # IMPORTANT
+    # In order to cache our POST requests we have to override hishel's
+    # speceficiation for SAFE_METHODS
+    # If we don't, then the IdleClient state will immediately force a CacheMiss
+    # and we won't actually leverage a cached POST request, even if our policy
+    # supports POST requests
+    # >>> SAFE_METHODS = frozenset({'TRACE', 'HEAD', 'GET', 'OPTIONS'})
+    # We also have to create a new instance due to the frozenset usage
+    OVERRIDE_SAFE_METHODS = frozenset({"TRACE", "HEAD", "GET", "OPTIONS", "POST"})
+    hishel._core._spec.SAFE_METHODS = OVERRIDE_SAFE_METHODS
 
 
 logger = logging.getLogger("biothings.client")
@@ -96,10 +109,18 @@ class BiothingClient:
 
         self.http_client = None
         self.http_client_setup = False
+        self.http_cache_client_setup = False
         self.cache_storage = None
         self.caching_enabled = False
 
-    def _build_http_client(self, cache_db: Union[str, Path] = None) -> None:
+    def _set_http_client(self, cache_db: Union[str, Path] = None) -> None:
+        """Setter for determining what http client we build based on if caching is enabled."""
+        if self.caching_enabled:
+            self._build_cache_http_client(cache_db)
+        else:
+            self._build_http_client()
+
+    def _build_http_client(self) -> None:
         """
         Builds the client instance for usage through the lifetime
         of the biothings_client
@@ -115,6 +136,7 @@ class BiothingClient:
         """
         if not self.http_client_setup:
             self.http_client = httpx.Client(timeout=None)
+
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
@@ -134,29 +156,36 @@ class BiothingClient:
         be modified to prevent indefinite hanging with potentially bad network
         connections
         """
-        if not self.http_client_setup:
+        if not self.http_cache_client_setup:
             if cache_db is None:
                 cache_db = self._default_cache_file
+
             cache_db = Path(cache_db).resolve().absolute()
+            self.cache_storage = BiothingsClientSyncSqliteStorage(database_path=cache_db)
 
-            self.cache_storage = BiothingsClientSqlite3Cache()
-            self.cache_storage.setup_database_connection(cache_db)
-
-            http_transport = httpx.HTTPTransport()
-            cache_transport = hishel.CacheTransport(transport=http_transport, storage=self.cache_storage)
-            cache_controller = hishel.Controller(cacheable_methods=["GET", "POST"])
+            # We have to apply the SpecificationPolicy for both the SyncCacheTransport
+            # and the SyncCacheClient
+            cache_options = hishel.CacheOptions(
+                supported_methods=["GET", "HEAD", "POST"], shared=False, allow_stale=False
+            )
+            cache_policy = hishel.SpecificationPolicy(cache_options=cache_options)
+            http_transport = ForcedCacheTransport()
+            cache_transport = hishel.httpx.SyncCacheTransport(
+                next_transport=http_transport, storage=self.cache_storage, policy=cache_policy
+            )
 
             # Have to manually build the proxy mounts as httpx will not auto-discover
             # proxies if we provide our own HTTPTransport to the Client constructor
             proxy_mounts = self._build_caching_proxy_mounts()
-            self.http_client = hishel.CacheClient(
-                controller=cache_controller,
+            self.http_client = hishel.httpx.SyncCacheClient(
+                policy=cache_policy,
                 transport=cache_transport,
                 storage=self.cache_storage,
                 mounts=proxy_mounts,
                 timeout=None,
             )
-            self.http_client_setup = True
+            self.http_client_setup = False
+            self.http_cache_client_setup = True
 
     def _build_caching_proxy_mounts(self) -> PROXY_MOUNT:
         """
@@ -208,7 +237,6 @@ class BiothingClient:
         Converts object to DataFrame (pandas)
         """
         if _PANDAS:
-            # if dataframe not in ["by_source", "normal"]:
             if dataframe not in [1, 2]:
                 raise ValueError("dataframe must be either 1 (using json_normalize) " "or 2 (using DataFrame.from_dict")
 
@@ -237,7 +265,7 @@ class BiothingClient:
         """
         Wrapper around the httpx.get method
         """
-        self._build_http_client()
+        self._set_http_client()
         if params is None:
             params = {}
 
@@ -249,7 +277,8 @@ class BiothingClient:
         )
 
         response_extensions = response.extensions
-        from_cache = response_extensions.get("from_cache", False)
+        from_cache = response_extensions.get("hishel_from_cache", False)
+
         if from_cache:
             logger.debug("Cached response %s from %s", response, url)
 
@@ -269,7 +298,7 @@ class BiothingClient:
         """
         Wrapper around the httpx.post method
         """
-        self._build_http_client()
+        self._set_http_client()
         if params is None:
             params = {}
         return_raw = params.pop("return_raw", False)
@@ -279,7 +308,7 @@ class BiothingClient:
         )
 
         response_extensions = response.extensions
-        from_cache = response_extensions.get("from_cache", False)
+        from_cache = response_extensions.get("hishel_from_cache", False)
 
         if from_cache:
             logger.debug("Cached response %s from %s", response, url)
@@ -356,9 +385,9 @@ class BiothingClient:
                     logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
                     logger.info(
                         (
-                            "Enabled client caching: %s\n" 'Future queries will be cached in "%s"',
+                            "Enabled client caching: %s\nFuture queries will be cached in [%s]",
                             self,
-                            self.cache_storage.cache_filepath,
+                            self.cache_storage.database_path,
                         )
                     )
                 except Exception as gen_exc:
@@ -393,13 +422,6 @@ class BiothingClient:
 
         if _CACHING:
             if self.caching_enabled:
-                try:
-                    self.cache_storage.clear_cache()
-                except Exception as gen_exc:
-                    logger.exception(gen_exc)
-                    logger.error("Error attempting to clear the local cache database")
-                    raise gen_exc
-
                 self.caching_enabled = False
                 self.http_client_setup = False
                 self._build_http_client()
@@ -432,7 +454,7 @@ class BiothingClient:
         if _CACHING:
             if self.caching_enabled:
                 try:
-                    self.cache_storage.clear_cache()
+                    self.cache_storage.hard_cleanup()
                 except Exception as gen_exc:
                     logger.exception(gen_exc)
                     logger.error("Error attempting to clear the local cache database")
@@ -625,7 +647,6 @@ class BiothingClient:
     def _fetch_all(self, url, verbose=True, **kwargs):
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
-
         Implicitly disables caching to ensure we actually hit the endpoint rather than
         pulling from local cache
         """
@@ -643,32 +664,44 @@ class BiothingClient:
                 logger.error("Unknown error occured while attempting to disable caching")
                 raise gen_exc
 
-        _, response = self._get(url, params=kwargs, verbose=verbose)
-        if verbose:
-            logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
-        for key in ["q", "fetch_all"]:
-            kwargs.pop(key)
-        while not response.get("error", "").startswith("No results to return"):
-            if "error" in response:
-                logger.error(response["error"])
-                break
-            if "_warning" in response and verbose:
-                logger.warning(response["_warning"])
-            yield from response["hits"]
-            kwargs.update({"scroll_id": response["_scroll_id"]})
+        try:
             _, response = self._get(url, params=kwargs, verbose=verbose)
 
-        if restore_caching:
-            logger.debug("re-enabling the client HTTP caching")
-            try:
-                self.set_caching()
-            except OptionalDependencyImportError as optional_import_error:
-                logger.exception(optional_import_error)
-                logger.debug("No cache to disable for fetch all. Continuing ...")
-            except Exception as gen_exc:
-                logger.exception(gen_exc)
-                logger.error("Unknown error occured while attempting to disable caching")
-                raise gen_exc
+            if verbose:
+                logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
+
+            for key in ["q", "fetch_all"]:
+                kwargs.pop(key)
+
+            while not response.get("error", "").startswith("No results to return"):
+                if "error" in response:
+                    logger.error(response["error"])
+                    break
+
+                if "_warning" in response and verbose:
+                    logger.warning(response["_warning"])
+
+                yield from response["hits"]
+
+                kwargs.update({"scroll_id": response["_scroll_id"]})
+                _, response = self._get(url, params=kwargs, verbose=verbose)
+
+        except Exception as gen_exc:
+            logger.exception(gen_exc)
+            raise gen_exc
+
+        finally:
+            if restore_caching:
+                logger.debug("re-enabling the client HTTP caching")
+                try:
+                    self.set_caching()
+                except OptionalDependencyImportError as optional_import_error:
+                    logger.exception(optional_import_error)
+                    logger.debug("No cache to disable for fetch all. Continuing ...")
+                except Exception as gen_exc:
+                    logger.exception(gen_exc)
+                    logger.error("Unknown error occured while attempting to disable caching")
+                    raise gen_exc
 
     def _querymany_inner(self, qterms, verbose=True, **kwargs):
         query_term_collection = concatenate_list(qterms)
