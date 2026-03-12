@@ -1,15 +1,26 @@
 """Gene specific utils."""
 
 from collections import OrderedDict
+from typing import Any, Dict, Iterable, List, Protocol, Union, cast
 
 from biothings_client import get_client
 
 
-def get_homologs(gene_list, fields="all", species="all"):
+class _GeneClient(Protocol):
+    def getgenes(
+        self, gene_list: Iterable[Union[str, int]], **kwargs: Any
+    ) -> List[Dict[str, Any]]: ...
+
+
+def get_homologs(
+    gene_list: Iterable[Union[str, int]],
+    fields: Union[str, Iterable[str]] = "all",
+    species: str = "all",
+) -> List[Dict[str, Any]]:
     """Return the gene-objects for homologs in species for each gene in the input *gene_list*."""
-    gene_client = get_client("gene")
+    gene_client = cast(_GeneClient, get_client("gene"))
     clean_species = [int(s) for s in species.split(",")] if species != "all" else []
-    initial = OrderedDict()
+    initial: "OrderedDict[str, Dict[int, List[Union[str, int]]]]" = OrderedDict()
     qset = set()
 
     for gene in gene_client.getgenes(gene_list, fields="homologene", species="all"):
@@ -20,13 +31,16 @@ def get_homologs(gene_list, fields="all", species="all"):
             if not clean_species or taxid in clean_species:
                 initial[gene["_id"]].setdefault(taxid, []).append(geneid)
                 qset.add(geneid)
-    gene_dict = {g["_id"]: g for g in gene_client.getgenes(iter(qset), fields=fields, species="all")}
+    gene_dict = {
+        g["_id"]: g
+        for g in gene_client.getgenes(iter(qset), fields=fields, species="all")
+    }
 
-    ret = []
+    ret: List[Dict[str, Any]] = []
     for geneid, homolog_dict in initial.items():
-        _ret = {"gene": geneid, "homologs": []}
+        _ret: Dict[str, Any] = {"gene": geneid, "homologs": []}
         for taxid, glist in homolog_dict.items():
-            _d = {"taxid": taxid, "genes": []}
+            _d: Dict[str, Any] = {"taxid": taxid, "genes": []}
             for g in glist:
                 if str(g) in gene_dict:
                     _d["genes"].append(gene_dict[str(g)])

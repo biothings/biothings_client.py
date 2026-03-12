@@ -6,6 +6,7 @@ to wait for the TTL expiration
 """
 
 import sqlite3
+from typing import Any
 
 from biothings_client._dependencies import _CACHING
 
@@ -13,8 +14,8 @@ if _CACHING:
     import logging
     import uuid
 
-    import hishel
-    from hishel._core._storages._packing import unpack
+    import hishel  # type: ignore[import-not-found]
+    from hishel._core._storages._packing import unpack  # type: ignore[import-not-found]
 
     logger = logging.getLogger("biothings.client")
     logger.setLevel(logging.INFO)
@@ -50,7 +51,9 @@ if _CACHING:
                 cache_entries_table = "entries"
                 connection = self._ensure_connection()
                 cursor = connection.cursor()
-                entry_identifiers = cursor.execute(f"SELECT id FROM {cache_entries_table}")
+                entry_identifiers = cursor.execute(
+                    f"SELECT id FROM {cache_entries_table}"
+                )
             return entry_identifiers
 
         def rebuild_cache_database(self) -> None:
@@ -74,6 +77,7 @@ if _CACHING:
 
                 if result is not None:
                     pair = unpack(result[0], kind="pair")
+                    assert pair is not None
                     self._hard_delete_pair(pair, cursor)
                     connection.commit()
 
@@ -101,14 +105,16 @@ if _CACHING:
             except Exception as gen_exc:
                 raise gen_exc
 
-        async def get_entries_table(self) -> sqlite3.Cursor:
+        async def get_entries_table(self) -> Any:
             """Get all rows in the `entries` cache table."""
             entry_identifiers = None
             async with self._lock:
                 cache_entries_table = "entries"
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
-                entry_identifiers = await cursor.execute(f"SELECT id FROM {cache_entries_table}")
+                entry_identifiers = await cursor.execute(
+                    f"SELECT id FROM {cache_entries_table}"
+                )
             return entry_identifiers
 
         async def rebuild_cache_database(self) -> None:
@@ -127,10 +133,13 @@ if _CACHING:
             async with self._lock:
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
-                await cursor.execute("SELECT data FROM entries WHERE id = ?", (id.bytes,))
+                await cursor.execute(
+                    "SELECT data FROM entries WHERE id = ?", (id.bytes,)
+                )
                 result = await cursor.fetchone()
 
                 if result is not None:
                     pair = unpack(result[0], kind="pair")
+                    assert pair is not None
                     await self._hard_delete_pair(pair, cursor)
                     await connection.commit()

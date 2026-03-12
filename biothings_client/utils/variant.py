@@ -1,4 +1,4 @@
-MYVARIANT_TOP_LEVEL_JSONLD_URIS = [
+MYVARIANT_TOP_LEVEL_JSONLD_URIS: list[str] = [
     "http://schema.myvariant.info/datasource/cadd",
     "http://schema.myvariant.info/datasource/clinvar",
     "http://schema.myvariant.info/datasource/dbnsfp",

@@ -1,14 +1,18 @@
 import io
 import logging
+from typing import Any, Callable, Tuple, TypeVar
 
 
-def cache_request(fn):
+T = TypeVar("T")
+
+
+def cache_request(fn: Callable[[], T]) -> Tuple[bool, T]:
     """
     Return a from_cache flag along with the request result
     The actual request is made in the given <fn> function
     """
     from_cache = False
-    res = None
+    res: Any = None
     logger = logging.getLogger("biothings.client")
     with io.StringIO() as buf:
         handler = logging.StreamHandler(buf)

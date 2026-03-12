@@ -1,3 +1,6 @@
+# mypy: disable-error-code=misc
+# pyright: reportGeneralTypeIssues=false
+
 from biothings_client.client import get_client, get_async_client
 
 
