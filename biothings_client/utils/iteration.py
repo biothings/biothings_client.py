@@ -5,13 +5,15 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Literal,
     Tuple,
     TypeVar,
     Union,
     overload,
 )
 import logging
+
+# enables python 3.7 support for backported Literal support
+from typing_extensions import Literal
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
@@ -37,7 +39,7 @@ def list_itemcnt(li: Iterable[T]) -> List[Tuple[T, int]]:
 
 
 @overload
-def iter_n(iterable: Iterable[T], n: int, with_cnt: Literal[False] = False) -> Iterator[Tuple[T, ...]]: ...
+def iter_n(iterable: Iterable[T], n: int, with_cnt: Literal[False]) -> Iterator[Tuple[T, ...]]: ...
 
 
 @overload
