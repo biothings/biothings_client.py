@@ -2,7 +2,6 @@
 Asynchronous Python Client for generic Biothings API services
 """
 
-from collections.abc import Iterable
 from copy import copy
 from pathlib import Path
 from typing import (
@@ -12,6 +11,7 @@ from typing import (
     Callable,
     cast,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,

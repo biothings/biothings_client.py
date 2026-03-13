@@ -2,7 +2,6 @@
 Synchronous Python Client for generic Biothings API services
 """
 
-from collections.abc import Iterable
 from copy import copy
 from pathlib import Path
 from typing import (
@@ -11,6 +10,7 @@ from typing import (
     cast,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Tuple,
