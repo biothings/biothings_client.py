@@ -127,9 +127,7 @@ class AsyncBiothingClient:
         self.max_query: int = self._max_query
 
         # delay and step attributes are for batch queries.
-        self.delay: Union[int, float] = (
-            self._delay
-        )  # delay is ignored when requests made from cache.
+        self.delay: Union[int, float] = self._delay  # delay is ignored when requests made from cache.
         self.step: int = self._step
 
         self.scroll_size: int = self._scroll_size
@@ -140,10 +138,7 @@ class AsyncBiothingClient:
         self.raise_for_status: bool = True
 
         self.default_user_agent = (
-            "{package_header}/{client_version} ("
-            "python:{python_version} "
-            "httpx:{httpx_version}"
-            ")"
+            "{package_header}/{client_version} (" "python:{python_version} " "httpx:{httpx_version}" ")"
         ).format(
             **{
                 "package_header": self._pkg_user_agent_header,
@@ -159,9 +154,7 @@ class AsyncBiothingClient:
         self.cache_storage: Any = None
         self.caching_enabled: bool = False
 
-    async def _set_http_client(
-        self, cache_db: Optional[Union[str, Path]] = None
-    ) -> None:
+    async def _set_http_client(self, cache_db: Optional[Union[str, Path]] = None) -> None:
         """Setter for determining what http client we build based on if caching is enabled."""
         if self.caching_enabled:
             await self._build_cache_http_client(cache_db)
@@ -188,9 +181,7 @@ class AsyncBiothingClient:
             self.http_client_setup = True
             self.http_cache_client_setup = False
 
-    async def _build_cache_http_client(
-        self, cache_db: Optional[Union[str, Path]] = None
-    ) -> None:
+    async def _build_cache_http_client(self, cache_db: Optional[Union[str, Path]] = None) -> None:
         """
         Builds the client instance used for caching biothings requests.
         We rebuild the client whenever we enable to caching to ensure
@@ -220,9 +211,7 @@ class AsyncBiothingClient:
 
             assert cache_db is not None
             cache_db = Path(cache_db).resolve().absolute()
-            self.cache_storage = BiothingsClientAsyncSqliteStorage(
-                database_path=cache_db
-            )
+            self.cache_storage = BiothingsClientAsyncSqliteStorage(database_path=cache_db)
 
             # We have to apply the SpecificationPolicy for both the SyncCacheTransport
             # and the SyncCacheClient
@@ -285,18 +274,14 @@ class AsyncBiothingClient:
             self.url = self.url.replace("http://", "https://")
 
     @staticmethod
-    async def _dataframe(
-        obj: Union[JsonDict, JsonList], dataframe: int, df_index: bool = True
-    ) -> Any:
+    async def _dataframe(obj: Union[JsonDict, JsonList], dataframe: int, df_index: bool = True) -> Any:
         """
         Converts object to DataFrame (pandas)
         """
         if _PANDAS:
             assert pandas is not None
             if dataframe not in [1, 2]:
-                raise ValueError(
-                    "dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict"
-                )
+                raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
 
             if isinstance(obj, dict) and "hits" in obj:
                 if dataframe == 1:
@@ -363,9 +348,7 @@ class AsyncBiothingClient:
                 response.raise_for_status()  # raise httpx._exceptions.HTTPStatusError
         return get_response
 
-    async def _post(
-        self, url: str, params: Optional[JsonDict], verbose: bool = True
-    ) -> Tuple[bool, ResponsePayload]:
+    async def _post(self, url: str, params: Optional[JsonDict], verbose: bool = True) -> Tuple[bool, ResponsePayload]:
         """
         Wrapper around the httpx.post method
         """
@@ -443,9 +426,7 @@ class AsyncBiothingClient:
         _, ret = await self._get(_url, params=kwargs, verbose=verbose)
         return ret
 
-    async def _set_caching(
-        self, cache_db: Optional[Union[str, Path]] = None, **kwargs: Any
-    ) -> None:
+    async def _set_caching(self, cache_db: Optional[Union[str, Path]] = None, **kwargs: Any) -> None:
         """
         Enable the client caching and creates a local cache database
         for all future requests
@@ -467,9 +448,7 @@ class AsyncBiothingClient:
                     self.caching_enabled = True
                     self.http_client_setup = False
                     await self._build_cache_http_client()
-                    logger.debug(
-                        "Reset the HTTP client to leverage caching %s", self.http_client
-                    )
+                    logger.debug("Reset the HTTP client to leverage caching %s", self.http_client)
                     logger.info(
                         (
                             "Enabled client caching: %s\nFuture queries will be cached in [%s]",
@@ -512,9 +491,7 @@ class AsyncBiothingClient:
                 self.caching_enabled = False
                 self.http_client_setup = False
                 await self._build_http_client()
-                logger.debug(
-                    "Reset the HTTP client to disable caching %s", self.http_client
-                )
+                logger.debug("Reset the HTTP client to disable caching %s", self.http_client)
                 logger.info("Disabled client caching: %s", self)
             else:
                 logger.warning("Caching already disabled. Skipping for now ...")
@@ -549,9 +526,7 @@ class AsyncBiothingClient:
                     logger.error("Error attempting to clear the local cache database")
                     raise gen_exc
             else:
-                logger.warning(
-                    "Caching already disabled. No local cache database to clear. Skipping for now ..."
-                )
+                logger.warning("Caching already disabled. No local cache database to clear. Skipping for now ...")
         else:
             caching_library_error = OptionalDependencyImportError(
                 optional_function_access="clear biothings-client cache",
@@ -560,9 +535,7 @@ class AsyncBiothingClient:
             )
             raise caching_library_error
 
-    async def _get_fields(
-        self, search_term: Optional[str] = None, verbose: bool = True
-    ) -> JsonDict:
+    async def _get_fields(self, search_term: Optional[str] = None, verbose: bool = True) -> JsonDict:
         """
         Wrapper for /metadata/fields
 
@@ -756,9 +729,7 @@ class AsyncBiothingClient:
             out = await self._dataframe(out, dataframe, df_index=False)
         return out
 
-    async def _fetch_all(
-        self, url: str, verbose: bool = True, **kwargs: Any
-    ) -> AsyncGenerator[JsonDict, None]:
+    async def _fetch_all(self, url: str, verbose: bool = True, **kwargs: Any) -> AsyncGenerator[JsonDict, None]:
         """
         Function that returns a generator to results. Assumes that 'q' is in kwargs.
         Implicitly disables caching to ensure we actually hit the endpoint rather than
@@ -775,20 +746,14 @@ class AsyncBiothingClient:
                 logger.debug("No cache to disable for fetch all. Continuing ...")
             except Exception as gen_exc:
                 logger.exception(gen_exc)
-                logger.error(
-                    "Unknown error occured while attempting to disable caching"
-                )
+                logger.error("Unknown error occured while attempting to disable caching")
                 raise gen_exc
 
         try:
             _, response = await self._get(url, params=kwargs, verbose=verbose)
 
             if verbose:
-                logger.info(
-                    "Fetching {0} {1} . . .".format(
-                        response["total"], self._optionally_plural_object_type
-                    )
-                )
+                logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
 
             for key in ["q", "fetch_all"]:
                 kwargs.pop(key)
@@ -821,9 +786,7 @@ class AsyncBiothingClient:
                     logger.debug("No cache to disable for fetch all. Continuing ...")
                 except Exception as gen_exc:
                     logger.exception(gen_exc)
-                    logger.error(
-                        "Unknown error occured while attempting to disable caching"
-                    )
+                    logger.error("Unknown error occured while attempting to disable caching")
                     raise gen_exc
 
     async def _querymany_inner(
@@ -923,23 +886,15 @@ class AsyncBiothingClient:
         if dataframe:
             assert pandas is not None
             out = await self._dataframe(out, dataframe, df_index=df_index)
-            li_dup_df = pandas.DataFrame.from_records(
-                li_dup, columns=["query", "duplicate hits"]
-            )
+            li_dup_df = pandas.DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
             li_missing_df = pandas.DataFrame(li_missing, columns=["query"])
 
         if verbose:
             if li_dup:
-                logger.warning(
-                    "{0} input query terms found dup hits:".format(len(li_dup))
-                    + "\t"
-                    + str(li_dup)[:100]
-                )
+                logger.warning("{0} input query terms found dup hits:".format(len(li_dup)) + "\t" + str(li_dup)[:100])
             if li_missing:
                 logger.warning(
-                    "{0} input query terms found no hit:".format(len(li_missing))
-                    + "\t"
-                    + str(li_missing)[:100]
+                    "{0} input query terms found no hit:".format(len(li_missing)) + "\t" + str(li_missing)[:100]
                 )
 
         if returnall:
@@ -949,9 +904,7 @@ class AsyncBiothingClient:
                 return {"out": out, "dup": li_dup, "missing": li_missing}
         else:
             if verbose and (li_dup or li_missing):
-                logger.info(
-                    'Pass "returnall=True" to return complete lists of duplicate or missing query terms.'
-                )
+                logger.info('Pass "returnall=True" to return complete lists of duplicate or missing query terms.')
             return out
 
 
@@ -986,13 +939,9 @@ def get_async_client(
                 else:
                     raise RuntimeError("Biothing_type in metadata url is not unique.")
             if not isinstance(biothing_type, str):
-                raise RuntimeError(
-                    "Biothing_type in metadata url is not a valid string."
-                )
+                raise RuntimeError("Biothing_type in metadata url is not a valid string.")
         except httpx.RequestError as request_error:
-            raise RuntimeError(
-                "Cannot access metadata url to determine biothing_type."
-            ) from request_error
+            raise RuntimeError("Cannot access metadata url to determine biothing_type.") from request_error
     else:
         biothing_type = biothing_type.lower()
     if biothing_type not in ASYNC_CLIENT_SETTINGS and not kwargs.get("url", False):
@@ -1002,9 +951,7 @@ def get_async_client(
     _settings = (
         ASYNC_CLIENT_SETTINGS[biothing_type]
         if biothing_type in ASYNC_CLIENT_SETTINGS
-        else generate_async_settings(
-            biothing_type, cast(Optional[str], kwargs.get("url"))
-        )
+        else generate_async_settings(biothing_type, cast(Optional[str], kwargs.get("url")))
     )
     _class = type(
         _settings["class_name"],
@@ -1018,9 +965,7 @@ def get_async_client(
                 target_attr,
                 copy_func(getattr(_class, src_attr), name=target_attr),
             )
-    for _name, _docstring in (
-        _settings["class_kwargs"].get("_docstring_obj", {}).items()
-    ):
+    for _name, _docstring in _settings["class_kwargs"].get("_docstring_obj", {}).items():
         _func = getattr(_class, _name, None)
         if _func:
             try:
@@ -1135,8 +1080,7 @@ def generate_async_settings(biothing_type: str, url: Optional[str]) -> ClientSet
     _aliases.update(
         {
             "_getannotation": "get" + biothing_type.lower(),
-            "_getannotations": "get"
-            + _pluralize(biothing_type.lower(), optional=False),
+            "_getannotations": "get" + _pluralize(biothing_type.lower(), optional=False),
         }
     )
     return {

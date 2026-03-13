@@ -13,7 +13,6 @@ from typing import (
 )
 import logging
 
-
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
 
@@ -38,15 +37,11 @@ def list_itemcnt(li: Iterable[T]) -> List[Tuple[T, int]]:
 
 
 @overload
-def iter_n(
-    iterable: Iterable[T], n: int, with_cnt: Literal[False] = False
-) -> Iterator[Tuple[T, ...]]: ...
+def iter_n(iterable: Iterable[T], n: int, with_cnt: Literal[False] = False) -> Iterator[Tuple[T, ...]]: ...
 
 
 @overload
-def iter_n(
-    iterable: Iterable[T], n: int, with_cnt: Literal[True]
-) -> Iterator[Tuple[Tuple[T, ...], int]]: ...
+def iter_n(iterable: Iterable[T], n: int, with_cnt: Literal[True]) -> Iterator[Tuple[Tuple[T, ...], int]]: ...
 
 
 def iter_n(
@@ -69,9 +64,7 @@ def iter_n(
             yield chunk
 
 
-def concatenate_list(
-    sequence: Iterable[Any], sep: str = ",", quoted: bool = True
-) -> Any:
+def concatenate_list(sequence: Iterable[Any], sep: str = ",", quoted: bool = True) -> Any:
     """
     Ingests an iterable sequence and combines all elements into a string
 
@@ -89,9 +82,7 @@ def concatenate_list(
         else:
             string_transform = sep.join(["{}".format(safe_str(x)) for x in sequence])
     elif isinstance(sequence, str):
-        logger.debug(
-            "Input sequence provided is already in string format. No operation performed"
-        )
+        logger.debug("Input sequence provided is already in string format. No operation performed")
         string_transform = sequence
     else:
         logger.warning(

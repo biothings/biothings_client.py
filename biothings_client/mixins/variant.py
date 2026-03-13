@@ -38,9 +38,7 @@ class MyVariantClientMixin:
                     yield self.format_hgvs(parts[0], parts[1], parts[3], alt)
 
     @staticmethod
-    def _normalized_vcf(
-        chrom: str, pos: Union[str, int], ref: str, alt: str
-    ) -> Tuple[str, int, str, str]:
+    def _normalized_vcf(chrom: str, pos: Union[str, int], ref: str, alt: str) -> Tuple[str, int, str, str]:
         """
         If both ref/alt are > 1 base, and there are overlapping from the left,
         we need to trim off the overlapping bases.
@@ -62,9 +60,7 @@ class MyVariantClientMixin:
         # something is wrong with this VCF record
         # assert not (_ref is None and _alt is None)
         if _ref is None and _alt is None:
-            raise ValueError(
-                '"ref" and "alt" cannot be the same: {}'.format((chrom, pos, ref, alt))
-            )
+            raise ValueError('"ref" and "alt" cannot be the same: {}'.format((chrom, pos, ref, alt)))
 
         _pos = int(pos)
         if _ref is None or _alt is None:
@@ -80,9 +76,7 @@ class MyVariantClientMixin:
 
         return (chrom, _pos, _ref, _alt)
 
-    def format_hgvs(
-        self, chrom: Union[str, int], pos: Union[str, int], ref: str, alt: str
-    ) -> str:
+    def format_hgvs(self, chrom: Union[str, int], pos: Union[str, int], ref: str, alt: str) -> str:
         """
         get a valid hgvs name from VCF-style "chrom, pos, ref, alt" data.
 
@@ -129,7 +123,5 @@ class MyVariantClientMixin:
                 end = int(pos) + len(ref) - 1
                 hgvs = "chr{0}:g.{1}_{2}delins{3}".format(chrom, pos, end, alt)
         else:
-            raise ValueError(
-                "Cannot convert {} into HGVS id.".format((chrom, pos, ref, alt))
-            )
+            raise ValueError("Cannot convert {} into HGVS id.".format((chrom, pos, ref, alt)))
         return hgvs

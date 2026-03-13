@@ -11,7 +11,6 @@ from typing import (
     Union,
 )
 
-
 Document = Dict[str, Any]
 JoinMap = Dict[str, List[int]]
 JoinedDocsMap = Dict[str, List[Document]]
@@ -20,9 +19,7 @@ JoinedDocsMap = Dict[str, List[Document]]
 class QueryClient(Protocol):
     _entity: str
 
-    def query(
-        self, query: str, fetch_all: bool = True, **kwargs: Any
-    ) -> Iterable[Document]: ...
+    def query(self, query: str, fetch_all: bool = True, **kwargs: Any) -> Iterable[Document]: ...
 
 
 def get_dotfield(d: Any, df: str) -> List[Any]:
@@ -65,11 +62,7 @@ def unordered_chunk_iterator(
         query_kwargs = chunk_size
         chunk_size = 100
     query_kwargs = query_kwargs or {}
-    if (
-        query_kwargs.get("fields", None)
-        and query_kwargs["fields"] != "all"
-        and join_field != "_id"
-    ):
+    if query_kwargs.get("fields", None) and query_kwargs["fields"] != "all" and join_field != "_id":
         query_kwargs["fields"] = query_kwargs["fields"].rstrip(", ") + "," + join_field
     for doc in client.query(query, fetch_all=True, **query_kwargs):
         for doc_join_val in get_dotfield(doc, join_field):
@@ -98,37 +91,19 @@ def join(
     ret_chunk: List[Document] = []
     e1_kwargs = e1_kwargs or {}
     e2_kwargs = e2_kwargs or {}
-    for outer_doc_chunk, outer_join_val_dict in unordered_chunk_iterator(
-        e1_client, e1_query, e1_join_field, e1_kwargs
-    ):
+    for outer_doc_chunk, outer_join_val_dict in unordered_chunk_iterator(e1_client, e1_query, e1_join_field, e1_kwargs):
         if outer_doc_chunk:
-            inner_query_string = " OR ".join(
-                ["{}:{}".format(e2_join_field, x) for x in outer_join_val_dict.keys()]
-            )
+            inner_query_string = " OR ".join(["{}:{}".format(e2_join_field, x) for x in outer_join_val_dict.keys()])
             if e2_query != "__all__":
-                inner_query_string = (
-                    "((" + inner_query_string + ") AND (" + e2_query + "))"
-                )
-            if (
-                e2_kwargs.get("fields", None)
-                and e2_kwargs["fields"] != "all"
-                and e2_join_field != "_id"
-            ):
-                e2_kwargs["fields"] = (
-                    e2_kwargs["fields"].rstrip(", ") + "," + e2_join_field
-                )
+                inner_query_string = "((" + inner_query_string + ") AND (" + e2_query + "))"
+            if e2_kwargs.get("fields", None) and e2_kwargs["fields"] != "all" and e2_join_field != "_id":
+                e2_kwargs["fields"] = e2_kwargs["fields"].rstrip(", ") + "," + e2_join_field
             e2_val_join_dict: JoinedDocsMap = {}
-            for inner_doc in e2_client.query(
-                inner_query_string, fetch_all=True, **e2_kwargs
-            ):
+            for inner_doc in e2_client.query(inner_query_string, fetch_all=True, **e2_kwargs):
                 for doc_join_val in get_dotfield(inner_doc, e2_join_field):
-                    e2_val_join_dict.setdefault(str(doc_join_val).lower(), []).append(
-                        inner_doc
-                    )
+                    e2_val_join_dict.setdefault(str(doc_join_val).lower(), []).append(inner_doc)
             # merge the docs for this chunk
-            chunk_intersection = set(list(e2_val_join_dict.keys())).intersection(
-                set(list(outer_join_val_dict.keys()))
-            )
+            chunk_intersection = set(list(e2_val_join_dict.keys())).intersection(set(list(outer_join_val_dict.keys())))
             if len(chunk_intersection) > 0:
                 for merge_join_field in set(list(e2_val_join_dict.keys())).intersection(
                     set(list(outer_join_val_dict.keys()))
@@ -137,9 +112,7 @@ def join(
                         outer_doc_chunk[index].setdefault(e2_client._entity, []).extend(
                             e2_val_join_dict[merge_join_field]
                         )
-                for p in {
-                    p for v in chunk_intersection for p in outer_join_val_dict[v]
-                }:
+                for p in {p for v in chunk_intersection for p in outer_join_val_dict[v]}:
                     ret_chunk.append(outer_doc_chunk[p])
                     if len(ret_chunk) == size:
                         yield ret_chunk

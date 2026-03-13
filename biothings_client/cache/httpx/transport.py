@@ -1,7 +1,6 @@
 import httpx
 from typing import Optional
 
-
 DEFAULT_CACHE_TIMEOUT: int = 7 * 24 * 60 * 60
 
 
@@ -22,9 +21,7 @@ class ForcedCacheTransport(httpx.HTTPTransport):
 
         # Force the header to be cacheable for 1 week
         # This overrides whatever the server said (e.g. no-store)
-        response.headers["Cache-Control"] = (
-            f"public, max-age={self.cache_timeout_seconds}"
-        )
+        response.headers["Cache-Control"] = f"public, max-age={self.cache_timeout_seconds}"
 
         # Remove 'Expires' or 'Pragma' if they exist to avoid conflicts
         response.headers.pop("Pragma", None)
@@ -50,9 +47,7 @@ class ForcedCacheAsyncTransport(httpx.AsyncHTTPTransport):
 
         # Force the header to be cacheable for 1 week
         # This overrides whatever the server said (e.g. no-store)
-        response.headers["Cache-Control"] = (
-            f"public, max-age={self.cache_timeout_seconds}"
-        )
+        response.headers["Cache-Control"] = f"public, max-age={self.cache_timeout_seconds}"
 
         # Remove 'Expires' or 'Pragma' if they exist to avoid conflicts
         response.headers.pop("Pragma", None)

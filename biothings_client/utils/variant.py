@@ -1,4 +1,6 @@
-MYVARIANT_TOP_LEVEL_JSONLD_URIS: list[str] = [
+from typing import List
+
+MYVARIANT_TOP_LEVEL_JSONLD_URIS: List[str] = [
     "http://schema.myvariant.info/datasource/cadd",
     "http://schema.myvariant.info/datasource/clinvar",
     "http://schema.myvariant.info/datasource/dbnsfp",

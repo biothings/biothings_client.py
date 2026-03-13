@@ -9,10 +9,10 @@ also indicating the purposes of the collection of functions in the
 module
 """
 
-from typing import Any, Sequence, Union
+from typing import Any, List, Sequence, Union
 
 
-def alwayslist(value: Union[Any, Sequence[Any]]) -> Union[list[Any], Sequence[Any]]:
+def alwayslist(value: Union[Any, Sequence[Any]]) -> Union[List[Any], Sequence[Any]]:
     """
     Simple transformation function that ensures the output is an iterable.
 

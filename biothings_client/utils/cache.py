@@ -2,7 +2,6 @@ import io
 import logging
 from typing import Any, Callable, Tuple, TypeVar
 
-
 T = TypeVar("T")
 
 

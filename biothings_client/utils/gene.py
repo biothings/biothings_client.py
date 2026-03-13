@@ -7,9 +7,7 @@ from biothings_client import get_client
 
 
 class _GeneClient(Protocol):
-    def getgenes(
-        self, gene_list: Iterable[Union[str, int]], **kwargs: Any
-    ) -> List[Dict[str, Any]]: ...
+    def getgenes(self, gene_list: Iterable[Union[str, int]], **kwargs: Any) -> List[Dict[str, Any]]: ...
 
 
 def get_homologs(
@@ -31,10 +29,7 @@ def get_homologs(
             if not clean_species or taxid in clean_species:
                 initial[gene["_id"]].setdefault(taxid, []).append(geneid)
                 qset.add(geneid)
-    gene_dict = {
-        g["_id"]: g
-        for g in gene_client.getgenes(iter(qset), fields=fields, species="all")
-    }
+    gene_dict = {g["_id"]: g for g in gene_client.getgenes(iter(qset), fields=fields, species="all")}
 
     ret: List[Dict[str, Any]] = []
     for geneid, homolog_dict in initial.items():

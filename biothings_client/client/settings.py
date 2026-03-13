@@ -10,7 +10,6 @@ from biothings_client.docstring.gene import DOCSTRING as GENE_DOCSTRING
 from biothings_client.docstring.variant import DOCSTRING as VARIANT_DOCSTRING
 from biothings_client.utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 
-
 FunctionAliases = Dict[str, str]
 DocstringMap = Dict[str, str]
 
@@ -62,22 +61,16 @@ COMMON_ALIASES: FunctionAliases = {
 MYGENE_ALIASES = copy(COMMON_ALIASES)
 MYGENE_ALIASES.update({"_getannotation": "getgene", "_getannotations": "getgenes"})
 MYVARIANT_ALIASES = copy(COMMON_ALIASES)
-MYVARIANT_ALIASES.update(
-    {"_getannotation": "getvariant", "_getannotations": "getvariants"}
-)
+MYVARIANT_ALIASES.update({"_getannotation": "getvariant", "_getannotations": "getvariants"})
 MYCHEM_ALIASES = copy(COMMON_ALIASES)
 MYCHEM_ALIASES.update({"_getannotation": "getchem", "_getannotations": "getchems"})
 MYCHEM_ALIASES.update({"getchem": "getdrug", "getchems": "getdrugs"})
 MYTAXON_ALIASES = copy(COMMON_ALIASES)
 MYTAXON_ALIASES.update({"_getannotation": "gettaxon", "_getannotations": "gettaxa"})
 MYDISEASE_ALIASES = copy(COMMON_ALIASES)
-MYDISEASE_ALIASES.update(
-    {"_getannotation": "getdisease", "_getannotations": "getdiseases"}
-)
+MYDISEASE_ALIASES.update({"_getannotation": "getdisease", "_getannotations": "getdiseases"})
 MYGENESET_ALIASES = copy(COMMON_ALIASES)
-MYGENESET_ALIASES.update(
-    {"_getannotation": "getgeneset", "_getannotations": "getgenesets"}
-)
+MYGENESET_ALIASES.update({"_getannotation": "getgeneset", "_getannotations": "getgenesets"})
 
 
 # ***********************************************

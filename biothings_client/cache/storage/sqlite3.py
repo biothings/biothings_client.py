@@ -51,9 +51,7 @@ if _CACHING:
                 cache_entries_table = "entries"
                 connection = self._ensure_connection()
                 cursor = connection.cursor()
-                entry_identifiers = cursor.execute(
-                    f"SELECT id FROM {cache_entries_table}"
-                )
+                entry_identifiers = cursor.execute(f"SELECT id FROM {cache_entries_table}")
             return entry_identifiers
 
         def rebuild_cache_database(self) -> None:
@@ -112,9 +110,7 @@ if _CACHING:
                 cache_entries_table = "entries"
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
-                entry_identifiers = await cursor.execute(
-                    f"SELECT id FROM {cache_entries_table}"
-                )
+                entry_identifiers = await cursor.execute(f"SELECT id FROM {cache_entries_table}")
             return entry_identifiers
 
         async def rebuild_cache_database(self) -> None:
@@ -133,9 +129,7 @@ if _CACHING:
             async with self._lock:
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
-                await cursor.execute(
-                    "SELECT data FROM entries WHERE id = ?", (id.bytes,)
-                )
+                await cursor.execute("SELECT data FROM entries WHERE id = ?", (id.bytes,))
                 result = await cursor.fetchone()
 
                 if result is not None:

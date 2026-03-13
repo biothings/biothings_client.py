@@ -1,10 +1,10 @@
 """Custom exceptions for the clients (async and sync)."""
 
+from typing import List
+
 
 class OptionalDependencyImportError(ImportError):
-    def __init__(
-        self, optional_function_access: str, optional_group: str, libraries: list[str]
-    ) -> None:
+    def __init__(self, optional_function_access: str, optional_group: str, libraries: List[str]) -> None:
         pip_command = f"`pip install biothings_client[{optional_group}]`"
         message = (
             f"To {optional_function_access} requires the {libraries} library(ies). "

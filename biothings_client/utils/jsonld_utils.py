@@ -5,20 +5,14 @@ from pyld import jsonld  # type: ignore
 
 def nquads_transform(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     t = jsonld.JsonLdProcessor()
-    nquads = t.parse_nquads(jsonld.to_rdf(doc, {"format": "application/nquads"}))[
-        "@default"
-    ]
+    nquads = t.parse_nquads(jsonld.to_rdf(doc, {"format": "application/nquads"}))["@default"]
 
     return nquads
 
 
-def get_value_and_node(
-    nquads: Iterable[Dict[str, Any]], uri: str
-) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+def get_value_and_node(nquads: Iterable[Dict[str, Any]], uri: str) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
     pairs: List[Tuple[str, str]] = [
-        (item["subject"]["value"], item["object"]["value"])
-        for item in nquads
-        if item["predicate"]["value"] == uri
+        (item["subject"]["value"], item["object"]["value"]) for item in nquads if item["predicate"]["value"] == uri
     ]
     if not pairs:
         return ((), ())
@@ -35,9 +29,7 @@ def find_top_level_uri(
             if item["predicate"]["value"] in top_level_uris:
                 uri = item["predicate"]["value"]
             elif item["predicate"]["value"] not in top_level_uris:
-                uri = find_top_level_uri(
-                    item["subject"]["value"], nquads, top_level_uris
-                )
+                uri = find_top_level_uri(item["subject"]["value"], nquads, top_level_uris)
             else:  # this can never happen?
                 print("couldn't find top level uri")
     return uri
@@ -46,11 +38,8 @@ def find_top_level_uri(
 def fetch_value_source(client: Any, _id: Any, uri: str) -> List[str]:
     doc = client._getannotation(_id, jsonld=True)
     nquads = nquads_transform(doc)
-    (node, value) = get_value_and_node(nquads, uri)
-    source = [
-        find_top_level_uri(item, nquads, client._top_level_jsonld_uris) or ""
-        for item in node
-    ]
+    node, value = get_value_and_node(nquads, uri)
+    source = [find_top_level_uri(item, nquads, client._top_level_jsonld_uris) or "" for item in node]
     result = [i + " " + j for i, j in zip(value, source)]
     return result
 
@@ -68,9 +57,7 @@ def get_uri_list(context: Dict[str, Dict[str, Dict[str, str]]]) -> Dict[str, Lis
     return uri_path_dict
 
 
-def query_by_uri(
-    client: Any, uri: str, value: str, context: Dict[str, Dict[str, Dict[str, str]]]
-) -> Any:
+def query_by_uri(client: Any, uri: str, value: str, context: Dict[str, Dict[str, Dict[str, str]]]) -> Any:
     context.pop("root")
     query_string = ""
     path_list = get_uri_list(context)[uri]
