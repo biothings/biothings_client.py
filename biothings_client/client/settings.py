@@ -3,7 +3,7 @@ Settings and configuration values for the different biothings-clients
 """
 
 from copy import copy
-from typing import Any, Dict, List, Type, TypedDict
+from typing import Any, Dict, List, Type
 
 from biothings_client.docstring.chem import DOCSTRING as CHEM_DOCSTRING
 from biothings_client.docstring.gene import DOCSTRING as GENE_DOCSTRING
@@ -14,7 +14,7 @@ FunctionAliases = Dict[str, str]
 DocstringMap = Dict[str, str]
 
 
-class ClientClassKwargs(TypedDict, total=False):
+class ClientClassKwargs(Dict):
     _annotation_endpoint: str
     _default_cache_file: str
     _default_url: str
@@ -32,7 +32,7 @@ class ClientClassKwargs(TypedDict, total=False):
     _top_level_jsonld_uris: List[str]
 
 
-class ClientSettings(TypedDict):
+class ClientSettings(Dict):
     class_name: str
     class_kwargs: ClientClassKwargs
     attr_aliases: FunctionAliases
