@@ -63,9 +63,6 @@ if _CACHING:
     import hishel  # type: ignore
     import hishel.httpx  # type: ignore
     from biothings_client.cache.storage.sqlite3 import BiothingsClientSyncSqliteStorage
-else:
-    hishel: Any = None  # type: ignore[no-redef]
-    BiothingsClientSyncSqliteStorage: Any = None  # type: ignore[no-redef]
 
     # IMPORTANT
     # In order to cache our POST requests we have to override hishel's
@@ -76,8 +73,10 @@ else:
     # >>> SAFE_METHODS = frozenset({'TRACE', 'HEAD', 'GET', 'OPTIONS'})
     # We also have to create a new instance due to the frozenset usage
     OVERRIDE_SAFE_METHODS = frozenset({"TRACE", "HEAD", "GET", "OPTIONS", "POST"})
-    if hishel is not None:
-        hishel._core._spec.SAFE_METHODS = OVERRIDE_SAFE_METHODS  # type: ignore[attr-defined]
+    hishel._core._spec.SAFE_METHODS = OVERRIDE_SAFE_METHODS  # type: ignore[attr-defined]
+else:
+    hishel: Any = None  # type: ignore[no-redef]
+    BiothingsClientSyncSqliteStorage: Any = None  # type: ignore[no-redef]
 
 
 logger = logging.getLogger("biothings.client")
