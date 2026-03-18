@@ -18,7 +18,6 @@ from biothings_client.client.definitions import (
     MyVariantInfo,
 )
 
-
 # --- CLIENTS ---
 # sync:
 # >>> MyGeneInfo client
