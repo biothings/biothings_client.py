@@ -15,7 +15,7 @@ import sys
 
 if sys.version_info >= (3, 8):
     from typing import Literal
-elif sys.version_info <= (3, 7):
+elif sys.version_info < (3, 8):
     from typing_extensions import Literal
 
 
