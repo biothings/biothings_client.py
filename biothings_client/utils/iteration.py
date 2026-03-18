@@ -11,9 +11,13 @@ from typing import (
     overload,
 )
 import logging
+import sys
 
-# enables python 3.7 support for backported Literal support
-from typing_extensions import Literal
+if sys.version_info >= (3, 8):
+    from typing import Literal
+elif sys.version_info <= (3, 7):
+    from typing_extensions import Literal
+
 
 logger = logging.getLogger("biothings.client")
 logger.setLevel(logging.INFO)
