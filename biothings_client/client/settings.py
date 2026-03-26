@@ -142,7 +142,7 @@ MYTAXON_KWARGS.update(
     {
         "_annotation_endpoint": "/taxon/",
         "_default_cache_file": "mytaxon_cache",
-        "_default_url": "https://t.biothings.io/v1",
+        "_default_url": "https://mytaxon.info/v1",
         "_entity": "taxon",
         "_optionally_plural_object_type": "taxon/taxa",
     }
