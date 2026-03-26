@@ -1,7 +1,31 @@
-def get_dotfield(d, df):
-    s = set()
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Protocol,
+    Set,
+    Tuple,
+    Union,
+)
 
-    def _helper(_d, _k):
+Document = Dict[str, Any]
+JoinMap = Dict[str, List[int]]
+JoinedDocsMap = Dict[str, List[Document]]
+
+
+class QueryClient(Protocol):
+    _entity: str
+
+    def query(self, query: str, fetch_all: bool = True, **kwargs: Any) -> Iterable[Document]: ...
+
+
+def get_dotfield(d: Any, df: str) -> List[Any]:
+    s: Set[Any] = set()
+
+    def _helper(_d: Any, _k: str) -> None:
         _f = _k.split(".")
         if len(_f) == 0:
             return
@@ -25,9 +49,18 @@ def get_dotfield(d, df):
     return list(s)
 
 
-def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kwargs=None):
-    chunk = []
-    join_val_dict = {}
+def unordered_chunk_iterator(
+    client: QueryClient,
+    query: str,
+    join_field: str,
+    chunk_size: Union[int, Dict[str, Any]] = 100,
+    query_kwargs: Optional[Dict[str, Any]] = None,
+) -> Iterator[Tuple[List[Document], JoinMap]]:
+    chunk: List[Document] = []
+    join_val_dict: JoinMap = {}
+    if isinstance(chunk_size, dict):
+        query_kwargs = chunk_size
+        chunk_size = 100
     query_kwargs = query_kwargs or {}
     if query_kwargs.get("fields", None) and query_kwargs["fields"] != "all" and join_field != "_id":
         query_kwargs["fields"] = query_kwargs["fields"].rstrip(", ") + "," + join_field
@@ -44,18 +77,18 @@ def unordered_chunk_iterator(client, query, join_field, chunk_size=100, query_kw
 
 
 def join(
-    e1_client,
-    e2_client,
-    size=10,
-    e1_query="__all__",
-    e2_query="__all__",
-    e1_join_field="_id",
-    e2_join_field="_id",
-    e1_kwargs=None,
-    e2_kwargs=None,
-):
+    e1_client: QueryClient,
+    e2_client: QueryClient,
+    size: int = 10,
+    e1_query: str = "__all__",
+    e2_query: str = "__all__",
+    e1_join_field: str = "_id",
+    e2_join_field: str = "_id",
+    e1_kwargs: Optional[Dict[str, Any]] = None,
+    e2_kwargs: Optional[Dict[str, Any]] = None,
+) -> Iterator[List[Document]]:
     """implements a join with e1 being the outer loop and e2 being the inner loop"""
-    ret_chunk = []
+    ret_chunk: List[Document] = []
     e1_kwargs = e1_kwargs or {}
     e2_kwargs = e2_kwargs or {}
     for outer_doc_chunk, outer_join_val_dict in unordered_chunk_iterator(e1_client, e1_query, e1_join_field, e1_kwargs):
@@ -65,7 +98,7 @@ def join(
                 inner_query_string = "((" + inner_query_string + ") AND (" + e2_query + "))"
             if e2_kwargs.get("fields", None) and e2_kwargs["fields"] != "all" and e2_join_field != "_id":
                 e2_kwargs["fields"] = e2_kwargs["fields"].rstrip(", ") + "," + e2_join_field
-            e2_val_join_dict = {}
+            e2_val_join_dict: JoinedDocsMap = {}
             for inner_doc in e2_client.query(inner_query_string, fetch_all=True, **e2_kwargs):
                 for doc_join_val in get_dotfield(inner_doc, e2_join_field):
                     e2_val_join_dict.setdefault(str(doc_join_val).lower(), []).append(inner_doc)

@@ -3,11 +3,41 @@ Settings and configuration values for the different biothings-clients
 """
 
 from copy import copy
+from typing import Any, Dict, List, Type
 
 from biothings_client.docstring.chem import DOCSTRING as CHEM_DOCSTRING
 from biothings_client.docstring.gene import DOCSTRING as GENE_DOCSTRING
 from biothings_client.docstring.variant import DOCSTRING as VARIANT_DOCSTRING
 from biothings_client.utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
+
+FunctionAliases = Dict[str, str]
+DocstringMap = Dict[str, str]
+
+
+class ClientClassKwargs(Dict):
+    _annotation_endpoint: str
+    _default_cache_file: str
+    _default_url: str
+    _delay: int
+    _docstring_obj: DocstringMap
+    _entity: str
+    _max_query: int
+    _metadata_endpoint: str
+    _metadata_fields_endpoint: str
+    _optionally_plural_object_type: str
+    _pkg_user_agent_header: str
+    _query_endpoint: str
+    _scroll_size: int
+    _step: int
+    _top_level_jsonld_uris: List[str]
+
+
+class ClientSettings(Dict):
+    class_name: str
+    class_kwargs: ClientClassKwargs
+    attr_aliases: FunctionAliases
+    base_class: Type[Any]
+    mixins: List[Type[Any]]
 
 
 # ***********************************************
@@ -17,7 +47,7 @@ from biothings_client.utils.variant import MYVARIANT_TOP_LEVEL_JSONLD_URIS
 # *  is aliased as "value" in the returned client class.
 # ***********************************************
 # Function aliases common to all clients
-COMMON_ALIASES = {
+COMMON_ALIASES: FunctionAliases = {
     "_clear_cache": "clear_cache",
     "_get_fields": "get_fields",
     "_metadata": "metadata",
@@ -50,7 +80,7 @@ MYGENESET_ALIASES.update({"_getannotation": "getgeneset", "_getannotations": "ge
 # *  on class creation.
 # ***********************************************
 # Object creation kwargs common to all clients
-COMMON_KWARGS = {
+COMMON_KWARGS: ClientClassKwargs = {
     "_delay": 1,
     "_docstring_obj": {},
     "_max_query": 1000,
@@ -63,7 +93,7 @@ COMMON_KWARGS = {
     "_top_level_jsonld_uris": [],
 }
 # project specific kwargs
-MYGENE_KWARGS = copy(COMMON_KWARGS)
+MYGENE_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYGENE_KWARGS.update(
     {
         "_annotation_endpoint": "/gene/",
@@ -74,7 +104,7 @@ MYGENE_KWARGS.update(
         "_optionally_plural_object_type": "gene(s)",
     }
 )
-MYVARIANT_KWARGS = copy(COMMON_KWARGS)
+MYVARIANT_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYVARIANT_KWARGS.update(
     {
         "_annotation_endpoint": "/variant/",
@@ -86,7 +116,7 @@ MYVARIANT_KWARGS.update(
         "_top_level_jsonld_uris": MYVARIANT_TOP_LEVEL_JSONLD_URIS,
     }
 )
-MYCHEM_KWARGS = copy(COMMON_KWARGS)
+MYCHEM_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYCHEM_KWARGS.update(
     {
         "_annotation_endpoint": "/chem/",
@@ -97,7 +127,7 @@ MYCHEM_KWARGS.update(
         "_optionally_plural_object_type": "chem(s)",
     }
 )
-MYDISEASE_KWARGS = copy(COMMON_KWARGS)
+MYDISEASE_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYDISEASE_KWARGS.update(
     {
         "_annotation_endpoint": "/disease/",
@@ -107,7 +137,7 @@ MYDISEASE_KWARGS.update(
         "_optionally_plural_object_type": "disease(s)",
     }
 )
-MYTAXON_KWARGS = copy(COMMON_KWARGS)
+MYTAXON_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYTAXON_KWARGS.update(
     {
         "_annotation_endpoint": "/taxon/",
@@ -117,7 +147,7 @@ MYTAXON_KWARGS.update(
         "_optionally_plural_object_type": "taxon/taxa",
     }
 )
-MYGENESET_KWARGS = copy(COMMON_KWARGS)
+MYGENESET_KWARGS: ClientClassKwargs = copy(COMMON_KWARGS)
 MYGENESET_KWARGS.update(
     {
         "_annotation_endpoint": "/geneset/",

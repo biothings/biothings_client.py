@@ -1,9 +1,12 @@
+from typing import Iterator, TextIO, Tuple, Union
+
+
 class MyVariantClientMixin:
     """
     Adding some utility methods specific to MyVariant.info API.
     """
 
-    def get_hgvs_from_vcf(self, input_vcf):
+    def get_hgvs_from_vcf(self, input_vcf: Union[str, TextIO]) -> Iterator[str]:
         """
         From the input VCF file (filename or file handle), return a generator
         of genomic based HGVS ids.
@@ -19,23 +22,23 @@ class MyVariantClientMixin:
         """
         if isinstance(input_vcf, str):
             # if input_vcf is a string, open it as a file
-            in_f = open(input_vcf)
+            in_f: TextIO = open(input_vcf)
         else:
             # otherwise it should be a file handle already
             in_f = input_vcf
         for row in in_f:
             if row[0] == "#":
                 continue
-            row = row.strip()
-            if row:
-                row = row.split("\t")
-                if row[0].lower().startswith("chr"):
-                    row[0] = row[0][3:]
-                for alt in row[4].split(","):
-                    yield self.format_hgvs(row[0], row[1], row[3], alt)
+            line = row.strip()
+            if line:
+                parts = line.split("\t")
+                if parts[0].lower().startswith("chr"):
+                    parts[0] = parts[0][3:]
+                for alt in parts[4].split(","):
+                    yield self.format_hgvs(parts[0], parts[1], parts[3], alt)
 
     @staticmethod
-    def _normalized_vcf(chrom, pos, ref, alt):
+    def _normalized_vcf(chrom: str, pos: Union[str, int], ref: str, alt: str) -> Tuple[str, int, str, str]:
         """
         If both ref/alt are > 1 base, and there are overlapping from the left,
         we need to trim off the overlapping bases.
@@ -43,6 +46,9 @@ class MyVariantClientMixin:
         ref/alt should be normalized as TTTT/T: [TC/TG --> C/G]
         and pos should be fixed as well.
         """
+        i: int = 0
+        _ref: Union[str, None] = None
+        _alt: Union[str, None] = None
         for i in range(max(len(ref), len(alt))):
             _ref = ref[i] if i < len(ref) else None
             _alt = alt[i] if i < len(alt) else None
@@ -70,7 +76,7 @@ class MyVariantClientMixin:
 
         return (chrom, _pos, _ref, _alt)
 
-    def format_hgvs(self, chrom, pos, ref, alt):
+    def format_hgvs(self, chrom: Union[str, int], pos: Union[str, int], ref: str, alt: str) -> str:
         """
         get a valid hgvs name from VCF-style "chrom, pos, ref, alt" data.
 

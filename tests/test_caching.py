@@ -11,7 +11,6 @@ import biothings_client
 from biothings_client.client.asynchronous import get_async_client
 from biothings_client.client.base import get_client
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
