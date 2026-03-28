@@ -98,6 +98,7 @@ class AsyncBiothingClient:
     _scroll_size: int
     _step: int
     _top_level_jsonld_uris: List[str]
+    clear_cache: Callable[..., Awaitable[None]]
     delete_cache: Callable[..., Awaitable[None]]
     set_caching: Callable[..., Awaitable[None]]
     stop_caching: Callable[..., Awaitable[None]]
