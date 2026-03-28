@@ -98,6 +98,7 @@ class AsyncBiothingClient:
     _scroll_size: int
     _step: int
     _top_level_jsonld_uris: List[str]
+    delete_cache: Callable[..., Awaitable[None]]
     set_caching: Callable[..., Awaitable[None]]
     stop_caching: Callable[..., Awaitable[None]]
 
@@ -187,7 +188,7 @@ class AsyncBiothingClient:
         Outputs:
         :return: None
         """
-        if not self.http_client_setup:
+        if not self.http_cache_client_setup:
             assert hishel is not None
             assert BiothingsClientAsyncSqliteStorage is not None
             if cache_db is None:
@@ -514,6 +515,41 @@ class AsyncBiothingClient:
         else:
             caching_library_error = OptionalDependencyImportError(
                 optional_function_access="clear biothings-client cache",
+                optional_group="caching",
+                libraries=["anysqlite", "hishel"],
+            )
+            raise caching_library_error
+
+    async def _delete_cache(self) -> None:
+        """
+        Disable caching, close the storage connection, and delete the local cache database file.
+
+        If caching is not currently active but a cache file was previously created,
+        the file will still be removed.
+
+        Inputs:
+        :param None
+
+        Outputs:
+        :return: None
+        """
+        if _CACHING_NOT_SUPPORTED:
+            raise CachingNotSupportedError("Caching is only supported for Python 3.8+")
+
+        if _CACHING:
+            if self.cache_storage is not None:
+                cache_db = self.cache_storage.database_path
+                if self.caching_enabled:
+                    await self._stop_caching()
+                await self.cache_storage.close()
+                self.cache_storage = None
+                cache_db.unlink(missing_ok=True)
+                logger.info("Deleted cache file: %s", cache_db)
+            else:
+                logger.warning("No cache storage found. Skipping delete ...")
+        else:
+            caching_library_error = OptionalDependencyImportError(
+                optional_function_access="delete biothings-client cache",
                 optional_group="caching",
                 libraries=["anysqlite", "hishel"],
             )

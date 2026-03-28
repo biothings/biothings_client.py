@@ -3,8 +3,7 @@ Tests the client caching functionality
 """
 
 import logging
-from typing import Callable, Optional
-from pathlib import Path
+from typing import Callable
 
 import pytest
 
@@ -107,18 +106,11 @@ def test_sync_caching(method: str, client: str, function: str, function_argument
             assert all(hot_response.elapsed < cold_response.elapsed for cold_response in cold_responses)
 
     except Exception as gen_exc:
-        client_instance.clear_cache()
-        client_instance.stop_caching()
+        client_instance.delete_cache()
         logger.exception(gen_exc)
         raise gen_exc
     finally:
-        client_instance.clear_cache()
-        cache_db: Optional[Path] = client_instance.cache_storage.database_path if client_instance.cache_storage else None
-        if client_instance.cache_storage:
-            client_instance.cache_storage.close()
-        client_instance.stop_caching()
-        if cache_db:
-            cache_db.unlink(missing_ok=True)
+        client_instance.delete_cache()
 
 
 @pytest.mark.asyncio
@@ -213,18 +205,11 @@ async def test_async_caching(method: str, client: str, function: str, function_a
             assert all(hot_response.elapsed < cold_response.elapsed for cold_response in cold_responses)
 
     except Exception as gen_exc:
-        await client_instance.clear_cache()
-        await client_instance.stop_caching()
+        await client_instance.delete_cache()
         logger.exception(gen_exc)
         raise gen_exc
     finally:
-        await client_instance.clear_cache()
-        cache_db: Optional[Path] = client_instance.cache_storage.database_path if client_instance.cache_storage else None
-        if client_instance.cache_storage:
-            await client_instance.cache_storage.close()
-        await client_instance.stop_caching()
-        if cache_db:
-            cache_db.unlink(missing_ok=True)
+        await client_instance.delete_cache()
 
 
 @pytest.mark.skipif(not biothings_client._CACHING, reason="caching libraries not installed")
@@ -269,18 +254,11 @@ def test_cache_clearing(method: str, client: str, function: str, function_argume
         assert len(entries) == 0
 
     except Exception as gen_exc:
-        client_instance.clear_cache()
-        client_instance.stop_caching()
+        client_instance.delete_cache()
         logger.exception(gen_exc)
         raise gen_exc
     finally:
-        client_instance.clear_cache()
-        cache_db: Optional[Path] = client_instance.cache_storage.database_path if client_instance.cache_storage else None
-        if client_instance.cache_storage:
-            client_instance.cache_storage.close()
-        client_instance.stop_caching()
-        if cache_db:
-            cache_db.unlink(missing_ok=True)
+        client_instance.delete_cache()
 
 
 @pytest.mark.asyncio
@@ -329,15 +307,8 @@ async def test_async_cache_clearing(method: str, client: str, function: str, fun
         assert len(entries) == 0
 
     except Exception as gen_exc:
-        await client_instance.clear_cache()
-        await client_instance.stop_caching()
+        await client_instance.delete_cache()
         logger.exception(gen_exc)
         raise gen_exc
     finally:
-        await client_instance.clear_cache()
-        cache_db: Optional[Path] = client_instance.cache_storage.database_path if client_instance.cache_storage else None
-        if client_instance.cache_storage:
-            await client_instance.cache_storage.close()
-        await client_instance.stop_caching()
-        if cache_db:
-            cache_db.unlink(missing_ok=True)
+        await client_instance.delete_cache()

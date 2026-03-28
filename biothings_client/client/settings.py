@@ -49,6 +49,7 @@ class ClientSettings(Dict):
 # Function aliases common to all clients
 COMMON_ALIASES: FunctionAliases = {
     "_clear_cache": "clear_cache",
+    "_delete_cache": "delete_cache",
     "_get_fields": "get_fields",
     "_metadata": "metadata",
     "_query": "query",
