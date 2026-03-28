@@ -127,22 +127,6 @@ minversion = "6.2.5"
 asyncio_mode = "auto"
 pythonpath = ["."]
 
-
-# Options
-addopts = [
-    "-rA",
-    "-vv",
-    "--doctest-modules",
-    "--setup-show",
-    "--capture=no",
-    "--tb=line",
-    "--durations=0",
-    "--showlocals",
-    "--strict-markers",
-    "--color=yes",
-    "--code-highlight=yes"
-]
-
 # Path
 norecursedirs = [
     ".svn",
@@ -158,9 +142,24 @@ markers = [
     "unit",
 ]
 
+# Uncomment these options for verbose output:
+# addopts = [
+#     "-rA",
+#     "-vv",
+#     "--doctest-modules",
+#     "--setup-show",
+#     "--capture=no",
+#     "--tb=line",
+#     "--durations=0",
+#     "--showlocals",
+#     "--strict-markers",
+#     "--color=yes",
+#     "--code-highlight=yes"
+# ]
+
 # Logging
-log_level = "DEBUG"
-log_cli = true
-log_cli_level = "DEBUG"
-log_cli_format = "%(asctime)s [%(levelname)] %(message)s"
-log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+# log_level = "DEBUG"
+# log_cli = true
+# log_cli_level = "DEBUG"
+# log_cli_format = "%(asctime)s [%(levelname)] %(message)s"
+# log_cli_date_format = "%Y-%m-%d %H:%M:%S"
