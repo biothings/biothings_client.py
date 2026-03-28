@@ -2,59 +2,42 @@
 Asynchronous Python Client for generic Biothings API services
 """
 
-from copy import copy
-from pathlib import Path
-from typing import (
-    Any,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
-    cast,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
 import asyncio
 import logging
 import platform
 import warnings
-
+from copy import copy
+from pathlib import Path
+from typing import Any, AsyncGenerator, Awaitable, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union, cast
 
 import httpx
 
+from biothings_client.__version__ import __version__
+from biothings_client._dependencies import _CACHING, _CACHING_NOT_SUPPORTED, _PANDAS
+from biothings_client.cache.httpx.transport import ForcedCacheAsyncTransport
+from biothings_client.client.exceptions import CachingNotSupportedError, OptionalDependencyImportError
 from biothings_client.client.settings import (
-    ClientClassKwargs,
-    ClientSettings,
     COMMON_ALIASES,
     COMMON_KWARGS,
     MYCHEM_ALIASES,
     MYCHEM_KWARGS,
     MYDISEASE_ALIASES,
     MYDISEASE_KWARGS,
-    MYGENESET_ALIASES,
-    MYGENESET_KWARGS,
     MYGENE_ALIASES,
     MYGENE_KWARGS,
+    MYGENESET_ALIASES,
+    MYGENESET_KWARGS,
     MYTAXON_ALIASES,
     MYTAXON_KWARGS,
     MYVARIANT_ALIASES,
     MYVARIANT_KWARGS,
-)
-from biothings_client.__version__ import __version__
-from biothings_client._dependencies import _CACHING, _CACHING_NOT_SUPPORTED, _PANDAS
-from biothings_client.client.exceptions import (
-    CachingNotSupportedError,
-    OptionalDependencyImportError,
+    ClientClassKwargs,
+    ClientSettings,
 )
 from biothings_client.mixins.gene import MyGeneClientMixin
 from biothings_client.mixins.variant import MyVariantClientMixin
 from biothings_client.utils.copy import copy_func
 from biothings_client.utils.iteration import concatenate_list, iter_n, list_itemcnt
-from biothings_client.cache.httpx.transport import ForcedCacheAsyncTransport
 
 if _PANDAS:
     import pandas
@@ -64,6 +47,7 @@ else:
 if _CACHING:
     import hishel  # type: ignore
     import hishel.httpx  # type: ignore
+
     from biothings_client.cache.storage.sqlite3 import BiothingsClientAsyncSqliteStorage
 
     # IMPORTANT
