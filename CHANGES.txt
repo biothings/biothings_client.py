@@ -1,3 +1,7 @@
+v0.5.0 (2025/03/26)
+    Dropped support for Python 3.6 and added suport for Python up to 3.14
+    Added type hints to the entire code base
+
 v0.4.1 (2025/01/14)
     Fix a bug in downstream libraries expecting the alwayslist function
     Fix auto-discovery of network proxy settings for the HTTP client (thanks @mccauleyp)

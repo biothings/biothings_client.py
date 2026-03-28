@@ -15,9 +15,10 @@ authors = [
     {name = "Xinghua Zhou"},
     {name = "Everaldo Rodolpho", email="erodolpho@scripps.edu"},
     {name = "Johnathan Schaff", email = "jschaff@scripps.edu"},
+    {name = "Dylan Welzel", email = "dwelzel@scripps.edu"},
     {name = "Chunlei Wu", email = "cwu@scripps.edu"},
 ]
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 description = "Python Client for BioThings API services."
 readme = "README.rst"
 license = { text = "BSD-3-Clause" }
@@ -43,11 +44,11 @@ keywords = [
     "mychem.info",
     "mydisease.info",
     "mygeneset.info",
+    "mytaxon.info",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -70,11 +71,10 @@ classifiers = [
 dependencies = [
     "httpx>=0.25.0; python_version>='3.8'",
     "httpx>=0.24.0; python_version=='3.7'",
-    "httpx>=0.22.0; python_version=='3.6'",
     "importlib-metadata; python_version<='3.7'",
     "typing-extensions; python_version<='3.7'",
 ]
-version = "0.4.1"
+version = "0.5.0"
 
 [project.optional-dependencies]
 
@@ -84,15 +84,13 @@ caching = [
     "hishel[httpx]==1.1.8; python_version=='3.9'",
     "hishel[httpx]>=1.1.9; python_version>'3.9'",
 ]
-dataframe = ["pandas>=1.1.5"]   # the last version supports python 3.6
+dataframe = ["pandas>=1.2.0"]   # the last version supports python 3.7
 jsonld = ["PyLD>=0.7.2"]
 tests = [
     "pytest>=8.3.3; python_version>='3.8'",
     "pytest>=7.4.4; python_version=='3.7'",
-    "pytest>=7.0.1; python_version=='3.6'",
     "pytest-asyncio>=0.23.8; python_version>='3.8'",
     "pytest-asyncio>=0.21.2; python_version=='3.7'",
-    "pytest-asyncio>=0.16.0; python_version=='3.6'",
 ]
 
 
@@ -113,6 +111,15 @@ profile = "black"
 combine_as_imports = true
 line_length = 120
 src_paths = ["."]
+
+[tool.ruff]
+line-length = 120
+
+[tool.bandit]
+exclude_dirs = ["tests", "docs"]
+
+[tool.pyright]
+exclude = ["tests", "build", "dist", ".git", ".pytest_cache", ".mypy_cache", "**/__pycache__", "**/node_modules", "**/.venv", "**/.env", "**/.*"]
 
 # pytest configuration
 [tool.pytest.ini_options]

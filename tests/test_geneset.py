@@ -7,9 +7,8 @@ import types
 
 import pytest
 
-import biothings_client
-from biothings_client.utils.score import descore
 from biothings_client.client.definitions import MyGenesetInfo
+from biothings_client.utils.score import descore
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
