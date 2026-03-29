@@ -148,7 +148,7 @@ async def test_query_fetch_all(async_variant_client: AsyncMyVariantInfo):
     assert isinstance(qres_generator, types.AsyncGeneratorType)
 
     async_count = 0
-    async for async_res in qres_generator:
+    async for _ in qres_generator:
         async_count += 1
     assert total == async_count
 
