@@ -190,12 +190,12 @@ class AsyncBiothingClient:
         :return: None
         """
         if not self.http_cache_client_setup:
-            assert hishel is not None
-            assert BiothingsClientAsyncSqliteStorage is not None
+            assert hishel is not None  # noqa: S101
+            assert BiothingsClientAsyncSqliteStorage is not None  # noqa: S101
             if cache_db is None:
                 cache_db = self._default_cache_file
 
-            assert cache_db is not None
+            assert cache_db is not None  # noqa: S101
             cache_db = Path(cache_db).resolve().absolute()
             self.cache_storage = BiothingsClientAsyncSqliteStorage(database_path=cache_db)
 
@@ -265,7 +265,7 @@ class AsyncBiothingClient:
         Converts object to DataFrame (pandas)
         """
         if _PANDAS:
-            assert pandas is not None
+            assert pandas is not None  # noqa: S101
             if dataframe not in [1, 2]:
                 raise ValueError("dataframe must be either 1 (using json_normalize) or 2 (using DataFrame.from_dict")
 
@@ -301,7 +301,7 @@ class AsyncBiothingClient:
         Wrapper around the httpx.get method
         """
         await self._set_http_client()
-        assert self.http_client is not None
+        assert self.http_client is not None  # noqa: S101
         if params is None:
             params = {}
 
@@ -339,7 +339,7 @@ class AsyncBiothingClient:
         Wrapper around the httpx.post method
         """
         await self._set_http_client()
-        assert self.http_client is not None
+        assert self.http_client is not None  # noqa: S101
 
         if params is None:
             params = {}
@@ -905,7 +905,7 @@ class AsyncBiothingClient:
         li_dup_df = None
         li_missing_df = None
         if dataframe:
-            assert pandas is not None
+            assert pandas is not None  # noqa: S101
             out = await self._dataframe(out, dataframe, df_index=df_index)
             li_dup_df = pandas.DataFrame.from_records(li_dup, columns=["query", "duplicate hits"])
             li_missing_df = pandas.DataFrame(li_missing, columns=["query"])

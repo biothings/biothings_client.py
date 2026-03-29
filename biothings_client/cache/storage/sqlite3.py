@@ -75,9 +75,9 @@ if _CACHING:
 
                 if result is not None:
                     pair = unpack(result[0], kind="pair")
-                    assert pair is not None
-                    self._hard_delete_pair(pair, cursor)
-                    connection.commit()
+                    if pair is not None:
+                        self._hard_delete_pair(pair, cursor)
+                        connection.commit()
 
     class BiothingsClientAsyncSqliteStorage(hishel.AsyncSqliteStorage):
         """Overriden AsyncSqliteStorage instance for biothings-client."""
