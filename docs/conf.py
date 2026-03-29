@@ -52,7 +52,7 @@ master_doc = "index"
 # General information about the project.
 project = "biothings_client"
 author = "BioThings team"
-copyright = "2018-2025, A BioThings Project."
+copyright = "2018-2025, A BioThings Project."  # noqa: A001
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
