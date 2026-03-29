@@ -10,7 +10,7 @@ from typing import Any
 
 from biothings_client._dependencies import _CACHING
 
-if _CACHING:
+if _CACHING:  # noqa: MC0001
     import logging
     import uuid
 
@@ -134,6 +134,6 @@ if _CACHING:
 
                 if result is not None:
                     pair = unpack(result[0], kind="pair")
-                    assert pair is not None
-                    await self._hard_delete_pair(pair, cursor)
-                    await connection.commit()
+                    if pair is not None:
+                        await self._hard_delete_pair(pair, cursor)
+                        await connection.commit()

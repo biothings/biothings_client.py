@@ -819,7 +819,7 @@ class AsyncBiothingClient:
         _url = self.url + self._query_endpoint
         return await self._post(_url, params=_kwargs, verbose=verbose)
 
-    async def _querymany(
+    async def _querymany(  # noqa: MC0001
         self,
         qterms: Union[str, Iterable[Any]],
         scopes: Optional[Union[str, Iterable[Any]]] = None,

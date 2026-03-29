@@ -821,7 +821,7 @@ class BiothingClient:
         _url = self.url + self._query_endpoint
         return self._post(_url, params=_kwargs, verbose=verbose)
 
-    def _querymany(
+    def _querymany(  # noqa: MC0001
         self,
         qterms: Union[str, Iterable[Any]],
         scopes: Optional[Union[str, Iterable[Any]]] = None,
