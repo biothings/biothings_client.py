@@ -21,9 +21,11 @@ Requirements
 ============
     Python >=3.7
 
-.. note:: Python<=3.7 (including Python 2.7) is no longer supported as of version 0.4.0. The last version supporting Python<=3.5 is 0.3.1.
+.. note:: The caching feature is not availble for Python 3.7. It requires Python >=3.8.
 
-.. note:: The caching feature requires Python >=3.8.
+.. note:: Python 3.6 is no longer supported as of version 0.5.0. The last version supporting Python 3.6 is 0.4.1.
+
+.. note:: Python<=3.5 (including Python 2.7) is no longer supported as of version 0.4.0. The last version supporting Python<=3.5 is 0.3.1.
 
 Installation
 =============
