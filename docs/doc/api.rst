@@ -53,6 +53,12 @@ MyTaxonInfo
     :members:
     :inherited-members:
 
+MyGenesetInfo
++++++++++++++
+.. autoclass:: MyGenesetInfo
+    :members:
+    :inherited-members:
+
 
 Asynchronous Client Definitions
 ===============================
@@ -84,5 +90,11 @@ AsyncMyDiseaseInfo
 AsyncMyTaxonInfo
 ++++++++++++++++
 .. autoclass:: AsyncMyTaxonInfo
+    :members:
+    :inherited-members:
+
+AsyncMyGenesetInfo
+++++++++++++++++++
+.. autoclass:: AsyncMyGenesetInfo
     :members:
     :inherited-members:
