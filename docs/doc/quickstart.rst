@@ -301,7 +301,7 @@ Use the client for MyDisease.info API - Disease
      'took': 17,
      'total': 120}
 
-Use the client for t.biothings.io API - Taxnomy
+Use the client for MyTaxon.info API - Taxonomy
 -----------------------------------------------
 
 

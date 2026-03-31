@@ -17,7 +17,7 @@ import biothings_client
         (["variant"], "https://myvariant.info/v1", "MyVariantInfo"),
         (["chem", "drug"], "https://mychem.info/v1", "MyChemInfo"),
         (["disease"], "https://mydisease.info/v1", "MyDiseaseInfo"),
-        (["taxon"], "https://t.biothings.io/v1", "MyTaxonInfo"),
+        (["taxon"], "https://mytaxon.info/v1", "MyTaxonInfo"),
         (["geneset"], "https://mygeneset.info/v1", "MyGenesetInfo"),
     ],
 )
