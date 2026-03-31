@@ -40,9 +40,9 @@ Intro
     * chem - The client for MyChem.Info_, which provides access to chemical/drug objects.
     * disease - The client for MyDisease.Info_, which provides access to disease objects.
     * geneset - The client for MyGeneset.Info_, which provides access to geneset/pathway objects.
-    * taxon - The client for t.biothings.io_, which provides access to taxon objects.
+    * taxon - The client for MyTaxon.Info_, which provides access to taxon objects.
 
-.. _t.biothings.io: https://t.biothings.io
+.. _MyTaxon.Info: https://mytaxon.info
 .. _Biothings.api: https://biothings.io
 .. _MyGene.Info: https://mygene.info
 .. _MyVariant.Info: https://myvariant.info
@@ -52,11 +52,26 @@ Intro
 
 Support
 ============
-    python >=3.7
+    Python >=3.7
+
+.. note:: The caching feature is not available for Python 3.7. It requires Python >=3.8.
+
+.. note:: Python 3.6 is no longer supported as of version 0.5.0. The last version supporting Python 3.6 is 0.4.1.
+
+.. note:: Python<=3.5 (including Python 2.7) is no longer supported as of version 0.4.0. The last version supporting Python<=3.5 is 0.3.1.
 
 Optional dependencies
 ======================
-    * `pandas <http://pandas.pydata.org>`_ (install using "pip install pandas") is required for returning a list of variant objects as `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
+    * dataframe support (install using ``pip install biothings_client[dataframe]``)
+
+      `pandas <http://pandas.pydata.org>`_ is required for returning query results as a `DataFrame <http://pandas.pydata.org/pandas-docs/stable/dsintro.html#dataframe>`_.
+
+    * caching support (install using ``pip install biothings_client[caching]``, requires Python >=3.8)
+
+      Allows local caching of client queries to a SQLite database. Requires:
+
+        * `hishel <https://hishel.com/>`_
+        * `anysqlite <https://pypi.org/project/anysqlite/>`_
 
 Installation
 =============
