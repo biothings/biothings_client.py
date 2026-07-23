@@ -87,6 +87,11 @@ if _CACHING:  # noqa: MC0001
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
 
+        def _get_database_lock(self) -> Any:
+            """Return Hishel's async SQLite lock (`_lock` before 1.2, `_write_lock` since 1.2)."""
+            lock = getattr(self, "_write_lock", None)
+            return lock if lock is not None else self._lock
+
         async def hard_cleanup(self):
             """Fully clear everything in the entries table for our cache.
 
@@ -110,7 +115,7 @@ if _CACHING:  # noqa: MC0001
         async def get_entries_table(self) -> Any:
             """Get all rows in the `entries` cache table."""
             entry_identifiers = None
-            async with self._lock:
+            async with self._get_database_lock():
                 cache_entries_table = "entries"
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
@@ -119,7 +124,7 @@ if _CACHING:  # noqa: MC0001
 
         async def rebuild_cache_database(self) -> None:
             """Runs the VACUUM directive to rebuild our database after wipe."""
-            async with self._lock:
+            async with self._get_database_lock():
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
                 await cursor.execute("VACUUM")
@@ -130,7 +135,7 @@ if _CACHING:  # noqa: MC0001
             Identical implementation to remove_entry, except we call _hard_delete_pair
             at the end instead of _soft_delete_pair
             """
-            async with self._lock:
+            async with self._get_database_lock():
                 connection = await self._ensure_connection()
                 cursor = await connection.cursor()
                 await cursor.execute("SELECT data FROM entries WHERE id = ?", (id.bytes,))

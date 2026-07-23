@@ -1,5 +1,6 @@
 v0.5.1 (2026/07/23)
-    Restricted HTTPX to versions below 1.0 and Hishel to versions below 1.2 pending compatibility updates
+    Restricted HTTPX to versions below 1.0 pending compatibility with its redesigned API
+    Added compatibility with Hishel 1.2 and later 1.x releases
     Improved Python 3.7 syntax compatibility in the optional cache storage module
     Re-enabled MyChem DrugBank tests now that the data source is available again
 
