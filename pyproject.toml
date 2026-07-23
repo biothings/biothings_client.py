@@ -82,7 +82,7 @@ version = "0.5.1"
 caching = [
     "anysqlite; python_version>='3.8'",
     "hishel[httpx]==1.1.8; python_version=='3.9'",
-    "hishel[httpx]>=1.1.9; python_version>'3.9'",
+    "hishel[httpx]>=1.1.9,<1.2; python_version>'3.9'",
 ]
 dataframe = ["pandas>=1.2.0"]   # the last version supports python 3.7
 jsonld = ["PyLD>=0.7.2"]
