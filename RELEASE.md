@@ -1,50 +1,58 @@
+# Release process
 
-# RELEASE
+This project publishes `biothings_client` to PyPI when a GitHub release is published.
 
-## This is the procedure we use for "biothings_client" package release
+## Prepare the release
 
- 1. requires both `build` and `twine` packages installed
+1. Install the package with all test extras and the release tools:
 
-    ```bash
-    pip install build twine
-    ```
+   ```bash
+   python -m pip install --upgrade -e ".[caching,dataframe,jsonld,tests]"
+   python -m pip install --upgrade build twine black ruff pyright
+   ```
 
- 2. Update version number in [pyproject.toml](pyproject.toml).
+2. Update the version in `pyproject.toml` and add the release notes and date to `CHANGES.txt`.
 
- 3. Check and update other sections of [pyproject.toml](pyproject.toml) if needed (dependencies, metadata etc.).
+3. Run the checks:
 
- 4. Build the package locally:
+   ```bash
+   python -m pytest tests
+   python -m black --check biothings_client tests
+   ruff check biothings_client tests
+   pyright
+   ```
 
-    ```bash
-    python -m build
-    ```
+4. Build and validate both distributions from a clean directory:
 
- 5. Test the package built locally:
+   ```bash
+   rm -rf build dist
+   python -m build
+   python -m twine check dist/*
+   ```
 
-    ```bash
-    pip install dist/biothings_client-0.3.0-py2.py3-none-any.whl
-    ```
+5. Install the wheel in a clean virtual environment and run a smoke test:
 
-   And run any local test as needed.
+   ```bash
+   python -m venv /tmp/biothings-client-release
+   /tmp/biothings-client-release/bin/python -m pip install dist/biothings_client-*.whl
+   /tmp/biothings-client-release/bin/python -c \
+     'from biothings_client import get_client; print(get_client("gene"))'
+   rm -rf /tmp/biothings-client-release
+   ```
 
- 6. Prepare github repo for the release:
+6. Commit the release preparation, open or merge the pull request, and confirm that the test and build workflows pass on `master`.
 
-    * Create a tag for each released version (with "v" prefix):
+## Publish the release
 
-      ```bash
-      git tag -a "v0.3.0" -m "tagging v0.3.0 for release"
-      ```
+1. Create an annotated version tag with a `v` prefix and push it:
 
-    * If everything looks good, push to the remote:
+   ```bash
+   git tag -a "v0.5.1" -m "tagging v0.5.1 for release"
+   git push origin master "v0.5.1"
+   ```
 
-      ```bash
-      git push --tags
-      ```
+2. Publish a GitHub release for the tag. The `PyPI release` workflow builds and uploads the distributions using the configured `PYPI_API_TOKEN` secret.
 
- 7. Upload to PyPI:
+3. Verify the release on PyPI and test installation from PyPI in a clean environment.
 
-    ```bash
-    twine upload dist/*
-    ```
-
-    Note: this step needs to be done by @newgene under ["newgene" PyPI account](https://pypi.org/user/newgene/) or any authorized PyPI user.
+If automated publication is unavailable, an authorized PyPI maintainer can upload the validated distributions manually with `python -m twine upload dist/*`.

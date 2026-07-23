@@ -228,7 +228,6 @@ def test_query(chem_client: MyChemInfo):
     assert len(qres["hits"]) == 5
 
 
-@pytest.mark.xfail(reason="Drugbank was removed")
 def test_query_drugbank(chem_client: MyChemInfo):
     qres = chem_client.query("drugbank.id:DB00536")
     assert "hits" in qres

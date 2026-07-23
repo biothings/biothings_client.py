@@ -1,5 +1,10 @@
-v0.5.0 (2025/03/26)
-    Dropped support for Python 3.6 and added suport for Python up to 3.14
+v0.5.1 (2026/07/23)
+    Restricted HTTPX to versions below 1.0 pending compatibility with its redesigned API
+    Improved Python 3.7 syntax compatibility in the optional cache storage module
+    Re-enabled MyChem DrugBank tests now that the data source is available again
+
+v0.5.0 (2026/03/31)
+    Dropped support for Python 3.6 and added support for Python up to 3.14
     Added type hints to the entire code base
 
 v0.4.1 (2025/01/14)

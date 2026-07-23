@@ -238,7 +238,6 @@ async def test_query(async_chem_client: AsyncMyChemInfo):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="drugbank datasource removed")
 async def test_query_drugbank(async_chem_client: AsyncMyChemInfo):
     qres = await async_chem_client.query("drugbank.id:DB00536")
     assert "hits" in qres

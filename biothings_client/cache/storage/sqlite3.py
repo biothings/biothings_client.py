@@ -36,9 +36,11 @@ if _CACHING:  # noqa: MC0001
             try:
                 entry_identifiers = self.get_entries_table()
                 if entry_identifiers is not None:
-                    while (entry_id := entry_identifiers.fetchone()) is not None:
+                    entry_id = entry_identifiers.fetchone()
+                    while entry_id is not None:
                         entry_uuid = uuid.UUID(bytes=entry_id[0])
                         self.hard_remove_entry(entry_uuid)
+                        entry_id = entry_identifiers.fetchone()
                     logger.info("Successfully cleared cache entries")
                 self.rebuild_cache_database()
             except Exception as gen_exc:
@@ -95,9 +97,11 @@ if _CACHING:  # noqa: MC0001
             try:
                 entry_identifiers = await self.get_entries_table()
                 if entry_identifiers is not None:
-                    while (entry_id := await entry_identifiers.fetchone()) is not None:
+                    entry_id = await entry_identifiers.fetchone()
+                    while entry_id is not None:
                         entry_uuid = uuid.UUID(bytes=entry_id[0])
                         await self.hard_remove_entry(entry_uuid)
+                        entry_id = await entry_identifiers.fetchone()
                     logger.info("Successfully cleared cache entries")
                 await self.rebuild_cache_database()
             except Exception as gen_exc:

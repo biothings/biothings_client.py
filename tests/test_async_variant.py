@@ -50,7 +50,7 @@ async def test_getvariant(async_variant_client: AsyncMyVariantInfo):
     assert v["snpeff"]["ann"]["genename"] == "ABCA1"
 
     v = await async_variant_client.getvariant("'chr1:g.1A>C'")  # something does not exist
-    assert v == None
+    assert v is None
 
 
 @pytest.mark.asyncio
