@@ -69,8 +69,8 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-    "httpx>=0.25.0; python_version>='3.8'",
-    "httpx>=0.24.0; python_version=='3.7'",
+    "httpx>=0.25.0,<1.0; python_version>='3.8'",
+    "httpx>=0.24.0,<1.0; python_version=='3.7'",
     "importlib-metadata; python_version<='3.7'",
     "typing-extensions; python_version<='3.7'",
 ]
