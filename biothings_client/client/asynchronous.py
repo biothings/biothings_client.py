@@ -714,10 +714,11 @@ class AsyncBiothingClient:
                                   True or 1: using json_normalize
                                   2        : using DataFrame.from_dict
                                   otherwise: return original json
-        :param fetch_all: if True, return a generator to all query results (unsorted).  This can provide a very fast
-                          return of all hits from a large query.
-                          Server requests are done in blocks of 1000 and yielded individually.  Each 1000 block of
-                          results must be yielded within 1 minute, otherwise the request will expire at server side.
+        :param fetch_all: if True, return a generator to all query results, in the order of **sort** if given,
+                          otherwise unsorted. This can provide a very fast return of all hits from a large query.
+                          Server requests are done in blocks of **size** hits (1000 by default) and yielded
+                          individually. Each block of results must be yielded within 1 minute, otherwise the request
+                          will expire at server side. Servers before BioThings SDK 1.2 return unsorted blocks of 1000.
 
         :return: a dictionary with returned variant hits or a pandas DataFrame object (when **as_dataframe** is True)
                  or a generator of all hits (when **fetch_all** is True)
@@ -771,27 +772,9 @@ class AsyncBiothingClient:
                 raise gen_exc
 
         try:
-            _, response = await self._get(url, params=kwargs, verbose=verbose)
-
-            if verbose:
-                logger.info("Fetching {0} {1} . . .".format(response["total"], self._optionally_plural_object_type))
-
-            for key in ["q", "fetch_all"]:
-                kwargs.pop(key)
-
-            while not response.get("error", "").startswith("No results to return"):
-                if "error" in response:
-                    logger.error(response["error"])
-                    break
-
-                if "_warning" in response and verbose:
-                    logger.warning(response["_warning"])
-
-                for hit in response["hits"]:
-                    yield hit
-
-                kwargs.update({"scroll_id": response["_scroll_id"]})
-                _, response = await self._get(url, params=kwargs, verbose=verbose)
+            kwargs.pop("fetch_all")
+            async for hit in self._search_after_hits(url, verbose=verbose, **kwargs):
+                yield hit
 
         except Exception as gen_exc:
             logger.exception(gen_exc)
@@ -809,6 +792,75 @@ class AsyncBiothingClient:
                     logger.exception(gen_exc)
                     logger.error("Unknown error occured while attempting to disable caching")
                     raise gen_exc
+
+    async def _search_after_hits(self, url: str, verbose: bool = True, **kwargs: Any) -> AsyncGenerator[JsonDict, None]:
+        """
+        Yield all hits of the query in kwargs. The first request sends search_after=*, then
+        each request sends the same query with the _search_after value of the previous
+        response, until a response no longer includes one.
+
+        Falls back to scrolling when the server cannot page with search_after: servers
+        before BioThings SDK 1.2 ignore it, and newer ones reject it for some options (facets).
+        """
+        params = dict(kwargs, search_after="*")
+        try:
+            _, response = await self._get(url, params=params, verbose=verbose)
+        except httpx.HTTPStatusError as status_error:
+            if status_error.response.status_code != 400 or "search_after" not in status_error.response.text:
+                raise
+            logger.warning("Scrolling instead of search_after: %s", status_error.response.text)
+            async for hit in self._scroll_hits(url, verbose=verbose, **kwargs):
+                yield hit
+            return
+
+        total = response["total"]
+        if isinstance(total, dict):
+            total = total["value"]
+        if "_search_after" not in response and len(response["hits"]) < total:
+            # the server ignored search_after and returned the first page of a regular query
+            logger.debug("search_after is not supported by %s, scrolling instead", url)
+            async for hit in self._scroll_hits(url, verbose=verbose, **kwargs):
+                yield hit
+            return
+
+        if verbose:
+            logger.info("Fetching %s %s . . .", total, self._optionally_plural_object_type)
+            if "_warning" in response:
+                logger.warning(response["_warning"])
+
+        while True:
+            for hit in response["hits"]:
+                yield hit
+            if "_search_after" not in response:
+                break
+            params["search_after"] = response["_search_after"]
+            _, response = await self._get(url, params=params, verbose=verbose)
+
+    async def _scroll_hits(self, url: str, verbose: bool = True, **kwargs: Any) -> AsyncGenerator[JsonDict, None]:
+        """
+        Yield all hits of the query in kwargs by scrolling with fetch_all and scroll_id,
+        which BioThings SDK 1.2 deprecates in favor of search_after.
+        """
+        _, response = await self._get(url, params=dict(kwargs, fetch_all=True), verbose=verbose)
+
+        if verbose:
+            logger.info("Fetching %s %s . . .", response["total"], self._optionally_plural_object_type)
+            if "_warning" in response:
+                logger.warning(response["_warning"])
+
+        kwargs.pop("q")
+
+        # older servers end a scroll with "No results to return", newer ones with "No more results to return."
+        while not response.get("error", "").startswith(("No results to return", "No more results to return")):
+            if "error" in response:
+                logger.error(response["error"])
+                break
+
+            for hit in response["hits"]:
+                yield hit
+
+            kwargs.update({"scroll_id": response["_scroll_id"]})
+            _, response = await self._get(url, params=kwargs, verbose=verbose)
 
     async def _querymany_inner(
         self, qterms: Iterable[Any], verbose: bool = True, **kwargs: Any
