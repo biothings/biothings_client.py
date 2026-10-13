@@ -719,9 +719,9 @@ class BiothingClient:
                                   otherwise: return original json
         :param fetch_all: if True, return a generator to all query results, in the order of **sort** if given,
                           otherwise unsorted. This can provide a very fast return of all hits from a large query.
-                          Server requests are done in blocks of **size** hits (1000 by default) and yielded
-                          individually. Each block of results must be yielded within 1 minute, otherwise the request
-                          will expire at server side. Servers before BioThings SDK 1.2 return unsorted blocks of 1000.
+                          Server requests are done in blocks of 1000 (**size** is ignored) and yielded individually.
+                          Each block of results must be yielded within 1 minute, otherwise the request will expire
+                          at server side. Servers before BioThings SDK 1.2 return the hits unsorted.
 
         :return: a dictionary with returned variant hits or a pandas DataFrame object (when **as_dataframe** is True)
                  or a generator of all hits (when **fetch_all** is True)
@@ -776,6 +776,8 @@ class BiothingClient:
 
         try:
             kwargs.pop("fetch_all")
+            # every page has the server's default number of hits (1000), as with scrolling
+            kwargs.pop("size", None)
             yield from self._search_after_hits(url, verbose=verbose, **kwargs)
 
         except Exception as gen_exc:

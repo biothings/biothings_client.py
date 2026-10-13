@@ -15,7 +15,8 @@ from biothings_client.client.definitions import AsyncMyGeneInfo, MyGeneInfo
 
 HITS = [{"_id": str(number)} for number in range(25)]
 
-# the requests query("cdk*", fields="symbol", fetch_all=True) makes when the server pages with search_after
+# the requests query("cdk*", fields="symbol", size=5, fetch_all=True) makes when the server pages with
+# search_after, without size, so that each page has the server's default number of hits
 SEARCH_AFTER_REQUESTS = [
     {"q": "cdk*", "fields": "symbol", "search_after": "*"},
     {"q": "cdk*", "fields": "symbol", "search_after": "10"},
@@ -86,7 +87,7 @@ def mock_async_client(api: MockQueryAPI) -> AsyncMyGeneInfo:
 
 def test_fetch_all_search_after():
     api = MockQueryAPI()
-    hits = list(mock_client(api).query("cdk*", fields="symbol", fetch_all=True))
+    hits = list(mock_client(api).query("cdk*", fields="symbol", size=5, fetch_all=True))
 
     assert hits == HITS
     assert api.requests == SEARCH_AFTER_REQUESTS
@@ -95,7 +96,7 @@ def test_fetch_all_search_after():
 @pytest.mark.parametrize("search_after", ["ignored", "rejected"])
 def test_fetch_all_scroll_fallback(search_after: str, caplog: pytest.LogCaptureFixture):
     api = MockQueryAPI(search_after)
-    hits = list(mock_client(api).query("cdk*", fields="symbol", fetch_all=True))
+    hits = list(mock_client(api).query("cdk*", fields="symbol", size=5, fetch_all=True))
 
     # the first page of a server that ignores search_after is discarded, not yielded again
     assert hits == HITS
@@ -107,7 +108,7 @@ def test_fetch_all_scroll_fallback(search_after: str, caplog: pytest.LogCaptureF
 @pytest.mark.asyncio
 async def test_async_fetch_all_search_after():
     api = MockQueryAPI()
-    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", fetch_all=True)]
+    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", size=5, fetch_all=True)]
 
     assert hits == HITS
     assert api.requests == SEARCH_AFTER_REQUESTS
@@ -117,7 +118,7 @@ async def test_async_fetch_all_search_after():
 @pytest.mark.parametrize("search_after", ["ignored", "rejected"])
 async def test_async_fetch_all_scroll_fallback(search_after: str):
     api = MockQueryAPI(search_after)
-    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", fetch_all=True)]
+    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", size=5, fetch_all=True)]
 
     assert hits == HITS
     assert api.requests == SCROLL_REQUESTS

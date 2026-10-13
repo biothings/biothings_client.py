@@ -80,9 +80,9 @@ DOCSTRING = {
                          otherwise, index by number. Only applicable if as_dataframe=True.
         :param fetch_all: if True, return a generator to all query results, in the order of **sort** if given,
                           otherwise unsorted. This can provide a very fast return of all hits from a large query.
-                          Server requests are done in blocks of **size** hits (1000 by default) and yielded
-                          individually. Each block of results must be yielded within 1 minute, otherwise the request
-                          will expire at server side. Servers before BioThings SDK 1.2 return unsorted blocks of 1000.
+                          Server requests are done in blocks of 1000 (**size** is ignored) and yielded individually.
+                          Each block of results must be yielded within 1 minute, otherwise the request will expire
+                          at server side. Servers before BioThings SDK 1.2 return the hits unsorted.
 
         :return: a dictionary with returned gene hits or a pandas DataFrame object (when **as_dataframe** is True)
 
