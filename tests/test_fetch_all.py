@@ -1,7 +1,4 @@
-"""Tests for fetch_all paging with search_after and its fallback to scrolling.
-
-They run against a mocked BioThings API, so they don't depend on the version deployed.
-"""
+"""Tests for fetch_all with search_after and its fallback to scrolling, against a mocked BioThings API."""
 
 import logging
 from dataclasses import dataclass, field
@@ -34,13 +31,11 @@ SCROLL_REQUESTS = [
 
 @dataclass
 class MockQueryAPI:
-    """Serves the /query endpoint of a BioThings API with HITS, 10 hits per request.
+    """Serves the /query endpoint of a BioThings API with HITS, 10 hits per request."""
 
-    search_after is "supported" to page with search_after, like BioThings SDK 1.2 and later,
-    "ignored" to treat it as an unknown parameter, like servers before 1.2, or "rejected" to
-    respond with the 400 error 1.2 gives for options search_after does not support (facets).
-    """
-
+    # "supported" pages with search_after, like BioThings SDK 1.2 and later, "ignored" treats it as an
+    # unknown parameter, like servers before 1.2, and "rejected" responds with the 400 error that 1.2
+    # gives for options search_after does not support (facets)
     search_after: str = "supported"
     requests: List[Dict[str, str]] = field(default_factory=list)
 
