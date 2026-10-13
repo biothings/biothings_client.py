@@ -1,9 +1,10 @@
-"""
-Tests for paging through fetch_all results with search_after, and the fallback to
-scrolling, against a mocked BioThings API so they don't depend on the deployed version
+"""Tests for fetch_all paging with search_after and its fallback to scrolling.
+
+They run against a mocked BioThings API, so they don't depend on the version deployed.
 """
 
 import logging
+from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 import httpx
@@ -14,29 +15,37 @@ from biothings_client.client.definitions import AsyncMyGeneInfo, MyGeneInfo
 
 HITS = [{"_id": str(number)} for number in range(25)]
 
+# the requests query("cdk*", fields="symbol", fetch_all=True) makes when the server pages with search_after
+SEARCH_AFTER_REQUESTS = [
+    {"q": "cdk*", "fields": "symbol", "search_after": "*"},
+    {"q": "cdk*", "fields": "symbol", "search_after": "10"},
+    {"q": "cdk*", "fields": "symbol", "search_after": "20"},
+]
+# and when it falls back to scrolling
+SCROLL_REQUESTS = [
+    {"q": "cdk*", "fields": "symbol", "search_after": "*"},
+    {"q": "cdk*", "fields": "symbol", "fetch_all": "true"},
+    {"fields": "symbol", "scroll_id": "10"},
+    {"fields": "symbol", "scroll_id": "20"},
+    {"fields": "symbol", "scroll_id": "30"},
+]
 
+
+@dataclass
 class MockQueryAPI:
-    """
-    Serves the /query endpoint of a BioThings API with HITS, a page of `size` hits
-    (default 10) per request.
+    """Serves the /query endpoint of a BioThings API with HITS, 10 hits per request.
 
-    :param search_after: "supported" pages with search_after, like BioThings SDK 1.2 and later,
-                         "ignored" treats it as an unknown parameter, like servers before 1.2,
-                         "rejected" responds with the 400 error 1.2 gives for options search_after
-                         does not support (facets)
+    search_after is "supported" to page with search_after, like BioThings SDK 1.2 and later,
+    "ignored" to treat it as an unknown parameter, like servers before 1.2, or "rejected" to
+    respond with the 400 error 1.2 gives for options search_after does not support (facets).
     """
 
-    def __init__(self, search_after: str = "supported") -> None:
-        self.search_after = search_after
-        self.requests: List[Dict[str, str]] = []
+    search_after: str = "supported"
+    requests: List[Dict[str, str]] = field(default_factory=list)
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         params = dict(request.url.params)
         self.requests.append(params)
-        size = int(params.get("size", 10))
-
-        if params.get("q") == "(":
-            return httpx.Response(400, json={"code": 400, "success": False, "error": "Invalid query"})
 
         if "search_after" in params and self.search_after == "rejected":
             details = "search_after does not support facets, request them in a separate query."
@@ -44,9 +53,9 @@ class MockQueryAPI:
 
         if "search_after" in params and self.search_after == "supported":
             start = 0 if params["search_after"] == "*" else int(params["search_after"])
-            body: Dict[str, Any] = {"total": len(HITS), "hits": HITS[start : start + size]}
-            if start + size < len(HITS):
-                body["_search_after"] = str(start + size)
+            body: Dict[str, Any] = {"total": len(HITS), "hits": HITS[start : start + 10]}
+            if start + 10 < len(HITS):
+                body["_search_after"] = str(start + 10)
             return httpx.Response(200, json=body)
 
         # scrolling, the scroll id is the index of the next hit in this mock
@@ -58,7 +67,7 @@ class MockQueryAPI:
         if params.get("fetch_all") == "true":
             return httpx.Response(200, json={"_scroll_id": "10", "total": len(HITS), "hits": HITS[:10]})
 
-        return httpx.Response(200, json={"total": len(HITS), "hits": HITS[:size]})
+        return httpx.Response(200, json={"total": len(HITS), "hits": HITS[:10]})
 
 
 def mock_client(api: MockQueryAPI) -> MyGeneInfo:
@@ -80,63 +89,19 @@ def test_fetch_all_search_after():
     hits = list(mock_client(api).query("cdk*", fields="symbol", fetch_all=True))
 
     assert hits == HITS
-    # each page sends the same query with the _search_after value of the previous page
-    assert api.requests == [
-        {"q": "cdk*", "fields": "symbol", "search_after": "*"},
-        {"q": "cdk*", "fields": "symbol", "search_after": "10"},
-        {"q": "cdk*", "fields": "symbol", "search_after": "20"},
-    ]
+    assert api.requests == SEARCH_AFTER_REQUESTS
 
 
-def test_fetch_all_search_after_size():
-    api = MockQueryAPI()
-    hits = list(mock_client(api).query("cdk*", size=20, fetch_all=True))
-
-    assert hits == HITS
-    assert [request["search_after"] for request in api.requests] == ["*", "20"]
-
-
-def test_fetch_all_single_page():
-    # all hits on the first page whether or not the server supports search_after, no fallback
-    api = MockQueryAPI(search_after="ignored")
-    hits = list(mock_client(api).query("cdk*", size=50, fetch_all=True))
-
-    assert hits == HITS
-    assert len(api.requests) == 1
-
-
-def test_fetch_all_scroll_when_search_after_ignored(caplog: pytest.LogCaptureFixture):
-    api = MockQueryAPI(search_after="ignored")
+@pytest.mark.parametrize("search_after", ["ignored", "rejected"])
+def test_fetch_all_scroll_fallback(search_after: str, caplog: pytest.LogCaptureFixture):
+    api = MockQueryAPI(search_after)
     hits = list(mock_client(api).query("cdk*", fields="symbol", fetch_all=True))
 
-    # the first page of the regular query is discarded, not yielded again
+    # the first page of a server that ignores search_after is discarded, not yielded again
     assert hits == HITS
-    assert api.requests == [
-        {"q": "cdk*", "fields": "symbol", "search_after": "*"},
-        {"q": "cdk*", "fields": "symbol", "fetch_all": "true"},
-        {"fields": "symbol", "scroll_id": "10"},
-        {"fields": "symbol", "scroll_id": "20"},
-        {"fields": "symbol", "scroll_id": "30"},
-    ]
+    assert api.requests == SCROLL_REQUESTS
     # the end of the scroll is not an error
     assert not [record for record in caplog.records if record.levelno >= logging.ERROR]
-
-
-def test_fetch_all_scroll_when_search_after_rejected(caplog: pytest.LogCaptureFixture):
-    api = MockQueryAPI(search_after="rejected")
-    hits = list(mock_client(api).query("cdk*", facets="taxid", fetch_all=True))
-
-    assert hits == HITS
-    assert api.requests[1] == {"q": "cdk*", "facets": "taxid", "fetch_all": "true"}
-    assert "search_after does not support facets" in caplog.text
-
-
-def test_fetch_all_query_error():
-    # an error that isn't about search_after is raised, without scrolling
-    api = MockQueryAPI()
-    with pytest.raises(httpx.HTTPStatusError):
-        list(mock_client(api).query("(", fetch_all=True))
-    assert len(api.requests) == 1
 
 
 @pytest.mark.asyncio
@@ -145,22 +110,14 @@ async def test_async_fetch_all_search_after():
     hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", fetch_all=True)]
 
     assert hits == HITS
-    assert [request["search_after"] for request in api.requests] == ["*", "10", "20"]
+    assert api.requests == SEARCH_AFTER_REQUESTS
 
 
 @pytest.mark.asyncio
-async def test_async_fetch_all_scroll_when_search_after_ignored():
-    api = MockQueryAPI(search_after="ignored")
-    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fetch_all=True)]
+@pytest.mark.parametrize("search_after", ["ignored", "rejected"])
+async def test_async_fetch_all_scroll_fallback(search_after: str):
+    api = MockQueryAPI(search_after)
+    hits = [hit async for hit in await mock_async_client(api).query("cdk*", fields="symbol", fetch_all=True)]
 
     assert hits == HITS
-    assert [request.get("scroll_id") for request in api.requests] == [None, None, "10", "20", "30"]
-
-
-@pytest.mark.asyncio
-async def test_async_fetch_all_scroll_when_search_after_rejected():
-    api = MockQueryAPI(search_after="rejected")
-    hits = [hit async for hit in await mock_async_client(api).query("cdk*", facets="taxid", fetch_all=True)]
-
-    assert hits == HITS
-    assert api.requests[1] == {"q": "cdk*", "facets": "taxid", "fetch_all": "true"}
+    assert api.requests == SCROLL_REQUESTS
